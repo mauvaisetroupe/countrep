@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { db, type Workout } from '../db'
 
 // Exercice sélectionné
 const selectedExercise = ref('Push-ups')
@@ -13,7 +14,7 @@ const exercises = [
 // --- PARTIE DYNAMIQUE ---
 const now = new Date()
 const currentYear = now.getFullYear()
-const currentMonthIndex = now.getMonth() // 0 pour janvier, 7 pour août, etc.
+const currentMonthIndex = now.getMonth()
 const today = now.getDate()
 
 // Nom du mois formaté (ex: "août 2026")
@@ -48,17 +49,46 @@ const showModal = ref(false)
 const inputMode = ref('add')
 const repsValue = ref('')
 
-const addQuick = (val) => {
+// Stockage local des entraînements récupérés
+const workoutsList = ref<Workout[]>([])
+
+// Charger les données au démarrage
+const loadWorkouts = async () => {
+  workoutsList.value = await db.workouts.toArray()
+}
+
+onMounted(() => {
+  loadWorkouts()
+})
+
+const addQuick = (val: number) => {
   const current = parseInt(repsValue.value) || 0
   if (inputMode.value === 'add') {
-    repsValue.value = current + val
+    repsValue.value = String(current + val)
   } else {
-    repsValue.value = val
+    repsValue.value = String(val)
   }
 }
 
-const saveWorkout = () => {
-  console.log(`Exercice: ${selectedExercise.value}, Date: ${selectedDate.value} ${currentMonth.value}, Mode: ${inputMode.value}, Valeur: ${repsValue.value}`)
+const saveWorkout = async () => {
+  const repsNum = parseInt(repsValue.value)
+  if (!repsNum || isNaN(repsNum)) return
+
+  // Format de la date pour le stockage (ex: "2026-08-29")
+  const formattedDate = `${currentYear}-${String(currentMonthIndex + 1).padStart(2, '0')}-${String(selectedDate.value).padStart(2, '0')}`
+
+  // Enregistrement dans IndexedDB via Dexie
+  await db.workouts.add({
+    exercise: selectedExercise.value,
+    date: formattedDate,
+    reps: repsNum,
+    mode: inputMode.value,
+    createdAt: Date.now()
+  })
+
+  // Recharger la liste locale
+  await loadWorkouts()
+
   showModal.value = false
   repsValue.value = ''
 }
