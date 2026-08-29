@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { db, type Workout } from '../db'
 
 const selectedExercise = ref('Push-ups')
@@ -78,8 +78,6 @@ const getStatsForPeriod = (startDate: Date, endDate: Date) => {
   const activeDays = activeDaysSet.size
   
   // Calcul du nombre de jours écoulés ou total dans la période pour la moyenne
-  const diffTime = Math.abs(endDate.getTime() - startDate.getTime())
-  const totalDaysInPeriod = Math.ceil(diffTime / (1000 * 3600 * 24)) + 1
   const average = activeDays > 0 ? (total / activeDays).toFixed(1) : '0.0'
 
   return { total, activeDays, average }
@@ -202,6 +200,15 @@ const monthChartData = computed(() => {
           <div class="flex justify-between text-gray-600"><span>Total</span><span class="font-bold text-gray-900">{{ monthStats.total }}</span></div>
           <div class="flex justify-between text-gray-600"><span>Jours actifs</span><span class="font-bold text-gray-900">{{ monthStats.activeDays }}</span></div>
           <div class="flex justify-between text-gray-600"><span>Moyenne par jour actif</span><span class="font-bold text-gray-900">{{ monthStats.average }}</span></div>
+        </div>
+      </section>
+
+      <section class="bg-amber-50/40 border border-amber-100/80 rounded-3xl p-5 shadow-xs space-y-4">
+        <h2 class="text-lg font-bold text-gray-800">Cette année</h2>
+        <div class="space-y-2 text-sm">
+          <div class="flex justify-between text-gray-600"><span>Total</span><span class="font-bold text-gray-900">{{ yearStats.total }}</span></div>
+          <div class="flex justify-between text-gray-600"><span>Jours actifs</span><span class="font-bold text-gray-900">{{ yearStats.activeDays }}</span></div>
+          <div class="flex justify-between text-gray-600"><span>Moyenne par jour actif</span><span class="font-bold text-gray-900">{{ yearStats.average }}</span></div>
         </div>
       </section>
 
