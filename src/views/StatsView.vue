@@ -1,14 +1,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { db, type Workout } from '../db'
+import { exercises } from '../exercises'
 
 const selectedExercise = ref('Push-ups')
-const exercises = [
-  { name: 'Push-ups', icon: '⚡' },
-  { name: 'Squats', icon: '🧍' },
-  { name: 'Chin-ups', icon: '📈' },
-  { name: 'Chin-ups2', icon: '📈' },
-]
 
 const workouts = ref<Workout[]>([])
 
