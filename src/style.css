@@ -1,0 +1,18 @@
+@import "tailwindcss";
+
+/* Fond chaleureux par défaut et anti-flash */
+body {
+  background-color: #fdf8f5;
+  color: #111827;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Masquer les scrollbars pour garder l'effet application native */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
