@@ -1,7 +1,5 @@
-<script setup>
+<script setup lang="ts">
 import { ref, computed } from 'vue'
-import { useRoute } from 'vue-router'
-const route = useRoute()
 
 // Exercice sélectionné
 const selectedExercise = ref('Push-ups')
