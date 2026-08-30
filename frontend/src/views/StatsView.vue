@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { db, type LocalWorkout } from '../db'
 import { exercises } from '../exercises'
 import { useExerciseStore } from '../stores/exercise'
+import { syncPendingWorkouts, syncWorkoutsFromServer } from '../services/sync'
 
 const exerciseStore = useExerciseStore()
 
@@ -13,8 +14,11 @@ const loadWorkouts = async () => {
   workouts.value = await db.workouts.toArray()
 }
 
-onMounted(() => {
-  loadWorkouts()
+onMounted(async () => {
+  await loadWorkouts()
+  await syncPendingWorkouts()
+  await syncWorkoutsFromServer()
+  await loadWorkouts()
 })
 
 // Filtrer les workouts pour l'exercice sélectionné
@@ -105,12 +109,21 @@ const yearStats = computed(() => {
 })
 
 // 3. Données pour le graphique du mois (jours 1 à N)
+
+const getLocalDateString = (date: string) => {
+  return date.length === 10
+    ? date
+    : date.slice(0, 10)
+}
+
 const monthChartData = computed(() => {
   const totalDays = new Date(currentYear, currentMonthIndex + 1, 0).getDate()
   const mapData: Record<number, number> = {}
   
   exerciseWorkouts.value.forEach(w => {
-    const [y, m, d] = w.date.split('-').map(Number)
+    const [y, m, d] = getLocalDateString(w.date)
+      .split('-')
+      .map(Number)
     if (y === currentYear && m - 1 === currentMonthIndex) {
       mapData[d] = (mapData[d] || 0) + w.reps
     }
