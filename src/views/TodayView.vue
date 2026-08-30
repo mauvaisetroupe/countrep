@@ -217,13 +217,17 @@ const saveWorkout = async () => {
   if (!repsNum || isNaN(repsNum)) {
     return
   }
+  const now = Date.now()
 
   await db.workouts.add({
+    id: crypto.randomUUID(),
     exercise: selectedExercise.value,
     date: selectedDate.value,
     reps: repsNum,
     mode: inputMode.value,
-    createdAt: Date.now()
+    createdAt: now,
+    updatedAt: now,
+    deletedAt: null
   })
 
   await loadWorkouts()

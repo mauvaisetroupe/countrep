@@ -1,23 +1,32 @@
 import Dexie, { type Table } from 'dexie'
 
 export interface Workout {
-  id?: number
+  id: string
   exercise: string
-  date: string // Format "YYYY-MM-DD" pour faciliter le tri
+  date: string
   reps: number
   mode: string
   createdAt: number
+  updatedAt: number
+  deletedAt?: number | null
+}
+
+export interface SyncState {
+  id: string
+  lastSync: number
 }
 
 export class WorkoutDatabase extends Dexie {
-  workouts!: Table<Workout, number>
+  workouts!: Table<Workout, string>
+  syncState!: Table<SyncState, string>
 
   constructor() {
     super('WorkoutDatabase')
     this.version(1).stores({
-      workouts: '++id, exercise, date, createdAt' // Indexation pour la recherche rapide
+      workouts: 'id, exercise, date, createdAt, updatedAt', 
+      syncState: 'id'
     })
-}
+  }
 }
 
 export const db = new WorkoutDatabase()
