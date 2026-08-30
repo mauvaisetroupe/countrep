@@ -5,8 +5,8 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   plugins: [vue()],
 
-  base: '/grease-the-groove/',
-
+  base: '/',
+  
   server: {
     host: true
   }

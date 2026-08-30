@@ -10,8 +10,7 @@ export interface ApiWorkout {
   deletedAt: number | null
 }
 
-const API_URL = import.meta.env.VITE_API_URL
-
+const API_URL = import.meta.env.VITE_API_URL || ''
 
 export async function createWorkout(
   workout: ApiWorkout
