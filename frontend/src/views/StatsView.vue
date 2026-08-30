@@ -5,8 +5,6 @@ import { exercises } from '../exercises'
 import { useExerciseStore } from '../stores/exercise'
 
 const exerciseStore = useExerciseStore()  
-
-// Charger les données depuis IndexedDB
 const { workouts } = useWorkouts()
 
 // Filtrer les workouts pour l'exercice sélectionné
@@ -15,16 +13,30 @@ const exerciseWorkouts = computed(() => {
 })
 
 // --- CALCULS STATISTIQUES ---
-const now = new Date()
-const currentYear = now.getFullYear()
-const currentMonthIndex = now.getMonth()
 
-// Helper pour formater une date en "YYYY-MM-DD"
+// Extraire la date du jour en local (sans heure)
+const getToday = () => {
+  const d = new Date()
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate())
+}
+
+// Helper pour formater une Date objet en "YYYY-MM-DD" local
 const formatDate = (d: Date) => {
   const y = d.getFullYear()
   const m = String(d.getMonth() + 1).padStart(2, '0')
   const day = String(d.getDate()).padStart(2, '0')
   return `${y}-${m}-${day}`
+}
+
+// Uniformiser n'importe quelle String de date vers "YYYY-MM-DD"
+const getLocalDateString = (dateStr: string) => {
+  if (!dateStr) return ''
+  // Si format ISO avec T (ex: 2026-08-30T14:00:00Z), on extrait la date locale
+  if (dateStr.includes('T')) {
+    const d = new Date(dateStr)
+    return formatDate(d)
+  }
+  return dateStr.slice(0, 10)
 }
 
 // 1. Statistiques globales / Streak
@@ -33,17 +45,24 @@ const totalRepsAllTime = computed(() => {
 })
 
 const longestStreak = computed(() => {
-  const dates = [...new Set(exerciseWorkouts.value.map(w => w.date))].sort()
+  const dates = [...new Set(exerciseWorkouts.value.map(w => getLocalDateString(w.date)))]
+    .filter(Boolean)
+    .sort()
+    
   if (dates.length === 0) return 0
   
   let maxStreak = 1
   let currentStreak = 1
   
   for (let i = 1; i < dates.length; i++) {
-    const prev = new Date(dates[i - 1])
-    const curr = new Date(dates[i])
-    const diffTime = curr.getTime() - prev.getTime()
-    const diffDays = diffTime / (1000 * 3600 * 24)
+    // Utiliser UTC pour éviter les décalages d'heure d'été/hiver sur la différence de jours
+    const [pY, pM, pD] = dates[i - 1].split('-').map(Number)
+    const [cY, cM, cD] = dates[i].split('-').map(Number)
+    
+    const prev = Date.UTC(pY, pM - 1, pD)
+    const curr = Date.UTC(cY, cM - 1, cD)
+    
+    const diffDays = Math.round((curr - prev) / (1000 * 3600 * 24))
     
     if (diffDays === 1) {
       currentStreak++
@@ -55,69 +74,74 @@ const longestStreak = computed(() => {
   return maxStreak
 })
 
-// 2. Statistiques par Période (Semaine, Mois, Année)
+// 2. Statistiques par Période
 const getStatsForPeriod = (startDate: Date, endDate: Date) => {
   const startStr = formatDate(startDate)
   const endStr = formatDate(endDate)
   
-  const filtered = exerciseWorkouts.value.filter(w => w.date >= startStr && w.date <= endStr)
+  const filtered = exerciseWorkouts.value.filter(w => {
+    const wDate = getLocalDateString(w.date)
+    return wDate >= startStr && wDate <= endStr
+  })
+
   const total = filtered.reduce((acc, curr) => acc + curr.reps, 0)
-  const activeDaysSet = new Set(filtered.map(w => w.date))
+  const activeDaysSet = new Set(filtered.map(w => getLocalDateString(w.date)))
   const activeDays = activeDaysSet.size
-  
-  // Calcul du nombre de jours écoulés ou total dans la période pour la moyenne
   const average = activeDays > 0 ? (total / activeDays).toFixed(1) : '0.0'
 
   return { total, activeDays, average }
 }
 
-// Cette semaine (du lundi au dimanche par exemple)
+// Cette semaine (du Lundi au Dimanche) - Sans muter `now`
 const weekStats = computed(() => {
-  const d = new Date(now)
-  const day = d.getDay()
-  const diffToMonday = d.getDate() - day + (day === 0 ? -6 : 1)
-  const monday = new Date(d.setDate(diffToMonday))
-  const sunday = new Date(monday)
-  sunday.setDate(monday.getDate() + 6)
+  const today = getToday()
+  const dayOfWeek = today.getDay() // 0 = Dimanche, 1 = Lundi, ...
+  
+  // Calcul du lundi
+  const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek
+  const monday = new Date(today.getFullYear(), today.getMonth(), today.getDate() + diffToMonday)
+  
+  // Calcul du dimanche
+  const sunday = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 6)
+
   return getStatsForPeriod(monday, sunday)
 })
 
 // Ce mois
 const monthStats = computed(() => {
-  const firstDay = new Date(currentYear, currentMonthIndex, 1)
-  const lastDay = new Date(currentYear, currentMonthIndex + 1, 0)
+  const today = getToday()
+  const firstDay = new Date(today.getFullYear(), today.getMonth(), 1)
+  const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0)
   return getStatsForPeriod(firstDay, lastDay)
 })
 
 // Cette année
 const yearStats = computed(() => {
-  const firstDay = new Date(currentYear, 0, 1)
-  const lastDay = new Date(currentYear, 11, 31)
+  const today = getToday()
+  const firstDay = new Date(today.getFullYear(), 0, 1)
+  const lastDay = new Date(today.getFullYear(), 11, 31)
   return getStatsForPeriod(firstDay, lastDay)
 })
 
-// 3. Données pour le graphique du mois (jours 1 à N)
-
-const getLocalDateString = (date: string) => {
-  return date.length === 10
-    ? date
-    : date.slice(0, 10)
-}
-
+// 3. Données pour le graphique du mois
 const monthChartData = computed(() => {
+  const today = getToday()
+  const currentYear = today.getFullYear()
+  const currentMonthIndex = today.getMonth()
+
   const totalDays = new Date(currentYear, currentMonthIndex + 1, 0).getDate()
   const mapData: Record<number, number> = {}
   
   exerciseWorkouts.value.forEach(w => {
-    const [y, m, d] = getLocalDateString(w.date)
-      .split('-')
-      .map(Number)
+    const cleanDate = getLocalDateString(w.date)
+    const [y, m, d] = cleanDate.split('-').map(Number)
+    
     if (y === currentYear && m - 1 === currentMonthIndex) {
       mapData[d] = (mapData[d] || 0) + w.reps
     }
   })
 
-  const maxReps = Math.max(...Object.values(mapData), 20) // Échelle dynamique
+  const maxReps = Math.max(...Object.values(mapData), 20)
 
   return Array.from({ length: totalDays }, (_, i) => {
     const dayNum = i + 1
