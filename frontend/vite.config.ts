@@ -4,5 +4,10 @@ import { defineConfig } from 'vite'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [vue()],
-    base: '/grease-the-groove/',
+
+  base: '/grease-the-groove/',
+
+  server: {
+    host: true
+  }
 })
