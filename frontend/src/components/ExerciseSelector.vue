@@ -18,7 +18,6 @@ const exerciseStore = useExerciseStore()
           : 'bg-white text-gray-700 border border-gray-200/60'
       ]"
     >
-      <span>{{ ex.icon }}</span>
       <span>{{ ex.name }}</span>
     </button>
   </div>
