@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { db, type LocalWorkout } from '../db'
+import { syncWorkout } from '../services/sync'
 import { exercises } from '../exercises'
 
 // Exercice sélectionné
@@ -219,7 +220,7 @@ const saveWorkout = async () => {
   }
   const now = Date.now()
 
-  await db.workouts.add({
+  const workout: LocalWorkout = {
     id: crypto.randomUUID(),
     exercise: selectedExercise.value,
     date: selectedDate.value,
@@ -227,13 +228,34 @@ const saveWorkout = async () => {
     mode: inputMode.value,
     createdAt: now,
     updatedAt: now,
-    deletedAt: null
-  })
+    deletedAt: null,
+    syncStatus: 'pending'
+  }
+
+  // ==========================================================
+  // 1. SAUVEGARDE LOCALE
+  // ==========================================================
+
+  await db.workouts.add(workout)
 
   await loadWorkouts()
 
   showModal.value = false
   repsValue.value = ''
+
+  // ==========================================================
+  // 2. SYNCHRONISATION SERVEUR
+  // ==========================================================
+
+  try {
+    await syncWorkout(workout)
+    await loadWorkouts()
+  } catch (error) {
+    console.warn(
+      'Workout enregistré localement mais non synchronisé',
+      error
+    )
+  }
 }
 </script>
 
