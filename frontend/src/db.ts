@@ -1,6 +1,6 @@
 import Dexie, { type Table } from 'dexie'
 
-export interface Workout {
+export interface LocalWorkout {
   id: string
   exercise: string
   date: string
@@ -17,7 +17,7 @@ export interface SyncState {
 }
 
 export class WorkoutDatabase extends Dexie {
-  workouts!: Table<Workout, string>
+  workouts!: Table<LocalWorkout, string>
   syncState!: Table<SyncState, string>
 
   constructor() {
