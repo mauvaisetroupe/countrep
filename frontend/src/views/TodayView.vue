@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed } from 'vue'
+import { useWorkouts } from '../composables/useWorkouts'
 import { db, type LocalWorkout } from '../db'
-import { syncWorkout, syncPendingWorkouts, syncWorkoutsFromServer } from '../services/sync'
+import { syncWorkout } from '../services/sync'
 import { exercises } from '../exercises'
 import { useExerciseStore } from '../stores/exercise'
 
@@ -152,31 +153,11 @@ const repsValue = ref('')
 // WORKOUTS
 // ============================================================
 
-const workoutsList = ref<LocalWorkout[]>([])
+const {
+  workouts,
+  loadWorkouts
+} = useWorkouts()
 
-// Charger les workouts depuis IndexedDB
-const loadWorkouts = async () => {
-  workoutsList.value = await db.workouts.toArray()
-}
-
-const handleOnline = async () => {
-  console.log('🌐 Réseau disponible → synchronisation')
-  await syncPendingWorkouts()
-  await syncWorkoutsFromServer()
-  await loadWorkouts()
-}
-
-onMounted(async () => {
-  await loadWorkouts()
-  await syncPendingWorkouts()
-  await syncWorkoutsFromServer()
-  await loadWorkouts()
-  window.addEventListener('online', handleOnline)
-})
-
-onUnmounted(() => {
-  window.removeEventListener('online', handleOnline)
-})
 
 // ============================================================
 // REPETITIONS PAR JOUR
@@ -205,7 +186,7 @@ const getLocalDateKey = (date: string): string => {
 const repsByDay = computed<Record<number, number>>(() => {
   const totals: Record<number, number> = {}
 
-  workoutsList.value
+  workouts.value
     .filter(
       workout =>
         workout.exercise === exerciseStore.selectedExercise

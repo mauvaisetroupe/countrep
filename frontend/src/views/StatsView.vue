@@ -1,25 +1,13 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { db, type LocalWorkout } from '../db'
+import { computed } from 'vue'
+import { useWorkouts } from '../composables/useWorkouts'
 import { exercises } from '../exercises'
 import { useExerciseStore } from '../stores/exercise'
-import { syncPendingWorkouts, syncWorkoutsFromServer } from '../services/sync'
 
-const exerciseStore = useExerciseStore()
-
-const workouts = ref<LocalWorkout[]>([])
+const exerciseStore = useExerciseStore()  
 
 // Charger les données depuis IndexedDB
-const loadWorkouts = async () => {
-  workouts.value = await db.workouts.toArray()
-}
-
-onMounted(async () => {
-  await loadWorkouts()
-  await syncPendingWorkouts()
-  await syncWorkoutsFromServer()
-  await loadWorkouts()
-})
+const { workouts } = useWorkouts()
 
 // Filtrer les workouts pour l'exercice sélectionné
 const exerciseWorkouts = computed(() => {
