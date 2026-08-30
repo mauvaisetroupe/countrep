@@ -52,4 +52,30 @@ export async function userRoutes(app: FastifyInstance) {
       createdAt: user.created_at
     }))
   })
+
+  app.get('/api/users/by-name/:name', async (request, reply) => {
+
+    const { name } = request.params as { name: string }
+
+    const result = await pool.query(
+      `
+      SELECT
+        id,
+        name,
+        created_at
+      FROM users
+      WHERE LOWER(name) = LOWER($1)
+      LIMIT 1
+      `,
+      [name]
+    )
+
+    if (result.rows.length === 0) {
+      return reply.code(404).send({
+        message: 'User not found'
+      })
+    }
+
+    return result.rows[0]
+  })
 }

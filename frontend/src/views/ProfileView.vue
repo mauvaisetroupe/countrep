@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { createUser } from '../api/users'
+import { createUser, findUserByName } from '../api/users'
 import { useCurrentUser } from '../composables/useCurrentUser'
 
 const { userId, setUserId, clearUserId } = useCurrentUser()
@@ -20,14 +20,26 @@ const createProfile = async () => {
   error.value = ''
 
   try {
-    const user = await createUser(trimmedName)
+    // Cherche d'abord un utilisateur existant
+    const existingUser = await findUserByName(trimmedName)
 
-    setUserId(user.id)
+    if (existingUser) {
 
+      // Utilisateur déjà présent
+      setUserId(existingUser.id)
+
+    } else {
+
+      // Nouveau utilisateur
+      const newUser = await createUser(trimmedName)
+
+      setUserId(newUser.id)
+
+    }
     name.value = ''
   } catch (err) {
     console.error(err)
-    error.value = 'Impossible de créer le profil.'
+    error.value = 'Impossible de retrouver ou créer le profil.'
   } finally {
     loading.value = false
   }
