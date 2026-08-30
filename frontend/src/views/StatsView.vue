@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { db, type Workout } from '../db'
+import { db, type LocalWorkout } from '../db'
 import { exercises } from '../exercises'
 
 const selectedExercise = ref('Push-ups')
 
-const workouts = ref<Workout[]>([])
+const workouts = ref<LocalWorkout[]>([])
 
 // Charger les données depuis IndexedDB
 const loadWorkouts = async () => {
