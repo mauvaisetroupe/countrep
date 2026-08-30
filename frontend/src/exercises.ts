@@ -1,11 +1,12 @@
 export interface Exercise {
   name: string
+  shortName: string
   icon: string
 }
 
 export const exercises: Exercise[] = [
-  { name: 'Inverted row', icon: '↓' },  // pull
-  { name: 'Biceps curl', icon: '↓' },   // pull
-  { name: 'Push-ups', icon: '↑' },      // push
-  { name: 'Support Hold', icon: '⏺' },   // isometric
+  { name: 'Inverted row', shortName: 'Rowing', icon: '↓' },
+  { name: 'Biceps curl', shortName: 'Curl', icon: '↓' },
+  { name: 'Push-ups', shortName: 'PushUp', icon: '↑' },
+  { name: 'Support Hold', shortName: 'Hold', icon: '⏺' },
 ]
