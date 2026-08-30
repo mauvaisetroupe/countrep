@@ -1,8 +1,12 @@
 <script setup lang="ts">
 import { exercises } from '../exercises'
 import { useExerciseStore } from '../stores/exercise'
+import { computed } from 'vue'
 
 const exerciseStore = useExerciseStore()
+const currentExercise = computed(() => {
+  return exercises.find(ex => ex.name === exerciseStore.selectedExercise)
+})
 </script>
 
 <template>
@@ -21,4 +25,7 @@ const exerciseStore = useExerciseStore()
       <span>{{ ex.shortName }}</span>
     </button>
   </div>
+  <p v-if="currentExercise" class="px-5 text-sm font-medium text-amber-600 mt-0.5">
+    {{ currentExercise.icon }} {{ currentExercise.name }}
+  </p>
 </template>
