@@ -2,8 +2,9 @@
 import { ref, computed, onMounted } from 'vue'
 import { db, type LocalWorkout } from '../db'
 import { exercises } from '../exercises'
+import { useExerciseStore } from '../stores/exercise'
 
-const selectedExercise = ref('Push-ups')
+const exerciseStore = useExerciseStore()
 
 const workouts = ref<LocalWorkout[]>([])
 
@@ -18,7 +19,7 @@ onMounted(() => {
 
 // Filtrer les workouts pour l'exercice sélectionné
 const exerciseWorkouts = computed(() => {
-  return workouts.value.filter(w => w.exercise === selectedExercise.value)
+  return workouts.value.filter(w => w.exercise === exerciseStore.selectedExercise)
 })
 
 // --- CALCULS STATISTIQUES ---
@@ -138,10 +139,10 @@ const monthChartData = computed(() => {
       <button 
         v-for="ex in exercises" 
         :key="ex.name"
-        @click="selectedExercise = ex.name"
+        @click="exerciseStore.selectedExercise = ex.name"
         :class="[
           'flex items-center gap-2 px-4 py-2.5 rounded-2xl font-medium shadow-xs transition-all whitespace-nowrap',
-          selectedExercise === ex.name ? 'bg-amber-500 text-white shadow-amber-200' : 'bg-white text-gray-700 border border-gray-200/60'
+          exerciseStore.selectedExercise === ex.name ? 'bg-amber-500 text-white shadow-amber-200' : 'bg-white text-gray-700 border border-gray-200/60'
         ]"
       >
         <span>{{ ex.icon }}</span>
@@ -210,7 +211,7 @@ const monthChartData = computed(() => {
       <!-- Carte Résumé Global (Total & Streak) -->
       <section class="bg-amber-50/40 border border-amber-100/80 rounded-3xl p-5 shadow-xs space-y-3">
         <div class="flex justify-between items-center">
-          <span class="text-gray-600 font-medium">Total {{ selectedExercise }}</span>
+          <span class="text-gray-600 font-medium">Total {{ exerciseStore.selectedExercise }}</span>
           <span class="text-xl font-bold text-gray-900">{{ totalRepsAllTime }}</span>
         </div>
         <div class="flex justify-between items-center border-t border-amber-100/60 pt-3">

@@ -3,9 +3,9 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { db, type LocalWorkout } from '../db'
 import { syncWorkout, syncPendingWorkouts, syncWorkoutsFromServer } from '../services/sync'
 import { exercises } from '../exercises'
+import { useExerciseStore } from '../stores/exercise'
 
-// Exercice sélectionné
-const selectedExercise = ref('Push-ups')
+const exerciseStore = useExerciseStore()
 
 // ============================================================
 // DATE / CALENDRIER
@@ -208,7 +208,7 @@ const repsByDay = computed<Record<number, number>>(() => {
   workoutsList.value
     .filter(
       workout =>
-        workout.exercise === selectedExercise.value
+        workout.exercise === exerciseStore.selectedExercise
     )
     .forEach(workout => {
 
@@ -258,7 +258,7 @@ const saveWorkout = async () => {
 
   const workout: LocalWorkout = {
     id: crypto.randomUUID(),
-    exercise: selectedExercise.value,
+    exercise: exerciseStore.selectedExercise,
     date: selectedDate.value,
     reps: repsNum,
     mode: inputMode.value,
@@ -313,17 +313,20 @@ const saveWorkout = async () => {
   ========================================================= -->
 
   <div class="px-5 flex gap-3 overflow-x-auto no-scrollbar pb-2">
-
-    <button v-for="ex in exercises" :key="ex.name" @click="selectedExercise = ex.name" :class="[
-      'flex items-center gap-2 px-4 py-2.5 rounded-2xl font-medium shadow-xs transition-all whitespace-nowrap',
-      selectedExercise === ex.name
-        ? 'bg-amber-500 text-white shadow-amber-200'
-        : 'bg-white text-gray-700 border border-gray-200/60'
-    ]">
+    <button 
+      v-for="ex in exercises" 
+      :key="ex.name" 
+      @click="exerciseStore.setExercise(ex.name)" 
+      :class="[
+        'flex items-center gap-2 px-4 py-2.5 rounded-2xl font-medium shadow-xs transition-all whitespace-nowrap',
+        exerciseStore.selectedExercise === ex.name
+          ? 'bg-amber-500 text-white shadow-amber-200'
+          : 'bg-white text-gray-700 border border-gray-200/60'
+      ]"
+    >
       <span>{{ ex.icon }}</span>
       <span>{{ ex.name }}</span>
     </button>
-
   </div>
 
 
@@ -452,7 +455,7 @@ const saveWorkout = async () => {
       @click="showModal = true"
       class="bg-amber-200 text-amber-950 font-semibold px-5 py-3.5 rounded-full shadow-lg flex items-center gap-2 border border-amber-300/60 active:scale-95 transition-transform"
       >
-      <span>⚡</span> Add {{ selectedExercise }}
+      <span>⚡</span> Add {{ exerciseStore.selectedExercise }}
     </button>
   </div>
 
@@ -465,7 +468,7 @@ const saveWorkout = async () => {
         <div class="flex items-center gap-2.5">
           <span class="bg-amber-500 text-white p-2 rounded-xl text-sm shadow-sm">⚡</span>
           <h3 class="text-xl font-bold text-gray-900">
-            Ajouter {{ selectedExercise }}
+            Ajouter {{ exerciseStore.selectedExercise }}
           </h3>
         </div>
         <button @click="showModal = false"
@@ -504,7 +507,7 @@ const saveWorkout = async () => {
 
       <!-- Question -->
       <p class="text-sm font-medium text-gray-800 text-center">
-        Combien de {{ selectedExercise }} avez-vous fait ?
+        Combien de {{ exerciseStore.selectedExercise }} avez-vous fait ?
       </p>
 
       <!-- Champ de saisie -->
