@@ -4,10 +4,10 @@ export interface ApiWorkout {
   exercise: string
   date: string
   reps: number
-  mode: string
+  mode: 'add' | 'set'
   createdAt: number
   updatedAt: number
-  deletedAt?: number | null
+  deletedAt: number | null
 }
 
 const API_URL = import.meta.env.VITE_API_URL
@@ -32,9 +32,13 @@ export async function createWorkout(
   return response.json()
 }
 
-export async function getWorkouts(): Promise<ApiWorkout[]> {
+export async function getWorkouts(
+  userId: string
+): Promise<ApiWorkout[]> {
 
-  const response = await fetch(`${API_URL}/api/workouts`)
+  const response = await fetch(
+    `${API_URL}/api/workouts?userId=${encodeURIComponent(userId)}`
+  )
 
   if (!response.ok) {
     throw new Error(`API error: ${response.status}`)

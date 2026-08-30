@@ -94,35 +94,34 @@ export async function workoutRoutes(app: FastifyInstance) {
   })
 
 
-  app.get('/api/workouts', async () => {
+app.get('/api/workouts', async (request) => {
+  const { userId } = request.query as {
+    userId?: string
+  }
 
-    const result = await pool.query(`
-      SELECT
-        id,
-        user_id,
-        exercise,
-        date::text AS date,
-        reps,
-        mode,
-        created_at,
-        updated_at,
-        deleted_at
-      FROM workouts
-      ORDER BY date, created_at
-    `)
+  if (!userId) {
+    return []
+  }
 
-    return result.rows.map(workout => ({
-      id: workout.id,
-      userId: workout.user_id,
-      exercise: workout.exercise,
-      date: workout.date,
-      reps: workout.reps,
-      mode: workout.mode,
-      createdAt: new Date(workout.created_at).getTime(),
-      updatedAt: new Date(workout.updated_at).getTime(),
-      deletedAt: workout.deleted_at
-        ? new Date(workout.deleted_at).getTime()
-        : null
-    }))
-  })
+  const result = await pool.query(
+    `
+    SELECT
+      id,
+      user_id AS "userId",
+      exercise,
+      date,
+      reps,
+      mode,
+      created_at AS "createdAt",
+      updated_at AS "updatedAt",
+      deleted_at AS "deletedAt"
+    FROM workouts
+    WHERE user_id = $1
+    ORDER BY date ASC, created_at ASC
+    `,
+    [userId]
+  )
+
+  return result.rows
+})
 }

@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { db, type LocalWorkout } from '../db'
-import { syncWorkout } from '../services/sync'
+import { syncWorkout, syncPendingWorkouts, syncWorkoutsFromServer } from '../services/sync'
 import { exercises } from '../exercises'
 
 // Exercice sélectionné
@@ -159,13 +159,46 @@ const loadWorkouts = async () => {
   workoutsList.value = await db.workouts.toArray()
 }
 
-onMounted(() => {
-  loadWorkouts()
+const handleOnline = async () => {
+  console.log('🌐 Réseau disponible → synchronisation')
+  await syncPendingWorkouts()
+  await syncWorkoutsFromServer()
+  await loadWorkouts()
+}
+
+onMounted(async () => {
+  await loadWorkouts()
+  await syncPendingWorkouts()
+  await syncWorkoutsFromServer()
+  await loadWorkouts()
+  window.addEventListener('online', handleOnline)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('online', handleOnline)
 })
 
 // ============================================================
 // REPETITIONS PAR JOUR
 // ============================================================
+
+
+
+const getLocalDateKey = (date: string): string => {
+  // Date locale déjà au format YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    return date
+  }
+
+  // Date ISO provenant de PostgreSQL
+  const parsed = new Date(date)
+
+  return formatDate(
+    parsed.getFullYear(),
+    parsed.getMonth(),
+    parsed.getDate()
+  )
+}
 
 // Retourne le total des reps pour chaque jour du mois
 // pour l'exercice actuellement sélectionné.
@@ -178,11 +211,13 @@ const repsByDay = computed<Record<number, number>>(() => {
         workout.exercise === selectedExercise.value
     )
     .forEach(workout => {
-      const [year, month, day] = workout.date
+
+      const dateKey = getLocalDateKey(workout.date)
+
+      const [year, month, day] = dateKey
         .split('-')
         .map(Number)
 
-      // Seulement les workouts du mois affiché
       if (
         year === currentYear.value &&
         month === currentMonthIndex.value + 1
@@ -193,6 +228,7 @@ const repsByDay = computed<Record<number, number>>(() => {
 
   return totals
 })
+
 
 // ============================================================
 // AJOUT RAPIDE
