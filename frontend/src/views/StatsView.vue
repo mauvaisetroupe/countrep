@@ -164,7 +164,7 @@ const monthChartData = computed(() => {
       <button 
         v-for="ex in exercises" 
         :key="ex.name"
-        @click="exerciseStore.selectedExercise = ex.name"
+        @click="exerciseStore.setExercise(ex.name)"
         :class="[
           'flex items-center gap-2 px-4 py-2.5 rounded-2xl font-medium shadow-xs transition-all whitespace-nowrap',
           exerciseStore.selectedExercise === ex.name ? 'bg-amber-500 text-white shadow-amber-200' : 'bg-white text-gray-700 border border-gray-200/60'
