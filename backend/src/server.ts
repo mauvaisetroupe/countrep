@@ -9,7 +9,10 @@ const app = Fastify({
 })
 
 await app.register(cors, {
-  origin: 'http://localhost:5173'
+  origin: [
+    'http://localhost:5173',
+    'http://192.168.1.109:5173'
+  ]
 })
 
 app.get('/api/health', async () => {
