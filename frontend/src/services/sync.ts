@@ -1,5 +1,5 @@
 import { db, type LocalWorkout } from '../db'
-import { createWorkout, getWorkouts } from '../api/workouts'
+import { createWorkout, getWorkouts, type ApiWorkout } from '../api/workouts'
 import { useCurrentUser } from '../composables/useCurrentUser'
 
 export async function syncWorkout(
@@ -12,7 +12,7 @@ export async function syncWorkout(
     return
   }
 
-  const apiWorkout = {
+  const apiWorkout: ApiWorkout = {
     id: workout.id,
     userId: userId.value,
     exercise: workout.exercise,

@@ -5,7 +5,7 @@ export interface LocalWorkout {
   exercise: string
   date: string
   reps: number
-  mode: string
+  mode: 'add' | 'set'
   createdAt: number
   updatedAt: number
   deletedAt?: number | null
