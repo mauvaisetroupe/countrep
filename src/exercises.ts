@@ -4,8 +4,8 @@ export interface Exercise {
 }
 
 export const exercises: Exercise[] = [
-  { name: 'Inverted row', icon: '⚡' },
-  { name: 'Push-ups', icon: '🧍' },
-  { name: 'Bicpes curl', icon: '📈' },
-
+  { name: 'Inverted row', icon: '↓' },  // pull
+  { name: 'Push-ups', icon: '↑' },      // push
+  { name: 'Biceps curl', icon: '↓' },   // pull
+  { name: 'Support Hold', icon: '⏺' }    // isometric
 ]
