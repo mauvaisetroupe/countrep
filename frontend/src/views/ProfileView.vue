@@ -17,6 +17,7 @@ const handleAuthAction = async (isRegistration: boolean) => {
   error.value = ''
 
   try {
+    // LCO
     const verification = isRegistration 
       ? await registerUser(trimmedName) 
       : await loginUser(trimmedName)

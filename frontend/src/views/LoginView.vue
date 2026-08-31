@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import { startRegistration, startAuthentication } from '@simplewebauthn/browser'
+import { registerUser, loginUser } from '../services/auth'
 
 const username = ref('')
 const error = ref('')
@@ -10,37 +10,17 @@ const loading = ref(false)
 const router = useRouter()
 const authStore = useAuthStore()
 
-const API_URL = import.meta.env.VITE_API_URL || ''
-
 const handleRegister = async () => {
   if (!username.value.trim()) return
   loading.value = true
   error.value = ''
   
   try {
-    const res = await fetch(`${API_URL}/api/auth/register-challenge`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: username.value })
-    })
-    const optionsJSON = await res.json()
-    const cred = await startRegistration({ optionsJSON })
-
-    const verifyRes = await fetch(`${API_URL}/api/auth/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: username.value, cred })
-    })
-    const verification = await verifyRes.json()
-
-    if (!verification.verified) {
-      throw new Error("L'enregistrement a échoué.")
-    }
-    
+    const verification = await registerUser(username.value)
     authStore.setToken(verification.token)
     router.push({ name: 'today' })
   } catch (err: any) {
-    error.value = "Une erreur est survenue lors de l'enregistrement."
+    error.value = err.message || "Une erreur est survenue lors de l'enregistrement."
   } finally {
     loading.value = false
   }
@@ -52,27 +32,9 @@ const handleLogin = async () => {
   error.value = ''
 
   try {
-    const res = await fetch(`${API_URL}/api/auth/login-challenge`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: username.value })
-    })
-    const optionsJSON = await res.json()
-    const cred = await startAuthentication({ optionsJSON })
-
-    const verifyRes = await fetch(`${API_URL}/api/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: username.value, cred })
-    })
-    const verification = await verifyRes.json()
-
-    if (verification.verified) {
-      authStore.setToken(verification.token)
-      router.push({ name: 'today' })
-    } else {
-      error.value = 'Échec de la connexion.'
-    }
+    const verification = await loginUser(username.value)
+    authStore.setToken(verification.token)
+    router.push({ name: 'today' })
   } catch (err: any) {
     error.value = err.message || "Une erreur est survenue lors de la connexion."
   } finally {
@@ -94,6 +56,7 @@ const handleLogin = async () => {
         <p class="mt-1 text-sm text-gray-500">
           Entrez votre identifiant pour vous connecter ou créer une clé.
         </p>
+
         <!-- Identifiant -->
         <div class="mt-5">
           <label

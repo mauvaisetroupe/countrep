@@ -1,7 +1,9 @@
 import { startRegistration, startAuthentication } from '@simplewebauthn/browser';
 
+const API_URL = import.meta.env.VITE_API_URL || '';
+
 export async function registerUser(username: string) {
-  const res = await fetch('/api/auth/register-challenge', {
+  const res = await fetch(`${API_URL}/api/auth/register-challenge`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username })
@@ -13,12 +15,12 @@ export async function registerUser(username: string) {
   }
   
   const optionsJSON = await res.json();
-  const attResp = await startRegistration({ optionsJSON });
+  const cred = await startRegistration({ optionsJSON });
 
-  const verificationRes = await fetch('/api/auth/register', {
+  const verificationRes = await fetch(`${API_URL}/api/auth/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username, cred: attResp })
+    body: JSON.stringify({ username, cred })
   });
   
   const verification = await verificationRes.json();
@@ -30,7 +32,7 @@ export async function registerUser(username: string) {
 }
 
 export async function loginUser(username: string) {
-  const res = await fetch('/api/auth/login-challenge', {
+  const res = await fetch(`${API_URL}/api/auth/login-challenge`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username })
@@ -42,12 +44,12 @@ export async function loginUser(username: string) {
   }
 
   const optionsJSON = await res.json();
-  const assResp = await startAuthentication({ optionsJSON });
+  const cred = await startAuthentication({ optionsJSON });
 
-  const verificationRes = await fetch('/api/auth/login', {
+  const verificationRes = await fetch(`${API_URL}/api/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username, cred: assResp })
+    body: JSON.stringify({ username, cred })
   });
 
   const verification = await verificationRes.json();

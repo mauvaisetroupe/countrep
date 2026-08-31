@@ -28,7 +28,6 @@ export async function authRoutes(fastify: FastifyInstance) {
     let userId: string
 
     if (userResult.rows.length === 0) {
-      //LCO
       userId = randomUUID()
       const now = new Date()
       await pool.query(
