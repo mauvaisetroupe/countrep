@@ -1,6 +1,8 @@
+import { useAuthStore } from '../stores/auth'
+
 export interface ApiWorkout {
   id: string
-  userId: string
+  userId?: string
   exercise: string
   date: string
   reps: number
@@ -12,15 +14,21 @@ export interface ApiWorkout {
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
+function getHeaders() {
+  const authStore = useAuthStore()
+  return {
+    'Content-Type': 'application/json',
+    ...(authStore.token ? { 'Authorization': `Bearer ${authStore.token}` } : {})
+  }
+}
+
 export async function createWorkout(
   workout: ApiWorkout
 ): Promise<ApiWorkout> {
 
   const response = await fetch(`${API_URL}/api/workouts`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
+    headers: getHeaders(),
     body: JSON.stringify(workout)
   })
 
@@ -31,13 +39,10 @@ export async function createWorkout(
   return response.json()
 }
 
-export async function getWorkouts(
-  userId: string
-): Promise<ApiWorkout[]> {
-
-  const response = await fetch(
-    `${API_URL}/api/workouts?userId=${encodeURIComponent(userId)}`
-  )
+export async function getWorkouts(): Promise<ApiWorkout[]> {
+  const response = await fetch(`${API_URL}/api/workouts`, {
+    headers: getHeaders()
+  })
 
   if (!response.ok) {
     throw new Error(`API error: ${response.status}`)

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
+import { useAuthStore } from '../stores/auth'
 import { startRegistration, startAuthentication } from '@simplewebauthn/browser'
 
 const username = ref('')
@@ -34,8 +34,11 @@ const handleRegister = async () => {
     if (!verification.verified) {
       throw new Error("L'enregistrement a échoué.")
     }
+    
+    authStore.setToken(verification.token)
+    router.push({ name: 'today' })
   } catch (err: any) {
-    error.value = err.message || "Une erreur est survenue lors de l'enregistrement."
+    error.value = "Une erreur est survenue lors de l'enregistrement."
   } finally {
     loading.value = false
   }
@@ -63,7 +66,7 @@ const handleLogin = async () => {
     const verification = await verifyRes.json()
 
     if (verification.verified) {
-      authStore.setAuthenticated(true)
+      authStore.setToken(verification.token)
       router.push({ name: 'today' })
     } else {
       error.value = 'Échec de la connexion.'

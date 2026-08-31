@@ -1,13 +1,17 @@
 import type { FastifyInstance } from 'fastify'
+import { verifyJWT } from '../middleware/auth.js'
 import { pool } from '../db.js'
 
 export async function workoutRoutes(app: FastifyInstance) {
+  
+  // Applique la vérification JWT à toutes les routes de ce fichier
+  app.addHook('onRequest', verifyJWT)
 
   app.post('/api/workouts', async (request, reply) => {
-
+    const userId = request.userId // Récupéré de manière sécurisée depuis le token
+    
     const body = request.body as {
       id: string
-      userId: string
       exercise: string
       date: string
       reps: number
@@ -47,7 +51,7 @@ export async function workoutRoutes(app: FastifyInstance) {
       `,
       [
         body.id,
-        body.userId,
+        userId, // Utilisation du userId sécurisé
         body.exercise,
         body.date,
         body.reps,
@@ -71,9 +75,9 @@ export async function workoutRoutes(app: FastifyInstance) {
         updated_at,
         deleted_at
       FROM workouts
-      WHERE id = $1
+      WHERE id = $1 AND user_id = $2
       `,
-      [body.id]
+      [body.id, userId]
     )
 
     const workout = result.rows[0]
@@ -93,35 +97,28 @@ export async function workoutRoutes(app: FastifyInstance) {
     })
   })
 
+  app.get('/api/workouts', async (request) => {
+    const userId = request.userId // Plus besoin de le chercher dans les query params
 
-app.get('/api/workouts', async (request) => {
-  const { userId } = request.query as {
-    userId?: string
-  }
+    const result = await pool.query(
+      `
+      SELECT
+        id,
+        user_id AS "userId",
+        exercise,
+        date,
+        reps,
+        mode,
+        created_at AS "createdAt",
+        updated_at AS "updatedAt",
+        deleted_at AS "deletedAt"
+      FROM workouts
+      WHERE user_id = $1
+      ORDER BY date ASC, created_at ASC
+      `,
+      [userId]
+    )
 
-  if (!userId) {
-    return []
-  }
-
-  const result = await pool.query(
-    `
-    SELECT
-      id,
-      user_id AS "userId",
-      exercise,
-      date,
-      reps,
-      mode,
-      created_at AS "createdAt",
-      updated_at AS "updatedAt",
-      deleted_at AS "deletedAt"
-    FROM workouts
-    WHERE user_id = $1
-    ORDER BY date ASC, created_at ASC
-    `,
-    [userId]
-  )
-
-  return result.rows
-})
+    return result.rows
+  })
 }

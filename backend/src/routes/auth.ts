@@ -1,39 +1,57 @@
 import type { FastifyInstance } from 'fastify'
+import { randomUUID } from 'crypto'
 import {
   generateRegistrationOptions,
   verifyRegistrationResponse,
   generateAuthenticationOptions,
   verifyAuthenticationResponse,
 } from '@simplewebauthn/server'
+import { pool } from '../db.js'
+import jwt from 'jsonwebtoken'
 
 const rpName = 'CountRep App'
 const rpID = 'localhost'
 const expectedOrigin = 'http://localhost:5173'
 
-const users = new Map<string, any>()
+const JWT_SECRET: string = process.env.JWT_SECRET || 'votre_secret_super_securise'
+
 const currentChallenges = new Map<string, string>()
 
 export async function authRoutes(fastify: FastifyInstance) {
   
-  // 1. Générer options d'enregistrement
   fastify.post('/api/auth/register-challenge', async (request, reply) => {
     const { username } = request.body as { username: string }
     if (!username) return reply.code(400).send({ error: 'Username requis' })
 
-    let user = users.get(username)
-    if (!user) {
-      user = { id: Buffer.from(username), username, devices: [] }
-      users.set(username, user)
+    let userResult = await pool.query('SELECT id FROM users WHERE name = $1', [username])
+    let userId: string
+
+    if (userResult.rows.length === 0) {
+      //LCO
+      userId = randomUUID()
+      const now = new Date()
+      await pool.query(
+        'INSERT INTO users (id, name, created_at) VALUES ($1, $2, $3)',
+        [userId, username, now]
+      )
+    } else {
+      return reply.code(400).send({ error: 'Ce nom d\'utilisateur est déjà pris' })
     }
+
+    const devicesRes = await pool.query(
+      'SELECT credential_id, transports FROM user_devices WHERE user_id = $1',
+      [userId]
+    )
 
     const options = await generateRegistrationOptions({
       rpName,
       rpID,
-      userID: user.id,
+      userID: Buffer.from(userId),
       userName: username,
-      excludeCredentials: user.devices.map((dev: any) => ({
-        id: dev.credentialID,
+      excludeCredentials: devicesRes.rows.map((dev: any) => ({
+        id: dev.credential_id,
         type: 'public-key',
+        transports: dev.transports,
       })),
     })
 
@@ -41,15 +59,15 @@ export async function authRoutes(fastify: FastifyInstance) {
     return options
   })
 
-  // 2. Vérifier et enregistrer la clé
   fastify.post('/api/auth/register', async (request, reply) => {
     const { username, cred } = request.body as { username: string; cred: any }
-    const user = users.get(username)
     const expectedChallenge = currentChallenges.get(username)
 
-    if (!user || !expectedChallenge) {
+    const userResult = await pool.query('SELECT id FROM users WHERE name = $1', [username])
+    if (userResult.rows.length === 0 || !expectedChallenge) {
       return reply.code(400).send({ error: 'Contexte invalide' })
     }
+    const userId = userResult.rows[0].id
 
     try {
       const verification = await verifyRegistrationResponse({
@@ -61,14 +79,23 @@ export async function authRoutes(fastify: FastifyInstance) {
 
       if (verification.verified && verification.registrationInfo) {
         const { credential } = verification.registrationInfo
-        user.devices.push({
-          credentialID: credential.id,
-          credentialPublicKey: credential.publicKey,
-          counter: credential.counter,
-          transports: credential.transports,
-        })
+
+        await pool.query(
+          `INSERT INTO user_devices (user_id, credential_id, credential_public_key, counter, transports)
+           VALUES ($1, $2, $3, $4, $5)
+           ON CONFLICT (credential_id) DO NOTHING`,
+          [
+            userId,
+            credential.id,
+            Buffer.from(credential.publicKey),
+            credential.counter,
+            credential.transports || [],
+          ]
+        )
+
         currentChallenges.delete(username)
-        return { verified: true }
+        const token = jwt.sign({ userId }, JWT_SECRET, { expiresIn: '7d' })
+        return { verified: true, token }
       }
       return { verified: false }
     } catch (error: any) {
@@ -76,19 +103,28 @@ export async function authRoutes(fastify: FastifyInstance) {
     }
   })
 
-  // 3. Générer options de connexion
   fastify.post('/api/auth/login-challenge', async (request, reply) => {
     const { username } = request.body as { username: string }
-    const user = users.get(username)
-
-    if (!user) {
+    
+    const userResult = await pool.query('SELECT id FROM users WHERE name = $1', [username])
+    if (userResult.rows.length === 0) {
       return reply.code(404).send({ error: 'Utilisateur inconnu' })
+    }
+    const userId = userResult.rows[0].id
+
+    const devicesRes = await pool.query(
+      'SELECT credential_id, transports FROM user_devices WHERE user_id = $1',
+      [userId]
+    )
+
+    if (devicesRes.rows.length === 0) {
+      return reply.code(400).send({ error: 'Aucun appareil enregistré pour cet utilisateur' })
     }
 
     const options = await generateAuthenticationOptions({
       rpID,
-      allowCredentials: user.devices.map((dev: any) => ({
-        id: dev.credentialID,
+      allowCredentials: devicesRes.rows.map((dev: any) => ({
+        id: dev.credential_id,
         type: 'public-key',
         transports: dev.transports,
       })),
@@ -98,20 +134,26 @@ export async function authRoutes(fastify: FastifyInstance) {
     return options
   })
 
-  // 4. Vérifier la connexion
   fastify.post('/api/auth/login', async (request, reply) => {
     const { username, cred } = request.body as { username: string; cred: any }
-    const user = users.get(username)
     const expectedChallenge = currentChallenges.get(username)
 
-    if (!user || !expectedChallenge) {
+    const userResult = await pool.query('SELECT id FROM users WHERE name = $1', [username])
+    if (userResult.rows.length === 0 || !expectedChallenge) {
       return reply.code(400).send({ error: 'Contexte invalide' })
     }
+    const userId = userResult.rows[0].id
 
-    const dbDevice = user.devices.find((dev: any) => dev.credentialID === cred.id)
-    if (!dbDevice) {
+    const deviceRes = await pool.query(
+      'SELECT credential_id, credential_public_key, counter, transports FROM user_devices WHERE user_id = $1 AND credential_id = $2',
+      [userId, cred.id]
+    )
+
+    if (deviceRes.rows.length === 0) {
       return reply.code(400).send({ error: 'Appareil non reconnu' })
     }
+
+    const dbDevice = deviceRes.rows[0]
 
     try {
       const verification = await verifyAuthenticationResponse({
@@ -120,17 +162,22 @@ export async function authRoutes(fastify: FastifyInstance) {
         expectedOrigin,
         expectedRPID: rpID,
         credential: {
-          id: dbDevice.credentialID,
-          publicKey: dbDevice.credentialPublicKey,
-          counter: dbDevice.counter,
+          id: dbDevice.credential_id,
+          publicKey: dbDevice.credential_public_key,
+          counter: Number(dbDevice.counter),
           transports: dbDevice.transports,
         },
       })
 
       if (verification.verified && verification.authenticationInfo) {
-        dbDevice.counter = verification.authenticationInfo.newCounter
+        await pool.query(
+          'UPDATE user_devices SET counter = $1 WHERE credential_id = $2',
+          [verification.authenticationInfo.newCounter, dbDevice.credential_id]
+        )
+
         currentChallenges.delete(username)
-        return { verified: true }
+        const token = jwt.sign({ userId }, JWT_SECRET, { expiresIn: '7d' })
+        return { verified: true, token }
       }
       return { verified: false }
     } catch (error: any) {

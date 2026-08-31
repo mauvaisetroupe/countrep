@@ -1,81 +1,89 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { createUser, findUserByName } from '../api/users'
-import { useCurrentUser } from '../composables/useCurrentUser'
+import { ref, computed } from 'vue'
+import { useAuthStore } from '../stores/auth'
+import { registerUser, loginUser } from '../services/auth'
 
-const { userId, setUserId, clearUserId } = useCurrentUser()
+const authStore = useAuthStore()
 
 const name = ref('')
 const loading = ref(false)
 const error = ref('')
 
-const createProfile = async () => {
+const handleAuthAction = async (isRegistration: boolean) => {
   const trimmedName = name.value.trim()
-
-  if (!trimmedName) {
-    return
-  }
+  if (!trimmedName) return
 
   loading.value = true
   error.value = ''
 
   try {
-    // Cherche d'abord un utilisateur existant
-    const existingUser = await findUserByName(trimmedName)
+    const verification = isRegistration 
+      ? await registerUser(trimmedName) 
+      : await loginUser(trimmedName)
 
-    if (existingUser) {
-
-      // Utilisateur déjà présent
-      setUserId(existingUser.id)
-
+    if (verification.verified && verification.token) {
+      authStore.setToken(verification.token)
+      name.value = ''
     } else {
-
-      // Nouveau utilisateur
-      const newUser = await createUser(trimmedName)
-
-      setUserId(newUser.id)
-
+      error.value = "Échec de l'authentification."
     }
-    name.value = ''
-  } catch (err) {
+  } catch (err: any) {
     console.error(err)
-    error.value = 'Impossible de retrouver ou créer le profil.'
+    error.value = err.message || "Une erreur est survenue lors de l'authentification biométrique."
   } finally {
     loading.value = false
   }
 }
 
-const removeUser = () => {
-  clearUserId()
+const logout = () => {
+  authStore.logout()
   name.value = ''
   error.value = ''
 }
+
+const decodedToken = computed(() => {
+  const token = authStore.token
+  if (!token) return null
+  try {
+    const base64Url = token.split('.')[1]
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    )
+    return JSON.parse(jsonPayload)
+  } catch (e) {
+    return { error: 'Impossible de décoder le JWT' }
+  }
+})
 </script>
 
 <template>
   <div class="min-h-screen bg-[#fdf8f5] pb-28 px-5 pt-6">
 
     <h1 class="text-2xl font-bold text-gray-900">
-      Profil
+      Profil & Sécurité
     </h1>
 
     <main class="mt-6 space-y-4">
 
       <!-- =====================================================
-           PAS DE PROFIL
+           NON CONNECTÉ
       ====================================================== -->
 
       <section
-        v-if="!userId"
+        v-if="!authStore.isAuthenticated"
         class="bg-amber-50/40 border border-amber-100/80 rounded-3xl p-5 shadow-xs"
       >
 
         <h2 class="text-lg font-bold text-gray-800">
-          Créer votre profil
+          Connexion / Inscription
         </h2>
 
         <p class="mt-1 text-sm text-gray-500">
-          Entrez simplement votre nom pour commencer.
+          Entrez votre nom pour utiliser la sécurité biométrique (Passkey).
         </p>
 
         <!-- Nom -->
@@ -85,7 +93,7 @@ const removeUser = () => {
             for="name"
             class="text-xs font-semibold text-gray-500 block mb-2"
           >
-            Nom
+            Nom d'utilisateur
           </label>
 
           <input
@@ -93,9 +101,9 @@ const removeUser = () => {
             v-model="name"
             type="text"
             placeholder="Lionel"
-            autocomplete="name"
+            autocomplete="username"
             class="w-full bg-white border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
-            @keyup.enter="createProfile"
+            @keyup.enter="handleAuthAction(false)"
           />
 
         </div>
@@ -108,20 +116,30 @@ const removeUser = () => {
           {{ error }}
         </p>
 
-        <!-- Création -->
-        <button
-          @click="createProfile"
-          :disabled="loading || !name.trim()"
-          class="mt-4 w-full bg-amber-500 hover:bg-amber-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-3.5 rounded-2xl shadow-md shadow-amber-200 transition-all active:scale-[0.98]"
-        >
-          {{ loading ? 'Création...' : 'Créer mon profil' }}
-        </button>
+        <!-- Boutons d'action -->
+        <div class="mt-4 space-y-2">
+          <button
+            @click="handleAuthAction(false)"
+            :disabled="loading || !name.trim()"
+            class="w-full bg-amber-500 hover:bg-amber-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-3.5 rounded-2xl shadow-md shadow-amber-200 transition-all active:scale-[0.98]"
+          >
+            {{ loading ? 'Patientez...' : 'Se connecter (Passkey)' }}
+          </button>
+
+          <button
+            @click="handleAuthAction(true)"
+            :disabled="loading || !name.trim()"
+            class="w-full bg-white border border-amber-300 hover:bg-amber-50 disabled:bg-gray-100 disabled:cursor-not-allowed text-amber-700 font-semibold py-3.5 rounded-2xl transition-all"
+          >
+            Créer un compte
+          </button>
+        </div>
 
       </section>
 
 
       <!-- =====================================================
-           PROFIL ACTIF
+           PROFIL ACTIF (CONNECTÉ)
       ====================================================== -->
 
       <section
@@ -135,30 +153,57 @@ const removeUser = () => {
           <div
             class="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center"
           >
-            👤
+            🔒
           </div>
 
           <!-- Informations -->
           <div class="min-w-0">
 
             <p class="text-sm font-semibold text-gray-800">
-              Profil actif
+              Session sécurisée active
             </p>
 
             <p class="text-xs text-gray-500 font-mono truncate">
-              {{ userId }}
+              Authentifié par Jeton JWT
             </p>
 
           </div>
 
+
+
+          <!-- =====================================================
+           BLOC DE DEBUG DU TOKEN & STORE
+      ====================================================== -->
+      <section
+        v-if="authStore.isAuthenticated"
+        class="bg-slate-900 text-slate-100 rounded-3xl p-5 shadow-inner text-xs font-mono space-y-3"
+      >
+        <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+          <span class="font-bold text-amber-400">🔍 Debug Store & JWT</span>
+          <span class="text-slate-400">Actif</span>
         </div>
 
-        <!-- Changer de profil -->
+        <div>
+          <p class="text-slate-400 mb-1">Raw Token :</p>
+          <p class="break-all bg-slate-950 p-2.5 rounded-xl text-slate-300 max-h-24 overflow-y-auto">
+            {{ authStore.token }}
+          </p>
+        </div>
+
+        <div>
+          <p class="text-slate-400 mb-1">Payload Décodé (UserId, Expire, etc.) :</p>
+          <pre class="bg-slate-950 p-2.5 rounded-xl text-amber-200 overflow-x-auto">{{ JSON.stringify(decodedToken, null, 2) }}</pre>
+        </div>
+      </section>
+
+        </div>
+
+        <!-- Déconnexion / Changer de profil -->
         <button
-          @click="removeUser"
+          @click="logout"
           class="mt-4 w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 rounded-2xl transition-colors"
         >
-          Changer de profil
+          Se déconnecter
         </button>
 
       </section>
