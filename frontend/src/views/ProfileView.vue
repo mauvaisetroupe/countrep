@@ -167,35 +167,23 @@ const decodedToken = computed(() => {
               Authentifié par Jeton JWT
             </p>
 
+            <p class="text-sm font-semibold text-gray-800">
+              Raw Token
+            </p>
+
+            <p class="text-xs text-gray-500 font-mono truncate">
+              {{ authStore.token }}
+            </p>
+
+            <p class="text-sm font-semibold text-gray-800">
+              Decoded Token
+            </p>
+
+            <p class="text-xs text-gray-500 font-mono">
+              {{ JSON.stringify(decodedToken, null, 2) }}
+            </p>    
+                    
           </div>
-
-
-
-          <!-- =====================================================
-           BLOC DE DEBUG DU TOKEN & STORE
-      ====================================================== -->
-      <section
-        v-if="authStore.isAuthenticated"
-        class="bg-slate-900 text-slate-100 rounded-3xl p-5 shadow-inner text-xs font-mono space-y-3"
-      >
-        <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-          <span class="font-bold text-amber-400">🔍 Debug Store & JWT</span>
-          <span class="text-slate-400">Actif</span>
-        </div>
-
-        <div>
-          <p class="text-slate-400 mb-1">Raw Token :</p>
-          <p class="break-all bg-slate-950 p-2.5 rounded-xl text-slate-300 max-h-24 overflow-y-auto">
-            {{ authStore.token }}
-          </p>
-        </div>
-
-        <div>
-          <p class="text-slate-400 mb-1">Payload Décodé (UserId, Expire, etc.) :</p>
-          <pre class="bg-slate-950 p-2.5 rounded-xl text-amber-200 overflow-x-auto">{{ JSON.stringify(decodedToken, null, 2) }}</pre>
-        </div>
-      </section>
-
         </div>
 
         <!-- Déconnexion / Changer de profil -->
