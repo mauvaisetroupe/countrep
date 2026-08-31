@@ -10,8 +10,9 @@ import { pool } from '../db.js'
 import jwt from 'jsonwebtoken'
 
 const rpName = 'CountRep App'
-const rpID = 'localhost'
-const expectedOrigin = 'http://localhost:5173'
+// Récupérez les valeurs depuis les variables d'environnement avec des replis pour le local
+const rpID = process.env.RP_ID || 'localhost'
+const expectedOrigin = process.env.EXPECTED_ORIGIN || 'http://localhost:5173'
 
 const JWT_SECRET: string = process.env.JWT_SECRET || 'votre_secret_super_securise'
 
