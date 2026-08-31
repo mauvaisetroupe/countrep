@@ -4,18 +4,21 @@ import { defineStore } from 'pinia'
 const STORAGE_KEY = 'workout_selected_exercise'
 
 export const useExerciseStore = defineStore('exercise', () => {
-  // Récupère l'exercice stocké ou prend 'Push-ups' par défaut
-  const selectedExercise = ref<string>(
-    localStorage.getItem(STORAGE_KEY) || 'Push-ups'
+  const selectedExercise = ref<string | null>(
+    localStorage.getItem(STORAGE_KEY)
   )
 
-  const setExercise = (name: string) => {
+  const setExercise = (name: string | null) => {
     selectedExercise.value = name
-    localStorage.setItem(STORAGE_KEY, name)
+    if (name) {
+      localStorage.setItem(STORAGE_KEY, name)
+    } else {
+      localStorage.removeItem(STORAGE_KEY)
+    }
   }
 
   return {
     selectedExercise,
     setExercise
   }
-})  
+})

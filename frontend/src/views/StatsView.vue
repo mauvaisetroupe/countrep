@@ -7,8 +7,11 @@ import { useExerciseStore } from '../stores/exercise'
 const exerciseStore = useExerciseStore()  
 const { workouts } = useWorkouts()
 
-// Filtrer les workouts pour l'exercice sélectionné
+// Filtrer les workouts : si aucun exercice n'est sélectionné (null), on prend tout
 const exerciseWorkouts = computed(() => {
+  if (!exerciseStore.selectedExercise) {
+    return workouts.value
+  }
   return workouts.value.filter(w => w.exercise === exerciseStore.selectedExercise)
 })
 
@@ -92,7 +95,7 @@ const getStatsForPeriod = (startDate: Date, endDate: Date) => {
   return { total, activeDays, average }
 }
 
-// Cette semaine (du Lundi au Dimanche) - Sans muter `now`
+// Cette semaine (du Lundi au Dimanche)
 const weekStats = computed(() => {
   const today = getToday()
   const dayOfWeek = today.getDay() // 0 = Dimanche, 1 = Lundi, ...
@@ -160,7 +163,7 @@ const monthChartData = computed(() => {
     </header>
 
     <!-- Sélecteur d'exercices -->
-    <ExerciseSelector />
+    <ExerciseSelector :required="false"/>
 
     <main class="px-5 mt-4 space-y-4">
       
@@ -171,7 +174,7 @@ const monthChartData = computed(() => {
           <h2 class="text-lg font-bold text-gray-800">Ce mois</h2>
         </div>
 
-        <!-- Graphique ultra-compact sans chiffres ni scroll -->
+        <!-- Graphique ultra-compact -->
         <div class="h-28 flex items-end gap-0.5 pt-2 border-b border-amber-100 pb-2 w-full">
           <div 
             v-for="item in monthChartData" 
@@ -179,7 +182,6 @@ const monthChartData = computed(() => {
             class="flex-1 min-w-0 flex flex-col items-center h-full justify-end"
             :title="`Jour ${item.day}: ${item.reps} reps`"
           >
-            <!-- Barre -->
             <div 
               :class="[
                 'w-full rounded-t-[2px] transition-all duration-300',
@@ -191,8 +193,7 @@ const monthChartData = computed(() => {
         </div>
       </section>
 
-
-      <!-- Cartes Périodes (Cette semaine / Ce mois / Cette année) -->
+      <!-- Cartes Périodes -->
       <section class="bg-amber-50/40 border border-amber-100/80 rounded-3xl p-5 shadow-xs space-y-4">
         <h2 class="text-lg font-bold text-gray-800">Cette semaine</h2>
         <div class="space-y-2 text-sm">
@@ -220,17 +221,19 @@ const monthChartData = computed(() => {
         </div>
       </section>
 
-      <!-- Carte Résumé Global (Total & Streak) -->
+      <!-- Carte Résumé Global -->
       <section class="bg-amber-50/40 border border-amber-100/80 rounded-3xl p-5 shadow-xs space-y-3">
         <div class="flex justify-between items-center">
-          <span class="text-gray-600 font-medium">Total {{ exerciseStore.selectedExercise }}</span>
+          <span class="text-gray-600 font-medium">
+            Total {{ exerciseStore.selectedExercise || 'de tous les exercices' }}
+          </span>
           <span class="text-xl font-bold text-gray-900">{{ totalRepsAllTime }}</span>
         </div>
         <div class="flex justify-between items-center border-t border-amber-100/60 pt-3">
           <span class="text-gray-600 font-medium">Streak le plus long</span>
           <span class="text-lg font-bold text-gray-900">{{ longestStreak }} jours</span>
         </div>
-      </section>      
+      </section>     
 
     </main>
   </div>
