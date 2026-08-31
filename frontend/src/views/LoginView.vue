@@ -10,13 +10,15 @@ const loading = ref(false)
 const router = useRouter()
 const authStore = useAuthStore()
 
+const API_URL = import.meta.env.VITE_API_URL || ''
+
 const handleRegister = async () => {
   if (!username.value.trim()) return
   loading.value = true
   error.value = ''
   
   try {
-    const res = await fetch('http://localhost:3000/api/auth/register-challenge', {
+    const res = await fetch(`${API_URL}/api/auth/register-challenge`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username: username.value })
@@ -24,7 +26,7 @@ const handleRegister = async () => {
     const optionsJSON = await res.json()
     const cred = await startRegistration({ optionsJSON })
 
-    const verifyRes = await fetch('http://localhost:3000/api/auth/register', {
+    const verifyRes = await fetch(`${API_URL}/api/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username: username.value, cred })
@@ -50,7 +52,7 @@ const handleLogin = async () => {
   error.value = ''
 
   try {
-    const res = await fetch('http://localhost:3000/api/auth/login-challenge', {
+    const res = await fetch(`${API_URL}/api/auth/login-challenge`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username: username.value })
@@ -58,7 +60,7 @@ const handleLogin = async () => {
     const optionsJSON = await res.json()
     const cred = await startAuthentication({ optionsJSON })
 
-    const verifyRes = await fetch('http://localhost:3000/api/auth/login', {
+    const verifyRes = await fetch(`${API_URL}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username: username.value, cred })
