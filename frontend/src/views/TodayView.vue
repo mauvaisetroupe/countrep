@@ -230,6 +230,8 @@ const addQuick = (val: number) => {
 // ============================================================
 
 const saveWorkout = async () => {
+  if (!exerciseStore.selectedExercise) return
+
   const repsNum = parseInt(repsValue.value)
 
   if (!repsNum || isNaN(repsNum)) {
