@@ -147,21 +147,59 @@ const monthChartData = computed(() => {
 
   const maxReps = Math.max(
     ...days.map(d => mapData[formatDate(d)] || 0),
-    20
+    0
   )
 
-  return days.map(d => {
-    const date = formatDate(d)
-    const reps = mapData[date] || 0
-    const heightPercent = Math.min(100, (reps / maxReps) * 100)
+  // Détermine une échelle "propre" pour l'axe Y
+  const getChartScale = (max: number) => {
+    if (max <= 0) {
+      return { max: 20, step: 5 }
+    }
+
+    const rawStep = max / 4
+    const magnitude = Math.pow(10, Math.floor(Math.log10(rawStep)))
+    const normalized = rawStep / magnitude
+
+    let niceStep: number
+
+    if (normalized <= 1) {
+      niceStep = 1 * magnitude
+    } else if (normalized <= 2) {
+      niceStep = 2 * magnitude
+    } else if (normalized <= 5) {
+      niceStep = 5 * magnitude
+    } else {
+      niceStep = 10 * magnitude
+    }
+
+    const chartMax = Math.ceil(max / niceStep) * niceStep
 
     return {
-      date,
-      day: d.getDate(),
-      reps,
-      height: heightPercent
+      max: chartMax,
+      step: niceStep
     }
-  })
+  }
+
+  const scale = getChartScale(maxReps)
+
+  return {
+    days: days.map(d => {
+      const date = formatDate(d)
+      const reps = mapData[date] || 0
+
+      return {
+        date,
+        day: d.getDate(),
+        reps
+      }
+    }),
+    max: scale.max,
+    step: scale.step,
+    ticks: Array.from(
+      { length: Math.floor(scale.max / scale.step) + 1 },
+      (_, i) => i * scale.step
+    )
+  }
 })
 
 </script>
@@ -184,20 +222,55 @@ const monthChartData = computed(() => {
           <h2 class="text-lg font-bold text-gray-800">30 derniers jours</h2>
         </div>
 
-        <div class="h-28 flex items-end gap-0.5 pt-2 border-b border-amber-100 pb-2 w-full">
-          <div 
-            v-for="item in monthChartData" 
-            :key="item.date" 
-            class="flex-1 min-w-0 flex flex-col items-center h-full justify-end"
-            :title="`${item.date}: ${item.reps} reps`"
-          >
-            <div 
-              :class="[
-                'w-full rounded-t-[2px] transition-all duration-300',
-                item.reps > 0 ? 'bg-amber-500' : 'bg-amber-200/40'
-              ]"
-              :style="{ height: `${Math.max(item.height, 4)}%` }"
+        <div class="flex gap-2">
+
+          <!-- Axe Y -->
+          <div class="h-28 flex flex-col justify-between text-[10px] text-gray-400 text-right">
+            <span
+              v-for="tick in [...monthChartData.ticks].reverse()"
+              :key="tick"
+            >
+              {{ tick }}
+            </span>
+          </div>
+
+          <!-- Graphique -->
+          <div class="relative flex-1 h-28">
+
+            <!-- Lignes horizontales -->
+            <div
+              v-for="tick in monthChartData.ticks"
+              :key="`line-${tick}`"
+              class="absolute left-0 right-0 border-t border-amber-100/70"
+              :style="{
+                bottom: `${(tick / monthChartData.max) * 100}%`
+              }"
             ></div>
+
+            <!-- Barres -->
+            <div class="absolute inset-0 flex items-end gap-0.5">
+              <div
+                v-for="item in monthChartData.days"
+                :key="item.date"
+                class="flex-1 min-w-0 h-full flex items-end"
+                :title="`${item.date}: ${item.reps} reps`"
+              >
+                <div
+                  :class="[
+                    'w-full rounded-t-[2px] transition-all duration-300',
+                    item.reps > 0
+                      ? 'bg-amber-500'
+                      : 'bg-amber-200/40'
+                  ]"
+                  :style="{
+                    height: item.reps > 0
+                      ? `${(item.reps / monthChartData.max) * 100}%`
+                      : '2px'
+                  }"
+                ></div>
+              </div>
+            </div>
+
           </div>
         </div>
       </section>
