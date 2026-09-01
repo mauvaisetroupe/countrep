@@ -126,33 +126,44 @@ const yearStats = computed(() => {
   return getStatsForPeriod(firstDay, lastDay)
 })
 
-// 3. Données pour le graphique du mois
+// 3. Données pour le graphique des 30 derniers jours
 const monthChartData = computed(() => {
   const today = getToday()
-  const currentYear = today.getFullYear()
-  const currentMonthIndex = today.getMonth()
+  const mapData: Record<string, number> = {}
 
-  const totalDays = new Date(currentYear, currentMonthIndex + 1, 0).getDate()
-  const mapData: Record<number, number> = {}
-  
   exerciseWorkouts.value.forEach(w => {
-    const cleanDate = getLocalDateString(w.date)
-    const [y, m, d] = cleanDate.split('-').map(Number)
-    
-    if (y === currentYear && m - 1 === currentMonthIndex) {
-      mapData[d] = (mapData[d] || 0) + w.reps
+    const date = getLocalDateString(w.date)
+    if (date) {
+      mapData[date] = (mapData[date] || 0) + w.reps
     }
   })
 
-  const maxReps = Math.max(...Object.values(mapData), 20)
+  // Les 30 derniers jours, aujourd'hui inclus
+  const days = Array.from({ length: 30 }, (_, i) => {
+    const d = new Date(today)
+    d.setDate(today.getDate() - (29 - i))
+    return d
+  })
 
-  return Array.from({ length: totalDays }, (_, i) => {
-    const dayNum = i + 1
-    const reps = mapData[dayNum] || 0
+  const maxReps = Math.max(
+    ...days.map(d => mapData[formatDate(d)] || 0),
+    20
+  )
+
+  return days.map(d => {
+    const date = formatDate(d)
+    const reps = mapData[date] || 0
     const heightPercent = Math.min(100, (reps / maxReps) * 100)
-    return { day: dayNum, reps, height: heightPercent }
+
+    return {
+      date,
+      day: d.getDate(),
+      reps,
+      height: heightPercent
+    }
   })
 })
+
 </script>
 
 <template>
@@ -167,20 +178,18 @@ const monthChartData = computed(() => {
 
     <main class="px-5 mt-4 space-y-4">
       
-      <!-- Carte Graphique "Ce mois" -->
+      <!-- Carte Graphique "30 derniers jours" -->
       <section class="bg-amber-50/40 border border-amber-100/80 rounded-3xl p-5 shadow-xs space-y-4">
         <div class="flex items-center gap-2">
-          <span class="text-amber-600 font-bold">📊</span>
-          <h2 class="text-lg font-bold text-gray-800">Ce mois</h2>
+          <h2 class="text-lg font-bold text-gray-800">30 derniers jours</h2>
         </div>
 
-        <!-- Graphique ultra-compact -->
         <div class="h-28 flex items-end gap-0.5 pt-2 border-b border-amber-100 pb-2 w-full">
           <div 
             v-for="item in monthChartData" 
-            :key="item.day" 
+            :key="item.date" 
             class="flex-1 min-w-0 flex flex-col items-center h-full justify-end"
-            :title="`Jour ${item.day}: ${item.reps} reps`"
+            :title="`${item.date}: ${item.reps} reps`"
           >
             <div 
               :class="[
