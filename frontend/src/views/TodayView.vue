@@ -127,6 +127,45 @@ const nextMonth = () => {
   )
 }
 
+// ============================================================
+// SWIPE CALENDRIER
+// ============================================================
+
+const touchStartX = ref(0)
+const touchStartY = ref(0)
+
+const handleTouchStart = (event: TouchEvent) => {
+  const touch = event.touches[0]
+
+  touchStartX.value = touch.clientX
+  touchStartY.value = touch.clientY
+}
+
+const handleTouchEnd = (event: TouchEvent) => {
+  const touch = event.changedTouches[0]
+
+  const deltaX = touch.clientX - touchStartX.value
+  const deltaY = touch.clientY - touchStartY.value
+
+  // On ignore les mouvements principalement verticaux
+  if (Math.abs(deltaX) < Math.abs(deltaY)) {
+    return
+  }
+
+  // Distance minimale pour considérer qu'il s'agit d'un swipe
+  if (Math.abs(deltaX) < 50) {
+    return
+  }
+
+  if (deltaX < 0) {
+    // Swipe vers la gauche → mois suivant
+    nextMonth()
+  } else {
+    // Swipe vers la droite → mois précédent
+    prevMonth()
+  }
+}
+
 // Retour à aujourd'hui
 const goToToday = () => {
   currentYear.value = realYear
@@ -292,8 +331,11 @@ const saveWorkout = async () => {
          CALENDRIER
     ====================================================== -->
 
-    <section class="bg-amber-50/40 border border-amber-100/80 rounded-3xl p-5 shadow-xs">
-
+      <section
+        class="bg-amber-50/40 border border-amber-100/80 rounded-3xl p-5 shadow-xs touch-pan-y"
+        @touchstart="handleTouchStart"
+        @touchend="handleTouchEnd"
+      >
       <!-- En-tête du calendrier -->
       <div class="flex justify-between items-center mb-4">
 
