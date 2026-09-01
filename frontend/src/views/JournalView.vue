@@ -16,6 +16,7 @@ const PAGE_SIZE = 30
 
 const visibleCount = ref(PAGE_SIZE)
 const editingWorkoutId = ref<string | null>(null)
+const openMenuId = ref<string | null>(null)
 
 const filteredWorkouts = computed(() => {
   let result = workouts.value.filter(w => !w.deletedAt)
@@ -134,7 +135,25 @@ const dayTotal = (date: string) => {
     .reduce((total, w) => total + w.reps, 0)
 }
 
+/**
+ * Ouvre / ferme le menu d'un workout.
+ */
+const toggleMenu = (id: string) => {
+  openMenuId.value =
+    openMenuId.value === id
+      ? null
+      : id
+}
+
+/**
+ * Ferme le menu lorsqu'on clique ailleurs.
+ */
+const handleDocumentClick = () => {
+  openMenuId.value = null
+}
+
 const startEdit = (id: string) => {
+  openMenuId.value = null
   editingWorkoutId.value = id
 }
 
@@ -157,6 +176,8 @@ const saveEdit = async (workout: LocalWorkout) => {
 }
 
 const handleDeleteWorkout = async (workout: LocalWorkout) => {
+  openMenuId.value = null
+
   const confirmed = window.confirm(
     `Supprimer ${workout.exercise} — ${workout.reps} reps ?`
   )
@@ -180,10 +201,12 @@ const handleScroll = () => {
 
 onMounted(() => {
   window.addEventListener('scroll', handleScroll)
+  document.addEventListener('click', handleDocumentClick)
 })
 
 onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll)
+  document.removeEventListener('click', handleDocumentClick)
 })
 </script>
 
@@ -223,7 +246,7 @@ onUnmounted(() => {
       <!-- Journal -->
       <div
         v-else
-        class="space-y-5"
+        class="space-y-2"
       >
 
         <template
@@ -302,7 +325,7 @@ onUnmounted(() => {
             <!-- Mode normal -->
             <div
               v-else
-              class="flex items-center gap-3 px-4 py-3"
+              class="flex items-center gap-3 px-4 py-1"
             >
 
               <!-- Heure -->
@@ -316,13 +339,6 @@ onUnmounted(() => {
               <div class="flex-1 min-w-0">
                 <div class="font-semibold text-gray-800 truncate">
                   {{ workout.exercise }}
-                </div>
-
-                <div
-                  v-if="workout.mode"
-                  class="text-xs text-gray-400 mt-0.5"
-                >
-                  {{ workout.mode }}
                 </div>
               </div>
 
@@ -338,17 +354,19 @@ onUnmounted(() => {
               </span>
 
               <!-- Menu -->
-              <div class="relative group">
+              <div class="relative">
 
                 <button
-                  class="w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:bg-amber-100 hover:text-gray-700 transition-colors"
+                  class="w-7 h-7 flex items-center justify-center rounded-full text-gray-400 hover:bg-amber-100 hover:text-gray-700 transition-colors"
                   aria-label="Actions"
+                  @click.stop="toggleMenu(workout.id)"
                 >
                   ⋮
                 </button>
 
                 <div
-                  class="hidden group-hover:block absolute right-0 top-8 z-50 w-32 bg-white border border-gray-100 rounded-xl shadow-lg overflow-hidden"
+                  v-if="openMenuId === workout.id"
+                  class="absolute right-0 top-7 z-50 w-32 bg-white border border-gray-100 rounded-xl shadow-lg overflow-hidden"
                 >
 
                   <button

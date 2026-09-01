@@ -145,8 +145,6 @@ const goToToday = () => {
 
 const showModal = ref(false)
 
-const inputMode = ref<'add' | 'set'>('add')
-
 const repsValue = ref('')
 
 // ============================================================
@@ -217,13 +215,7 @@ const repsByDay = computed<Record<number, number>>(() => {
 // ============================================================
 
 const addQuick = (val: number) => {
-  const current = parseInt(repsValue.value) || 0
-
-  if (inputMode.value === 'add') {
-    repsValue.value = String(current + val)
-  } else {
-    repsValue.value = String(val)
-  }
+  repsValue.value = String(val)
 }
 
 // ============================================================
@@ -245,7 +237,7 @@ const saveWorkout = async () => {
     exercise: exerciseStore.selectedExercise,
     date: selectedDate.value,
     reps: repsNum,
-    mode: inputMode.value,
+    mode: 'add',
     createdAt: now,
     updatedAt: now,
     deletedAt: null,
@@ -442,27 +434,6 @@ const saveWorkout = async () => {
       ================================================== -->
       <div class="text-center text-sm text-gray-500">
         {{ selectedDate }}
-      </div>
-
-      <!-- Onglets (Ajouter une série / Définir le total) -->
-      <div class="grid grid-cols-2 bg-gray-200/70 p-1 rounded-2xl">
-        <button @click="inputMode = 'add'" :class="[
-          'py-2.5 text-sm font-semibold rounded-xl transition-all',
-          inputMode === 'add'
-            ? 'bg-white text-gray-900 shadow-xs'
-            : 'text-gray-500'
-        ]">
-          Ajouter une série
-        </button>
-        <button @click="inputMode = 'set'"
-        :class="[
-          'py-2.5 text-sm font-semibold rounded-xl transition-all',
-          inputMode === 'set'
-            ? 'bg-white text-gray-900 shadow-xs'
-            : 'text-gray-500'
-        ]">
-          Définir le total
-        </button>
       </div>
 
       <!-- Question -->
