@@ -1,5 +1,6 @@
 import { ref, onMounted, onUnmounted } from 'vue'
-import { db, type LocalWorkout } from '../db'
+import { type LocalWorkout } from '../db'
+import { workoutRepository } from '../repositories/workoutRepository'
 import {
   syncPendingWorkouts,
   syncWorkoutsFromServer
@@ -15,7 +16,7 @@ export function useWorkouts() {
   // ============================================================
 
   const loadWorkouts = async () => {
-    workouts.value = await db.workouts.toArray()
+    workouts.value = await workoutRepository.getAll()
   }
 
   // ============================================================
@@ -26,9 +27,8 @@ export function useWorkouts() {
     workout: LocalWorkout
   ): Promise<void> => {
 
-    await db.workouts.add(workout)
+    await workoutRepository.create(workout)
 
-    // Mise à jour immédiate de l'état exposé au composant
     workouts.value.push(workout)
   }
 
