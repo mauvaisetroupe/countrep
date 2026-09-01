@@ -50,3 +50,38 @@ export async function getWorkouts(): Promise<ApiWorkout[]> {
 
   return response.json()
 }
+
+export async function updateWorkout(
+  id: string,
+  changes: Partial<ApiWorkout>
+): Promise<ApiWorkout> {
+
+  const response = await fetch(`${API_URL}/api/workouts/${id}`, {
+    method: 'PATCH',
+    headers: getHeaders(),
+    body: JSON.stringify(changes)
+  })
+
+  if (!response.ok) {
+    throw new Error(`API error: ${response.status}`)
+  }
+
+  return response.json()
+}
+
+export async function deleteWorkout(id: string): Promise<void> {
+  const authStore = useAuthStore()
+
+  const response = await fetch(`${API_URL}/api/workouts/${id}`, {
+    method: 'DELETE',
+    headers: {
+      ...(authStore.token
+        ? { 'Authorization': `Bearer ${authStore.token}` }
+        : {})
+    }
+  })
+
+  if (!response.ok) {
+    throw new Error(`API error: ${response.status}`)
+  }
+}

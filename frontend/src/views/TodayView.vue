@@ -4,6 +4,7 @@ import ExerciseSelector from '../components/ExerciseSelector.vue'
 import { useWorkouts } from '../composables/useWorkouts'
 import { syncWorkout } from '../services/sync'
 import { useExerciseStore } from '../stores/exercise'
+import type { LocalWorkout } from '../db'
 
 const exerciseStore = useExerciseStore()
 
@@ -248,7 +249,8 @@ const saveWorkout = async () => {
     createdAt: now,
     updatedAt: now,
     deletedAt: null,
-    syncStatus: 'pending'
+    syncStatus: 'pending',
+    syncOperation: 'create'
   }
   
   await createWorkout(workout)

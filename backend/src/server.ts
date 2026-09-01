@@ -15,7 +15,9 @@ await app.register(cors, {
     'http://192.168.1.109:5173',
     process.env.EXPECTED_ORIGIN || 'https://countrep.architech.lu'
   ],
-  credentials: true // Utile si vous passez des cookies ou des en-têtes d'authentification
+  methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
 })
 
 app.get('/api/health', async () => {

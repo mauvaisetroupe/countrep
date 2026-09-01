@@ -1,11 +1,16 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import ExerciseSelector from '../components/ExerciseSelector.vue'
 import { useExerciseStore } from '../stores/exercise'
 import { useWorkouts } from '../composables/useWorkouts'
+import type { LocalWorkout } from '../db'
 
 const exerciseStore = useExerciseStore()
-const { workouts } = useWorkouts()
+const {
+  workouts,
+  updateWorkout,
+  deleteWorkout
+} = useWorkouts()
 
 const PAGE_SIZE = 30
 
@@ -43,11 +48,6 @@ const loadMore = () => {
   if (!hasMore.value) return
 
   visibleCount.value += PAGE_SIZE
-}
-
-const resetPagination = () => {
-  visibleCount.value = PAGE_SIZE
-  editingWorkoutId.value = null
 }
 
 /**
@@ -142,43 +142,28 @@ const cancelEdit = () => {
   editingWorkoutId.value = null
 }
 
-/*
- * Pour l'instant on modifie directement l'objet du workout.
- *
- * Si ton useWorkouts possède déjà une méthode updateWorkout(),
- * on la branchera ici ensuite.
- */
-const saveEdit = async (workout: any) => {
-  workout.reps = Number(workout.reps)
+const saveEdit = async (workout: LocalWorkout) => {
+  const reps = Number(workout.reps)
 
-  if (!Number.isFinite(workout.reps) || workout.reps < 0) {
+  if (!Number.isFinite(reps) || reps <= 0) {
     return
   }
 
-  workout.updatedAt = Date.now()
+  await updateWorkout(workout.id, {
+    reps
+  })
 
   editingWorkoutId.value = null
-
-  await nextTick()
 }
 
-/*
- * Suppression logique.
- *
- * À remplacer par la méthode du composable si useWorkouts
- * expose déjà deleteWorkout().
- */
-const deleteWorkout = async (workout: any) => {
+const handleDeleteWorkout = async (workout: LocalWorkout) => {
   const confirmed = window.confirm(
     `Supprimer ${workout.exercise} — ${workout.reps} reps ?`
   )
 
   if (!confirmed) return
 
-  workout.deletedAt = Date.now()
-  workout.updatedAt = Date.now()
-
-  await nextTick()
+  await deleteWorkout(workout.id)
 }
 
 /**
@@ -375,7 +360,7 @@ onUnmounted(() => {
 
                   <button
                     class="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50"
-                    @click="deleteWorkout(workout)"
+                    @click="handleDeleteWorkout(workout)"
                   >
                     🗑️ Supprimer
                   </button>

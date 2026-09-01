@@ -26,6 +26,10 @@ export const workoutRepository = {
 
   async saveSynced(workout: LocalWorkout): Promise<void> {
     await db.workouts.put(workout)
-  }
+  },
+
+  async remove(id: string): Promise<void> {
+    await db.workouts.delete(id)
+  }  
 
 }

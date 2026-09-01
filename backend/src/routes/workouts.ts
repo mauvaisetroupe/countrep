@@ -3,13 +3,17 @@ import { verifyJWT } from '../middleware/auth.js'
 import { pool } from '../db.js'
 
 export async function workoutRoutes(app: FastifyInstance) {
-  
+
   // Applique la vérification JWT à toutes les routes de ce fichier
   app.addHook('onRequest', verifyJWT)
 
+  // ============================================================
+  // CREATE
+  // ============================================================
+
   app.post('/api/workouts', async (request, reply) => {
-    const userId = request.userId // Récupéré de manière sécurisée depuis le token
-    
+    const userId = request.userId
+
     const body = request.body as {
       id: string
       exercise: string
@@ -51,7 +55,7 @@ export async function workoutRoutes(app: FastifyInstance) {
       `,
       [
         body.id,
-        userId, // Utilisation du userId sécurisé
+        userId,
         body.exercise,
         body.date,
         body.reps,
@@ -75,7 +79,8 @@ export async function workoutRoutes(app: FastifyInstance) {
         updated_at,
         deleted_at
       FROM workouts
-      WHERE id = $1 AND user_id = $2
+      WHERE id = $1
+        AND user_id = $2
       `,
       [body.id, userId]
     )
@@ -97,21 +102,25 @@ export async function workoutRoutes(app: FastifyInstance) {
     })
   })
 
+  // ============================================================
+  // READ
+  // ============================================================
+
   app.get('/api/workouts', async (request) => {
-    const userId = request.userId // Plus besoin de le chercher dans les query params
+    const userId = request.userId
 
     const result = await pool.query(
       `
       SELECT
         id,
-        user_id AS "userId",
+        user_id,
         exercise,
         date::text AS date,
         reps,
         mode,
-        created_at AS "createdAt",
-        updated_at AS "updatedAt",
-        deleted_at AS "deletedAt"
+        created_at,
+        updated_at,
+        deleted_at
       FROM workouts
       WHERE user_id = $1
       ORDER BY date ASC, created_at ASC
@@ -119,6 +128,113 @@ export async function workoutRoutes(app: FastifyInstance) {
       [userId]
     )
 
-    return result.rows
+    return result.rows.map(workout => ({
+      id: workout.id,
+      userId: workout.user_id,
+      exercise: workout.exercise,
+      date: workout.date,
+      reps: workout.reps,
+      mode: workout.mode,
+      createdAt: new Date(workout.created_at).getTime(),
+      updatedAt: new Date(workout.updated_at).getTime(),
+      deletedAt: workout.deleted_at
+        ? new Date(workout.deleted_at).getTime()
+        : null
+    }))
+  })
+
+  // ============================================================
+  // UPDATE
+  // ============================================================
+
+  app.patch('/api/workouts/:id', async (request, reply) => {
+    const userId = request.userId
+    const { id } = request.params as { id: string }
+
+    const body = request.body as {
+      reps?: number
+      exercise?: string
+      date?: string
+      mode?: string
+      updatedAt: number
+    }
+
+    const result = await pool.query(
+      `
+      UPDATE workouts
+      SET
+        reps = COALESCE($1, reps),
+        exercise = COALESCE($2, exercise),
+        date = COALESCE($3, date),
+        mode = COALESCE($4, mode),
+        updated_at = to_timestamp($5 / 1000.0)
+      WHERE id = $6
+        AND user_id = $7
+      RETURNING
+        id,
+        user_id,
+        exercise,
+        date::text AS date,
+        reps,
+        mode,
+        created_at,
+        updated_at,
+        deleted_at
+      `,
+      [
+        body.reps ?? null,
+        body.exercise ?? null,
+        body.date ?? null,
+        body.mode ?? null,
+        body.updatedAt,
+        id,
+        userId
+      ]
+    )
+
+    if (result.rowCount === 0) {
+      return reply.code(404).send({
+        error: 'Workout not found'
+      })
+    }
+
+    const workout = result.rows[0]
+
+    return reply.send({
+      id: workout.id,
+      userId: workout.user_id,
+      exercise: workout.exercise,
+      date: workout.date,
+      reps: workout.reps,
+      mode: workout.mode,
+      createdAt: new Date(workout.created_at).getTime(),
+      updatedAt: new Date(workout.updated_at).getTime(),
+      deletedAt: workout.deleted_at
+        ? new Date(workout.deleted_at).getTime()
+        : null
+    })
+  })
+
+  app.delete('/api/workouts/:id', async (request, reply) => {
+    const userId = request.userId
+    const { id } = request.params as { id: string }
+
+    const result = await pool.query(
+      `
+      DELETE FROM workouts
+      WHERE id = $1
+        AND user_id = $2
+      RETURNING id
+      `,
+      [id, userId]
+    )
+
+    if (result.rowCount === 0) {
+      return reply.code(404).send({
+        error: 'Workout not found'
+      })
+    }
+
+    return reply.code(204).send()
   })
 }

@@ -3,7 +3,9 @@ import { type LocalWorkout } from '../db'
 import { workoutRepository } from '../repositories/workoutRepository'
 import {
   syncPendingWorkouts,
-  syncWorkoutsFromServer
+  syncWorkoutsFromServer,
+  syncUpdatedWorkout,
+  syncDeletedWorkout
 } from '../services/sync'
 
 export function useWorkouts() {
@@ -31,6 +33,71 @@ export function useWorkouts() {
 
     workouts.value.push(workout)
   }
+
+const updateWorkout = async (
+  id: string,
+  changes: Partial<LocalWorkout>
+): Promise<void> => {
+
+  await workoutRepository.update(id, {
+    ...changes,
+    updatedAt: Date.now(),
+    syncStatus: 'pending',
+    syncOperation: 'update'
+  })
+
+  await loadWorkouts()
+
+  const workout = workouts.value.find(
+    workout => workout.id === id
+  )
+
+  if (!workout) {
+    return
+  }
+
+  try {
+    await syncUpdatedWorkout(workout)
+    await loadWorkouts()
+  } catch (error) {
+    console.warn(
+      `Workout ${id} modifié localement mais non synchronisé`,
+      error
+    )
+  }
+}
+
+const deleteWorkout = async (id: string) => {
+
+  const now = Date.now()
+
+  await workoutRepository.update(id, {
+    deletedAt: now,
+    updatedAt: now,
+    syncStatus: 'pending',
+    syncOperation: 'delete'
+  })
+
+  await loadWorkouts()
+
+  const workout = workouts.value.find(
+    workout => workout.id === id
+  )
+
+  if (!workout) {
+    return
+  }
+
+  try {
+    await syncDeletedWorkout(workout)
+    await loadWorkouts()
+  } catch (error) {
+    console.warn(
+      `Workout ${id} supprimé localement mais non synchronisé`,
+      error
+    )
+  }
+}
 
   // ============================================================
   // SYNCHRONISATION COMPLÈTE
@@ -93,6 +160,8 @@ export function useWorkouts() {
     loading,
     loadWorkouts,
     createWorkout,
+    updateWorkout,
+    deleteWorkout,
     sync
   }
 }

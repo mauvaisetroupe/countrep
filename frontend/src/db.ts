@@ -10,6 +10,7 @@ export interface LocalWorkout {
   updatedAt: number
   deletedAt?: number | null
   syncStatus: 'pending' | 'synced'
+  syncOperation: 'none' | 'create' | 'update' | 'delete'
 }
 
 export interface SyncState {
@@ -23,8 +24,8 @@ export class WorkoutDatabase extends Dexie {
 
   constructor() {
     super('WorkoutDatabase')
-    this.version(1).stores({
-        workouts: 'id, exercise, date, createdAt, updatedAt, syncStatus',
+    this.version(2).stores({
+        workouts: 'id, exercise, date, createdAt, updatedAt, syncStatus, syncOperation',
         syncState: 'id'
     })
   }

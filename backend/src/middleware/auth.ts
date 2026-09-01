@@ -13,12 +13,6 @@ declare module 'fastify' {
 export async function verifyJWT(request: FastifyRequest, reply: FastifyReply) {
   console.log('Methode recue :', JSON.stringify(request.method)) // Pour voir le contenu exact
   console.log('Methode recue :', JSON.stringify(request.raw?.method)) // Pour voir le contenu exact
-  if (request.raw.method?.toUpperCase() === 'OPTIONS') {    console.log('OPTIONS')
-    return
-  }
-  else {
-    console.log('OPTIONS-ELSE')
-  }
   const authHeader = request.headers.authorization
   console.log('Headers reçus :', request.headers)
   console.log('authHeader:' , authHeader)
