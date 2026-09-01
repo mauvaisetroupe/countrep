@@ -1,4 +1,5 @@
-import { db, type LocalWorkout } from '../db'
+import type { LocalWorkout } from '../db'
+import { workoutRepository } from '../repositories/workoutRepository'
 import { createWorkout, getWorkouts } from '../api/workouts'
 
 export async function syncWorkout(
@@ -18,16 +19,13 @@ export async function syncWorkout(
 
   await createWorkout(apiWorkout)
 
-  await db.workouts.update(workout.id, {
+  await workoutRepository.update(workout.id, {
     syncStatus: 'synced'
   })
 }
 
 export async function syncPendingWorkouts(): Promise<void> {
-  const pendingWorkouts = await db.workouts
-    .where('syncStatus')
-    .equals('pending')
-    .toArray()
+  const pendingWorkouts = await workoutRepository.getPending()
 
   for (const workout of pendingWorkouts) {
     try {
@@ -46,7 +44,7 @@ export async function syncWorkoutsFromServer(): Promise<void> {
     const remoteWorkouts = await getWorkouts()
 
     for (const workout of remoteWorkouts) {
-      await db.workouts.put({
+      const localWorkout: LocalWorkout = {
         id: workout.id,
         exercise: workout.exercise,
         date: workout.date,
@@ -56,7 +54,8 @@ export async function syncWorkoutsFromServer(): Promise<void> {
         updatedAt: workout.updatedAt,
         deletedAt: workout.deletedAt,
         syncStatus: 'synced'
-      })
+      }
+      await workoutRepository.saveSynced(localWorkout)
     }
   } catch (error) {
     console.warn("Impossible de récupérer les workouts du serveur (mode hors-ligne)", error)

@@ -22,6 +22,10 @@ export const workoutRepository = {
       .where('syncStatus')
       .equals('pending')
       .toArray()
+  },
+
+  async saveSynced(workout: LocalWorkout): Promise<void> {
+    await db.workouts.put(workout)
   }
 
 }
