@@ -2,7 +2,6 @@
 import { ref, computed } from 'vue'
 import ExerciseSelector from '../components/ExerciseSelector.vue'
 import { useWorkouts } from '../composables/useWorkouts'
-import { db, type LocalWorkout } from '../db'
 import { syncWorkout } from '../services/sync'
 import { useExerciseStore } from '../stores/exercise'
 
@@ -155,6 +154,7 @@ const repsValue = ref('')
 
 const {
   workouts,
+  createWorkout,
   loadWorkouts
 } = useWorkouts()
 
@@ -250,21 +250,11 @@ const saveWorkout = async () => {
     deletedAt: null,
     syncStatus: 'pending'
   }
-
-  // ==========================================================
-  // 1. SAUVEGARDE LOCALE
-  // ==========================================================
-
-  await db.workouts.add(workout)
-
-  await loadWorkouts()
+  
+  await createWorkout(workout)
 
   showModal.value = false
   repsValue.value = ''
-
-  // ==========================================================
-  // 2. SYNCHRONISATION SERVEUR
-  // ==========================================================
 
   try {
     await syncWorkout(workout)

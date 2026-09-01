@@ -19,6 +19,20 @@ export function useWorkouts() {
   }
 
   // ============================================================
+  // CRÉER UN WORKOUT
+  // ============================================================
+
+  const createWorkout = async (
+    workout: LocalWorkout
+  ): Promise<void> => {
+
+    await db.workouts.add(workout)
+
+    // Mise à jour immédiate de l'état exposé au composant
+    workouts.value.push(workout)
+  }
+
+  // ============================================================
   // SYNCHRONISATION COMPLÈTE
   // ============================================================
 
@@ -78,6 +92,7 @@ export function useWorkouts() {
     workouts,
     loading,
     loadWorkouts,
+    createWorkout,
     sync
   }
 }
