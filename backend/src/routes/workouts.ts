@@ -106,7 +106,7 @@ export async function workoutRoutes(app: FastifyInstance) {
         id,
         user_id AS "userId",
         exercise,
-        date,
+        date::text AS date,
         reps,
         mode,
         created_at AS "createdAt",
