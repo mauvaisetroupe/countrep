@@ -1,44 +1,65 @@
 # CountRep — Current Architecture
 
-> Current state of the architecture after introducing the `WorkoutRepository`.
-
-## 1. Overview
-
-CountRep is a Vue 3 / TypeScript application built around an **offline-first** approach.
-
-The core principle is:
-
-> User data is persisted locally in IndexedDB first. Synchronization with the backend happens afterwards, when the network is available.
-
-The current architecture is organized around several main areas:
-
-```text
-Frontend Vue 3
-      │
-      ├── UI / Views / Components
-      │
-      ├── Composables
-      │
-      ├── Pinia Stores
-      │
-      ├── Local Repository
-      │
-      ├── Synchronization
-      │
-      └── HTTP API
-                │
-                ▼
-          Fastify Backend
-                │
-                ▼
-            PostgreSQL
-```
+> This document describes the current architecture of CountRep.
+>
+> CountRep is an offline-first workout tracking application built with Vue 3, TypeScript, Fastify and PostgreSQL.
 
 ---
 
-# 2. Frontend Architecture
+## 1. Architectural Overview
 
-Current structure:
+CountRep follows an **offline-first architecture**.
+
+The frontend considers IndexedDB as the primary local persistence layer. Network communication with the backend is used to synchronize local data with the server.
+
+The general architecture is:
+
+```mermaid
+flowchart TD
+    User[User]
+
+    subgraph Frontend["Frontend — Vue 3 / TypeScript"]
+        UI[Views & Components]
+        Composable[Composables]
+        Stores[Pinia Stores]
+        Repository[WorkoutRepository]
+        IndexedDB[(IndexedDB / Dexie)]
+        Sync[Sync Service]
+        API[API Client]
+    end
+
+    subgraph Backend["Backend — Fastify"]
+        Auth[JWT Authentication]
+        Routes[HTTP Routes]
+    end
+
+    PostgreSQL[(PostgreSQL)]
+
+    User --> UI
+    UI --> Composable
+    UI --> Stores
+
+    Composable --> Repository
+    Repository --> IndexedDB
+
+    Composable --> Sync
+    Sync --> Repository
+    Sync --> API
+
+    API --> Auth
+    Auth --> Routes
+    Routes --> PostgreSQL
+```
+
+The important architectural principle is:
+
+> **Local persistence comes before network synchronization.**
+
+---
+
+# 2. Frontend Structure
+
+The current frontend structure is:
 
 ```text
 frontend/src/
@@ -53,7 +74,6 @@ frontend/src/
 │   └── useWorkouts.ts
 │
 ├── db.ts
-│
 ├── exercises.ts
 │
 ├── repositories/
@@ -70,71 +90,82 @@ frontend/src/
     └── TodayView.vue
 ```
 
+The main responsibilities are currently distributed as follows:
+
+| Layer        | Responsibility                                |
+| ------------ | --------------------------------------------- |
+| Views        | UI orchestration and user interactions        |
+| Components   | Reusable UI components                        |
+| Composables  | Application state and use cases               |
+| Stores       | Global client-side state                      |
+| Repository   | Local persistence abstraction                 |
+| Sync Service | Synchronization between local and remote data |
+| API          | HTTP communication                            |
+| DB           | IndexedDB / Dexie configuration               |
+
 ---
 
 # 3. `TodayView.vue`
 
-`TodayView.vue` is the main view used to add workouts and display repetitions in a calendar.
+`TodayView.vue` is currently the main workout entry point.
 
-Its current responsibilities include:
+It is responsible for:
 
 * displaying the calendar;
-* managing the displayed month;
-* managing the selected date;
-* displaying repetitions per day;
+* navigating between months;
+* selecting a date;
+* displaying daily repetition totals;
 * displaying the exercise selector;
-* managing the add-workout modal;
+* opening the workout modal;
 * handling repetition input;
-* creating a `LocalWorkout`;
-* asking `useWorkouts` to create the workout;
-* currently triggering its synchronization.
+* creating a workout through `useWorkouts`.
 
-The component uses:
+The component interacts with the application through:
 
-```text
-TodayView.vue
-    │
-    ├── ExerciseSelector
-    │
-    ├── useExerciseStore
-    │
-    └── useWorkouts
+```mermaid
+flowchart LR
+    Today["TodayView.vue"]
+    Exercise["ExerciseSelector.vue"]
+    ExerciseStore["exercise store"]
+    Workouts["useWorkouts"]
+
+    Today --> Exercise
+    Exercise --> ExerciseStore
+    Today --> ExerciseStore
+    Today --> Workouts
 ```
 
-### Important
+The view does **not** directly access IndexedDB.
 
-The view no longer knows about IndexedDB directly.
+This is an important separation:
 
-It no longer performs:
-
-```ts
-db.workouts.add(...)
+```mermaid
+flowchart LR
+    Today["TodayView.vue"] --> Workouts["useWorkouts"]
+    Workouts --> Repository["WorkoutRepository"]
+    Repository --> DB[(IndexedDB)]
 ```
-
-Instead, it uses:
-
-```ts
-createWorkout(workout)
-```
-
-provided by `useWorkouts`.
 
 ---
 
-# 4. `ExerciseSelector.vue`
+# 4. Exercise Selection
 
-The `ExerciseSelector` component is responsible for displaying and selecting an exercise.
-
-It uses:
+Exercise selection is currently handled by the `exercise` Pinia store.
 
 ```text
-ExerciseSelector.vue
-        │
-        ▼
-useExerciseStore()
-        │
-        ▼
-localStorage
+stores/exercise.ts
+```
+
+The selected exercise is persisted in `localStorage`.
+
+```mermaid
+flowchart LR
+    Selector["ExerciseSelector.vue"]
+    Store["exercise Pinia store"]
+    Storage["localStorage"]
+
+    Selector --> Store
+    Store --> Storage
 ```
 
 The available exercises are currently defined in:
@@ -143,134 +174,86 @@ The available exercises are currently defined in:
 exercises.ts
 ```
 
-The component displays:
-
-* short exercise name;
-* icon;
-* exercise name;
-* currently selected exercise.
-
----
-
-# 5. `exercise` Store
-
-The Pinia store:
-
-```text
-stores/exercise.ts
-```
-
-manages the exercise currently selected by the user.
-
-The selection is persisted in:
-
-```text
-localStorage
-```
-
-Main state:
+The store contains:
 
 ```ts
 selectedExercise: string | null
 ```
 
-The storage flow is:
-
-```text
-Pinia
-  │
-  └── localStorage
-```
-
 ---
 
-# 6. `auth` Store
+# 5. Authentication
 
-The store:
+Authentication state is handled by:
 
 ```text
 stores/auth.ts
 ```
 
-currently handles:
+The JWT token is persisted in `localStorage`.
 
-* JWT token;
-* authentication state;
-* login/logout state management;
-* clearing local data during logout.
+```mermaid
+flowchart LR
+    AuthStore["auth Pinia store"]
+    LocalStorage["localStorage"]
+    API["API Client"]
+    Backend["Fastify"]
+    JWT["JWT verification"]
 
-The token is stored in:
-
-```text
-localStorage
+    AuthStore --> LocalStorage
+    API --> AuthStore
+    API --> Backend
+    Backend --> JWT
 ```
 
-using the key:
+The frontend sends the token using:
 
-```text
-countrep.token
+```http
+Authorization: Bearer <token>
 ```
 
-During logout, the `WorkoutDatabase` IndexedDB database is also deleted.
+The backend extracts the authenticated user's ID from the JWT.
 
-The current flow is:
-
-```text
-Auth Store
-   │
-   ├── token
-   │
-   └── localStorage
-```
+The client therefore does not choose the owner of a workout.
 
 ---
 
-# 7. `useWorkouts`
+# 6. Local Persistence
 
-The composable:
+IndexedDB is the local persistence layer.
 
-```text
-composables/useWorkouts.ts
+Dexie is used as the IndexedDB abstraction.
+
+```mermaid
+flowchart TD
+    Application["Application"]
+    Repository["WorkoutRepository"]
+    Dexie["Dexie"]
+    IndexedDB[(IndexedDB)]
+
+    Application --> Repository
+    Repository --> Dexie
+    Dexie --> IndexedDB
 ```
 
-is currently the main entry point used by views to interact with workouts.
+The database is currently named:
 
-It exposes:
+```text
+WorkoutDatabase
+```
 
-```ts
+It contains:
+
+```text
 workouts
-loading
-loadWorkouts()
-createWorkout()
-sync()
-```
-
-Its current responsibilities are:
-
-1. maintain the reactive workout state;
-2. load workouts through the local repository;
-3. create workouts locally;
-4. trigger synchronization;
-5. listen for the browser coming back online;
-6. trigger synchronization when the composable is mounted.
-
-Architecture:
-
-```text
-useWorkouts
-    │
-    ├── reactive state
-    │
-    ├── WorkoutRepository
-    │
-    └── sync.ts
+syncState
 ```
 
 ---
 
-# 8. `WorkoutRepository`
+# 7. Workout Repository
 
-The repository was introduced to centralize IndexedDB access.
+The repository provides an abstraction over IndexedDB.
 
 File:
 
@@ -278,7 +261,7 @@ File:
 repositories/workoutRepository.ts
 ```
 
-It currently exposes:
+Current operations include:
 
 ```ts
 getAll()
@@ -288,59 +271,31 @@ getPending()
 saveSynced()
 ```
 
-Its responsibility is to encapsulate Dexie.
+The repository is deliberately unaware of Vue components.
 
-Architecture:
+Its responsibility is limited to local persistence.
 
-```text
-useWorkouts
-      │
-      ▼
-WorkoutRepository
-      │
-      ▼
-Dexie
-      │
-      ▼
-IndexedDB
+```mermaid
+flowchart LR
+    Composable["useWorkouts"]
+    Sync["Sync Service"]
+    Repository["WorkoutRepository"]
+    DB[(IndexedDB)]
+
+    Composable --> Repository
+    Sync --> Repository
+    Repository --> DB
 ```
 
-This separation means that higher-level layers no longer need to know about:
+This creates the following boundary:
 
-* Dexie;
-* `db.workouts`;
-* IndexedDB storage details.
+> Application code should interact with local workout data through the repository rather than directly through Dexie.
 
 ---
 
-# 9. Local IndexedDB
+# 8. Local Workout Model
 
-Current file:
-
-```text
-db.ts
-```
-
-The local database is implemented using Dexie.
-
-Database name:
-
-```text
-WorkoutDatabase
-```
-
-It currently contains two tables:
-
-```text
-workouts
-syncState
-```
-
----
-
-# 10. `LocalWorkout` Model
-
-The current local workout model is:
+The current local representation is:
 
 ```ts
 interface LocalWorkout {
@@ -356,46 +311,115 @@ interface LocalWorkout {
 }
 ```
 
-The field:
+The `syncStatus` property is local synchronization metadata.
 
-```ts
-syncStatus
-```
-
-is specific to local persistence and is currently used to determine whether a workout still needs to be synchronized.
-
-Possible states:
+Possible values are:
 
 ```text
 pending
 synced
 ```
 
+The model therefore combines:
+
+1. workout data;
+2. local synchronization state.
+
 ---
 
-# 11. IndexedDB Indexes
+# 9. Workout Creation Flow
 
-The `workouts` table is currently indexed by:
+Creating a workout follows the offline-first principle.
 
-```text
-id
-exercise
-date
-createdAt
-updatedAt
-syncStatus
+```mermaid
+sequenceDiagram
+    participant User
+    participant View as TodayView.vue
+    participant Composable as useWorkouts
+    participant Repository as WorkoutRepository
+    participant DB as IndexedDB
+    participant Sync as Sync Service
+    participant API as Backend API
+    participant Server as Fastify
+    participant PostgreSQL
+
+    User->>View: Enter workout
+    View->>Composable: createWorkout(workout)
+
+    Composable->>Repository: create(workout)
+    Repository->>DB: Save locally
+    DB-->>Repository: OK
+    Repository-->>Composable: Workout saved
+
+    Composable-->>View: Local save completed
+
+    Sync->>API: POST /api/workouts
+    API->>Server: HTTP request
+    Server->>PostgreSQL: INSERT workout
+    PostgreSQL-->>Server: OK
+    Server-->>API: 201 Created
+    API-->>Sync: Workout created
+
+    Sync->>Repository: update(id, synced)
+    Repository->>DB: Set syncStatus = synced
 ```
 
-This allows workouts to be queried by:
-
-* ID;
-* exercise;
-* date;
-* synchronization status.
+The local save does not depend on network availability.
 
 ---
 
-# 12. Synchronization
+# 10. Offline Behavior
+
+When the application is offline, the workout is still stored locally.
+
+```mermaid
+flowchart TD
+    User[User]
+    View[TodayView.vue]
+    Composable[useWorkouts]
+    Repository[WorkoutRepository]
+    DB[(IndexedDB)]
+
+    User --> View
+    View --> Composable
+    Composable --> Repository
+    Repository --> DB
+
+    DB --> Pending["syncStatus = pending"]
+```
+
+The network request may fail, but the local data remains available.
+
+When connectivity returns, pending workouts are synchronized.
+
+```mermaid
+sequenceDiagram
+    participant Browser
+    participant Composable as useWorkouts
+    participant Sync as Sync Service
+    participant Repository as WorkoutRepository
+    participant DB as IndexedDB
+    participant API as Backend API
+
+    Browser->>Composable: online event
+    Composable->>Sync: sync()
+
+    Sync->>Repository: getPending()
+    Repository->>DB: Query pending workouts
+    DB-->>Repository: Pending workouts
+    Repository-->>Sync: Pending workouts
+
+    loop For each pending workout
+        Sync->>API: POST workout
+        API-->>Sync: Success
+        Sync->>Repository: update(id, synced)
+        Repository->>DB: Mark as synced
+    end
+```
+
+---
+
+# 11. Synchronization Architecture
 
 Synchronization is currently implemented in:
 
@@ -403,7 +427,7 @@ Synchronization is currently implemented in:
 services/sync.ts
 ```
 
-It exposes three main functions:
+Main functions:
 
 ```ts
 syncWorkout()
@@ -411,241 +435,131 @@ syncPendingWorkouts()
 syncWorkoutsFromServer()
 ```
 
----
+The synchronization layer sits between local persistence and the remote API.
 
-# 13. Synchronizing a Workout
+```mermaid
+flowchart LR
+    Repository["WorkoutRepository"]
+    Sync["Sync Service"]
+    API["API Client"]
+    Backend["Fastify Backend"]
+    DB[(IndexedDB)]
 
-The current flow is:
+    DB --> Repository
+    Repository --> Sync
+    Sync --> API
+    API --> Backend
 
-```text
-LocalWorkout
-      │
-      ▼
-syncWorkout()
-      │
-      ▼
-createWorkout()
-      │
-      ▼
-Backend
-```
-
-When the server request succeeds:
-
-```text
-syncStatus:
-pending → synced
-```
-
-The local status is updated through:
-
-```ts
-workoutRepository.update(...)
+    Backend --> API
+    API --> Sync
+    Sync --> Repository
+    Repository --> DB
 ```
 
 ---
 
-# 14. Synchronizing Pending Workouts
+# 12. Pending Workout Synchronization
 
-`syncPendingWorkouts()`:
+Pending workouts are retrieved from IndexedDB using their local synchronization status.
 
-1. retrieves workouts where:
+```mermaid
+flowchart TD
+    Start["syncPendingWorkouts()"]
+    Query["Get workouts where syncStatus = pending"]
+    Workout["Pending workout"]
+    Send["POST /api/workouts"]
+    Success["Request succeeds"]
+    Failed["Request fails"]
+    Synced["Set syncStatus = synced"]
+    Retry["Keep syncStatus = pending"]
 
-```ts
-syncStatus === 'pending'
+    Start --> Query
+    Query --> Workout
+    Workout --> Send
+
+    Send --> Success
+    Send --> Failed
+
+    Success --> Synced
+    Failed --> Retry
 ```
 
-2. sends them to the backend one by one;
-3. marks successful workouts as `synced`;
-4. leaves failed workouts as `pending`.
-
-The current behavior is:
-
-```text
-IndexedDB
-   │
-   └── pending workouts
-           │
-           ▼
-     syncPendingWorkouts
-           │
-           ├── success → synced
-           │
-           └── error → remains pending
-```
+Failed workouts remain pending and can be retried during a future synchronization.
 
 ---
 
-# 15. Synchronizing From the Server
+# 13. Synchronization From the Server
 
-`syncWorkoutsFromServer()` calls:
+The frontend can retrieve workouts from the backend using:
 
-```text
+```http
 GET /api/workouts
 ```
 
-Each workout returned by the server is converted into a `LocalWorkout` and stored locally with:
+The returned workouts are stored locally.
 
-```ts
-syncStatus: 'synced'
-```
+```mermaid
+sequenceDiagram
+    participant Sync as Sync Service
+    participant API as API Client
+    participant Backend as Fastify
+    participant DB as PostgreSQL
+    participant Repository as WorkoutRepository
+    participant IndexedDB
 
-The flow is:
+    Sync->>API: getWorkouts()
+    API->>Backend: GET /api/workouts
+    Backend->>DB: SELECT user workouts
+    DB-->>Backend: Workouts
+    Backend-->>API: ApiWorkout[]
+    API-->>Sync: ApiWorkout[]
 
-```text
-Backend
-   │
-   ▼
-GET /api/workouts
-   │
-   ▼
-ApiWorkout[]
-   │
-   ▼
-LocalWorkout[]
-   │
-   ▼
-WorkoutRepository
-   │
-   ▼
-IndexedDB
+    loop For each workout
+        Sync->>Repository: saveSynced(workout)
+        Repository->>IndexedDB: put(workout)
+    end
 ```
 
 ---
 
-# 16. Frontend API Layer
+# 14. Frontend API Layer
 
-File:
+The current API layer is located in:
 
 ```text
 api/workouts.ts
 ```
 
-This module currently contains the HTTP operations related to workouts:
+It currently exposes:
 
 ```ts
 createWorkout()
 getWorkouts()
 ```
 
-It directly uses:
+The API layer is responsible for:
 
-```ts
-fetch()
-```
+* constructing HTTP requests;
+* adding authentication headers;
+* handling HTTP errors;
+* converting HTTP responses to application objects.
 
-and builds HTTP headers, including:
+Current dependency direction:
 
-```http
-Authorization: Bearer <token>
-```
-
-The API base URL comes from:
-
-```text
-VITE_API_URL
-```
-
----
-
-# 17. Complete Workout Creation Flow
-
-The current flow is:
-
-```text
-User
- │
- ▼
-TodayView.vue
- │
- ▼
-useWorkouts.createWorkout()
- │
- ▼
-WorkoutRepository.create()
- │
- ▼
-IndexedDB
- │
- ▼
-TodayView
- │
- ▼
-syncWorkout()
- │
- ▼
-api/workouts.ts
- │
- ▼
-HTTP POST
- │
- ▼
-Fastify
- │
- ▼
-PostgreSQL
-```
-
-The important property is that **local persistence happens before the network request**.
-
----
-
-# 18. Offline Behavior
-
-When the user is offline:
-
-```text
-User
- │
- ▼
-TodayView
- │
- ▼
-useWorkouts
- │
- ▼
-WorkoutRepository
- │
- ▼
-IndexedDB
-```
-
-The workout is stored locally with:
-
-```ts
-syncStatus: 'pending'
-```
-
-The API request fails, but this does not prevent the workout from existing locally.
-
-When the network comes back:
-
-```text
-online event
-     │
-     ▼
-useWorkouts.sync()
-     │
-     ▼
-syncPendingWorkouts()
-     │
-     ▼
-API
+```mermaid
+flowchart LR
+    Sync["Sync Service"] --> API["api/workouts.ts"]
+    API --> Fetch["fetch()"]
+    Fetch --> Backend["Fastify API"]
 ```
 
 ---
 
-# 19. Backend
+# 15. Backend Architecture
 
-The backend uses:
+The backend currently uses Fastify.
 
-```text
-Fastify
-```
-
-with PostgreSQL as the persistent data store.
-
-Current visible structure:
+Current structure:
 
 ```text
 backend/src/
@@ -660,93 +574,86 @@ backend/src/
     └── workouts.ts
 ```
 
----
+The current request flow is:
 
-# 20. `server.ts`
+```mermaid
+flowchart LR
+    Client["Frontend"]
+    Fastify["Fastify"]
+    Auth["verifyJWT"]
+    Routes["Workout Routes"]
+    PostgreSQL[(PostgreSQL)]
 
-The server:
-
-* initializes Fastify;
-* configures CORS;
-* enables logging;
-* exposes health-check endpoints;
-* registers routes;
-* starts the HTTP server.
-
-Workout routes are registered with:
-
-```ts
-app.register(workoutRoutes)
+    Client --> Fastify
+    Fastify --> Auth
+    Auth --> Routes
+    Routes --> PostgreSQL
 ```
 
 ---
 
-# 21. Backend Authentication
+# 16. Workout API
 
-Workout routes use:
-
-```ts
-verifyJWT
-```
-
-through:
-
-```ts
-app.addHook('onRequest', verifyJWT)
-```
-
-The `userId` is therefore extracted server-side from the JWT.
-
-The client does not determine the owner of a workout.
-
-The flow is:
-
-```text
-JWT
- │
- ▼
-verifyJWT
- │
- ▼
-request.userId
- │
- ▼
-PostgreSQL
-```
-
----
-
-# 22. Workout Routes
-
-The backend currently exposes:
+The workout API currently exposes:
 
 ```http
 POST /api/workouts
 GET  /api/workouts
 ```
 
-### POST
+Both endpoints are protected by JWT authentication.
 
-The server:
+```mermaid
+flowchart TD
+    Request["HTTP Request"]
+    JWT["JWT"]
+    Verify["verifyJWT"]
+    UserId["request.userId"]
+    Route["Workout Route"]
+    DB[(PostgreSQL)]
 
-1. retrieves `userId` from the JWT;
-2. reads the request body;
-3. inserts the workout into PostgreSQL;
-4. returns the created workout.
+    Request --> JWT
+    JWT --> Verify
+    Verify --> UserId
+    UserId --> Route
+    Route --> DB
+```
 
-### GET
-
-The server:
-
-1. retrieves `userId` from the JWT;
-2. retrieves the user's workouts;
-3. returns them to the frontend.
+The server obtains the user ID from the authenticated token rather than trusting a `userId` supplied by the client.
 
 ---
 
-# 23. PostgreSQL
+# 17. Backend Workout Creation
 
-The database currently contains:
+The current backend flow is:
+
+```mermaid
+sequenceDiagram
+    participant Client as Frontend API
+    participant Fastify
+    participant Auth as verifyJWT
+    participant Route as /api/workouts
+    participant DB as PostgreSQL
+
+    Client->>Fastify: POST /api/workouts
+    Fastify->>Auth: Verify JWT
+    Auth-->>Fastify: request.userId
+
+    Fastify->>Route: Handle request
+    Route->>DB: INSERT workout
+    DB-->>Route: Inserted
+
+    Route->>DB: SELECT workout
+    DB-->>Route: Workout
+
+    Route-->>Client: 201 + ApiWorkout
+```
+
+---
+
+# 18. PostgreSQL Data Model
+
+The current PostgreSQL database contains:
 
 ```text
 users
@@ -754,282 +661,379 @@ user_devices
 workouts
 ```
 
-Main relationship:
+The main relationships are:
 
-```text
-users
-  │
-  └──< workouts
+```mermaid
+erDiagram
+    USERS ||--o{ WORKOUTS : owns
+    USERS ||--o{ USER_DEVICES : has
+
+    USERS {
+        uuid id PK
+        varchar name
+        timestamptz created_at
+    }
+
+    WORKOUTS {
+        uuid id PK
+        uuid user_id FK
+        varchar exercise
+        date date
+        integer reps
+        varchar mode
+        timestamptz created_at
+        timestamptz updated_at
+        timestamptz deleted_at
+    }
+
+    USER_DEVICES {
+        serial id PK
+        uuid user_id FK
+        text credential_id
+        bytea credential_public_key
+        bigint counter
+        text[] transports
+    }
 ```
 
-A workout belongs to a user through:
+A workout belongs to exactly one user through:
 
 ```text
-workouts.user_id
-        ↓
-users.id
+workouts.user_id → users.id
 ```
 
 ---
 
-# 24. PostgreSQL `workouts` Model
+# 19. Workout Data Representations
 
-The table currently contains:
+A workout currently exists in several representations.
 
-```text
-id
-user_id
-exercise
-date
-reps
-mode
-created_at
-updated_at
-deleted_at
+```mermaid
+flowchart LR
+    Local["LocalWorkout"]
+    API["ApiWorkout"]
+    PostgreSQL["PostgreSQL workout"]
+
+    Local -->|"Synchronization"| API
+    API -->|"HTTP / persistence"| PostgreSQL
 ```
 
-It includes:
+### Local representation
 
-```sql
-PRIMARY KEY (id)
-```
+Used by IndexedDB:
 
-and:
-
-```sql
-FOREIGN KEY (user_id)
-REFERENCES users(id)
-```
-
-Therefore workouts are isolated per user at the database level.
-
----
-
-# 25. Overall Data Model
-
-There are currently three main representations of a workout:
-
-```text
+```ts
 LocalWorkout
-     │
-     │ synchronization
-     ▼
-ApiWorkout
-     │
-     │ HTTP
-     ▼
-PostgreSQL workout
 ```
 
-### `LocalWorkout`
+It contains local metadata such as:
 
-Representation used by IndexedDB.
-
-It contains local synchronization metadata such as:
-
-```text
+```ts
 syncStatus
 ```
 
-### `ApiWorkout`
+### API representation
 
-Representation used by the HTTP API.
+Used by the HTTP API:
+
+```ts
+ApiWorkout
+```
 
 It additionally contains:
 
-```text
+```ts
 userId
 ```
 
-### PostgreSQL
+### PostgreSQL representation
 
-Persistent server-side representation.
-
-Dates are stored using PostgreSQL date/timestamp types and converted to the API representation when returned.
+Stored in the `workouts` table.
 
 ---
 
-# 26. Current Architectural Boundaries
+# 20. Logout and Local Data
 
-The current architecture now has several clear boundaries:
+When the user logs out, the authentication store clears the authentication token and deletes the local workout database.
+
+```mermaid
+flowchart TD
+    Logout["User logs out"]
+    Auth["auth store"]
+    Token["Remove JWT from localStorage"]
+    DB["Delete WorkoutDatabase"]
+    IndexedDB[(IndexedDB)]
+
+    Logout --> Auth
+    Auth --> Token
+    Auth --> DB
+    DB --> IndexedDB
+```
+
+This prevents locally cached workout data from remaining on the device after logout.
+
+---
+
+# 21. Current Architectural Boundaries
+
+The current frontend architecture can be summarized as:
+
+```mermaid
+flowchart TD
+    UI["Views / Components"]
+    Application["Composables"]
+    Local["WorkoutRepository"]
+    Storage["IndexedDB"]
+    Sync["Sync Service"]
+    API["API Client"]
+    Backend["Fastify Backend"]
+    Database["PostgreSQL"]
+
+    UI --> Application
+    Application --> Local
+    Local --> Storage
+
+    Application --> Sync
+    Sync --> Local
+    Sync --> API
+
+    API --> Backend
+    Backend --> Database
+```
+
+The main boundaries are:
+
+### UI boundary
+
+Views and components should not directly access persistence or HTTP.
+
+### Local persistence boundary
+
+`WorkoutRepository` encapsulates IndexedDB/Dexie.
+
+### Synchronization boundary
+
+`Sync Service` coordinates local and remote data.
+
+### API boundary
+
+The API layer encapsulates HTTP communication.
+
+### Backend boundary
+
+Fastify routes authenticate requests and persist data in PostgreSQL.
+
+---
+
+# 22. Current Strengths
+
+The current architecture already provides several useful properties.
+
+## Offline-first persistence
+
+A workout can be created without a network connection.
+
+## Local-first user experience
+
+The UI does not need to wait for the server before displaying the newly created workout.
+
+## Local persistence abstraction
+
+IndexedDB access is progressively isolated behind a repository.
+
+## Server-side ownership
+
+The backend determines the authenticated user from the JWT.
+
+## Retry behavior
+
+Failed synchronization does not delete the local workout.
+
+## Clear frontend responsibilities
+
+The application is beginning to separate:
 
 ```text
 UI
- │
- ▼
-Composables
- │
- ▼
-Repository
- │
- ▼
-IndexedDB
-```
-
-and:
-
-```text
+Application logic
+Persistence
 Synchronization
- │
- ├── Repository
- │
- └── API
+HTTP
 ```
-
-and:
-
-```text
-API
- │
- ▼
-Fastify Routes
- │
- ▼
-PostgreSQL
-```
-
-The most important boundary introduced so far is:
-
-```text
-Application code
-      │
-      ▼
-WorkoutRepository
-      │
-      ▼
-IndexedDB / Dexie
-```
-
-This means IndexedDB is now an implementation detail of the repository rather than something the UI and composables access directly.
 
 ---
 
-# 27. Current Limitations
+# 23. Current Limitations
 
-The architecture is functional, but several areas are intentionally still simple.
+The architecture is functional, but several areas are still intentionally simple.
 
-### Synchronization
+## Synchronization
 
-The current synchronization strategy:
+The current synchronization mechanism:
 
-* downloads all workouts;
-* does not use `SyncState.lastSync`;
-* has no explicit conflict resolution;
-* has no explicit versioning;
-* does not yet implement a dedicated outbox;
-* does not distinguish all types of retryable/permanent errors.
+* retrieves all workouts from the server;
+* does not currently use `syncState.lastSync`;
+* has no explicit conflict resolution strategy;
+* has no versioning mechanism;
+* has no dedicated outbox abstraction;
+* does not distinguish all retryable and permanent errors.
 
-### API layer
+## API layer
 
-The API layer currently performs its own:
+The API layer currently uses `fetch()` directly.
 
-```text
-fetch
-headers
-authentication
-response handling
-```
+There is not yet a shared HTTP client responsible for common concerns such as:
 
-There is no shared HTTP client yet.
+* authentication;
+* error normalization;
+* request handling;
+* retries;
+* network detection.
 
-### Backend
+## Backend
 
-Workout routes currently contain:
+Workout routes currently combine:
 
-* HTTP handling;
+* HTTP request handling;
 * request extraction;
-* SQL;
+* SQL queries;
 * response mapping.
 
-There is not yet a separate service/repository layer on the backend.
+There is not yet a dedicated backend service/repository layer.
 
-### Domain model
+## Domain model
 
-`LocalWorkout`, `ApiWorkout`, and the PostgreSQL representation are still closely related.
+`LocalWorkout`, `ApiWorkout`, and the PostgreSQL representation remain relatively close to each other.
 
-There is not yet a formal domain model separating these representations.
+There is not yet a strongly separated domain model.
 
 ---
 
-# 28. Current Architecture Diagram
+# 24. Current Architecture at a Glance
 
-The current system can therefore be summarized as:
+The complete current architecture can be represented as:
 
-```text
-                         FRONTEND
-┌─────────────────────────────────────────────────────────┐
-│                                                         │
-│  TodayView.vue                                          │
-│       │                                                 │
-│       ▼                                                 │
-│  useWorkouts                                            │
-│       │                                                 │
-│       ▼                                                 │
-│  WorkoutRepository ────────────────┐                   │
-│       │                             │                   │
-│       ▼                             │                   │
-│   IndexedDB                         │                   │
-│                                     │                   │
-│                                     ▼                   │
-│                                services/sync            │
-│                                     │                   │
-│                              ┌──────┴──────┐            │
-│                              ▼             ▼            │
-│                         Repository     API client       │
-│                                            │            │
-└────────────────────────────────────────────┼────────────┘
-                                             │
-                                             │ HTTP
-                                             ▼
-                         BACKEND
-┌─────────────────────────────────────────────────────────┐
-│                                                         │
-│  Fastify                                                │
-│     │                                                   │
-│     ▼                                                   │
-│  JWT Authentication                                     │
-│     │                                                   │
-│     ▼                                                   │
-│  /api/workouts                                          │
-│     │                                                   │
-│     ▼                                                   │
-│  PostgreSQL                                             │
-│                                                         │
-└─────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph Client["Client — Vue 3"]
+        Views["Views"]
+        Components["Components"]
+        Composables["Composables"]
+        Stores["Pinia Stores"]
+        Repository["WorkoutRepository"]
+        IndexedDB[(IndexedDB)]
+        Sync["Sync Service"]
+        API["API Client"]
+        LocalStorage[(localStorage)]
+    end
+
+    subgraph Server["Server — Fastify"]
+        JWT["JWT Middleware"]
+        Routes["HTTP Routes"]
+        ServerDB["Database Access"]
+    end
+
+    PostgreSQL[(PostgreSQL)]
+
+    Views --> Components
+    Views --> Composables
+    Components --> Stores
+    Composables --> Repository
+    Repository --> IndexedDB
+
+    Composables --> Sync
+    Sync --> Repository
+    Sync --> API
+
+    Stores --> LocalStorage
+    API --> JWT
+    JWT --> Routes
+    Routes --> ServerDB
+    ServerDB --> PostgreSQL
 ```
 
 ---
 
-# 29. Architectural Direction
+# 25. Architectural Direction
 
-The current architecture should be considered a **working intermediate state**.
+The current architecture should be considered a **working intermediate architecture**, rather than a final target architecture.
 
-The most important structural improvement already made is the introduction of:
+The introduction of the `WorkoutRepository` is an important first step because it establishes a clear boundary around local persistence.
 
-```text
-WorkoutRepository
+Possible future improvements include:
+
+```mermaid
+flowchart LR
+    Current["Current Architecture"]
+
+    HTTP["Shared HTTP Client"]
+    SyncEngine["Dedicated Sync Engine"]
+    Incremental["Incremental Synchronization"]
+    Outbox["Explicit Outbox"]
+    Conflict["Conflict / Version Handling"]
+    BackendServices["Backend Service / Repository Layers"]
+
+    Current --> HTTP
+    HTTP --> SyncEngine
+    SyncEngine --> Incremental
+    Incremental --> Outbox
+    Outbox --> Conflict
+    Conflict --> BackendServices
 ```
 
-which establishes a clear boundary around local persistence.
+These elements are **not yet implemented** and should be introduced incrementally as the application grows.
 
-The next architectural improvements can be introduced incrementally without rewriting the application.
+---
 
-The likely next steps are:
+# 26. Architectural Principle
+
+The most important architectural principle of CountRep is:
 
 ```text
-1. Shared HTTP client
-        ↓
-2. Better separation of synchronization
-        ↓
-3. Dedicated SyncEngine
-        ↓
-4. Incremental synchronization
-        ↓
-5. Idempotent mutations
-        ↓
-6. Conflict/version handling
-        ↓
-7. Backend service/repository separation
+                    ┌───────────────┐
+                    │      UI       │
+                    └───────┬───────┘
+                            │
+                            ▼
+                    ┌───────────────┐
+                    │   Application │
+                    │     Logic     │
+                    └───────┬───────┘
+                            │
+                            ▼
+                    ┌───────────────┐
+                    │     Local     │
+                    │   Repository  │
+                    └───────┬───────┘
+                            │
+                            ▼
+                    ┌───────────────┐
+                    │   IndexedDB   │
+                    └───────────────┘
+
+                       ↑
+                       │
+                 Synchronization
+                       │
+                       ▼
+
+                    ┌───────────────┐
+                    │     API       │
+                    └───────┬───────┘
+                            │
+                            ▼
+                    ┌───────────────┐
+                    │    Fastify    │
+                    └───────┬───────┘
+                            │
+                            ▼
+                    ┌───────────────┐
+                    │  PostgreSQL   │
+                    └───────────────┘
 ```
 
-These are future architectural improvements and are **not yet part of the current implementation**.
+The local database is therefore not merely a cache.
+
+It is an important part of the application's operational data flow.
+
+The server acts as the persistent shared backend, while the client maintains a locally usable representation that can continue to operate without connectivity.
