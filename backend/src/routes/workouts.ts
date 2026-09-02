@@ -18,6 +18,7 @@ export async function workoutRoutes(app: FastifyInstance) {
       id: string
       exercise: string
       date: string
+      workoutTime: string
       reps: number
       mode: string
       createdAt: number
@@ -32,6 +33,7 @@ export async function workoutRoutes(app: FastifyInstance) {
         user_id,
         exercise,
         date,
+        workout_time,
         reps,
         mode,
         created_at,
@@ -45,11 +47,12 @@ export async function workoutRoutes(app: FastifyInstance) {
         $4,
         $5,
         $6,
-        to_timestamp($7 / 1000.0),
+        $7,
         to_timestamp($8 / 1000.0),
+        to_timestamp($9 / 1000.0),
         CASE
-          WHEN $9::bigint IS NULL THEN NULL
-          ELSE to_timestamp($9::bigint / 1000.0)
+          WHEN $10::bigint IS NULL THEN NULL
+          ELSE to_timestamp($10::bigint / 1000.0)
         END
       )
       `,
@@ -58,6 +61,7 @@ export async function workoutRoutes(app: FastifyInstance) {
         userId,
         body.exercise,
         body.date,
+        body.workoutTime,
         body.reps,
         body.mode,
         body.createdAt,
@@ -73,6 +77,7 @@ export async function workoutRoutes(app: FastifyInstance) {
         user_id,
         exercise,
         date::text AS date,
+        workout_time::text AS workout_time,
         reps,
         mode,
         created_at,
@@ -92,6 +97,7 @@ export async function workoutRoutes(app: FastifyInstance) {
       userId: workout.user_id,
       exercise: workout.exercise,
       date: workout.date,
+      workoutTime: workout.workout_time,
       reps: workout.reps,
       mode: workout.mode,
       createdAt: new Date(workout.created_at).getTime(),
@@ -116,6 +122,7 @@ export async function workoutRoutes(app: FastifyInstance) {
         user_id,
         exercise,
         date::text AS date,
+        workout_time::text AS workout_time,
         reps,
         mode,
         created_at,
@@ -123,7 +130,7 @@ export async function workoutRoutes(app: FastifyInstance) {
         deleted_at
       FROM workouts
       WHERE user_id = $1
-      ORDER BY date ASC, created_at ASC
+      ORDER BY date ASC, workout_time ASC
       `,
       [userId]
     )
@@ -133,6 +140,7 @@ export async function workoutRoutes(app: FastifyInstance) {
       userId: workout.user_id,
       exercise: workout.exercise,
       date: workout.date,
+      workoutTime: workout.workout_time,
       reps: workout.reps,
       mode: workout.mode,
       createdAt: new Date(workout.created_at).getTime(),
@@ -155,6 +163,7 @@ export async function workoutRoutes(app: FastifyInstance) {
       reps?: number
       exercise?: string
       date?: string
+      workoutTime?: string
       mode?: string
       updatedAt: number
     }
@@ -166,15 +175,17 @@ export async function workoutRoutes(app: FastifyInstance) {
         reps = COALESCE($1, reps),
         exercise = COALESCE($2, exercise),
         date = COALESCE($3, date),
-        mode = COALESCE($4, mode),
-        updated_at = to_timestamp($5 / 1000.0)
-      WHERE id = $6
-        AND user_id = $7
+        workout_time = COALESCE($4, workout_time),
+        mode = COALESCE($5, mode),
+        updated_at = to_timestamp($6 / 1000.0)
+      WHERE id = $7
+        AND user_id = $8
       RETURNING
         id,
         user_id,
         exercise,
         date::text AS date,
+        workout_time::text AS workout_time,
         reps,
         mode,
         created_at,
@@ -185,6 +196,7 @@ export async function workoutRoutes(app: FastifyInstance) {
         body.reps ?? null,
         body.exercise ?? null,
         body.date ?? null,
+        body.workoutTime ?? null,
         body.mode ?? null,
         body.updatedAt,
         id,
@@ -205,6 +217,7 @@ export async function workoutRoutes(app: FastifyInstance) {
       userId: workout.user_id,
       exercise: workout.exercise,
       date: workout.date,
+      workoutTime: workout.workout_time,
       reps: workout.reps,
       mode: workout.mode,
       createdAt: new Date(workout.created_at).getTime(),
@@ -214,6 +227,10 @@ export async function workoutRoutes(app: FastifyInstance) {
         : null
     })
   })
+
+  // ============================================================
+  // DELETE
+  // ============================================================
 
   app.delete('/api/workouts/:id', async (request, reply) => {
     const userId = request.userId

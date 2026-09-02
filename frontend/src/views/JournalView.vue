@@ -17,6 +17,9 @@ const PAGE_SIZE = 30
 const visibleCount = ref(PAGE_SIZE)
 const editingWorkoutId = ref<string | null>(null)
 const openMenuId = ref<string | null>(null)
+// ============================================================
+// WORKOUTS FILTRÉS ET TRIÉS
+// ============================================================
 
 const filteredWorkouts = computed(() => {
   let result = workouts.value.filter(w => !w.deletedAt)
@@ -27,13 +30,16 @@ const filteredWorkouts = computed(() => {
     )
   }
 
-  // Tri par date du workout, puis par heure de création.
+  // Tri par date du workout,
+  // puis par heure du workout.
+  //
+  // Les workouts les plus récents apparaissent en premier.
   return [...result].sort((a, b) => {
     if (a.date !== b.date) {
       return b.date.localeCompare(a.date)
     }
 
-    return b.createdAt - a.createdAt
+    return b.workoutTime.localeCompare(a.workoutTime)
   })
 })
 
@@ -51,15 +57,10 @@ const loadMore = () => {
   visibleCount.value += PAGE_SIZE
 }
 
-/**
- * Heure réelle de création du workout.
- */
-const formatTime = (timestamp: number) => {
-  return new Date(timestamp).toLocaleTimeString('fr-FR', {
-    hour: '2-digit',
-    minute: '2-digit'
-  })
-}
+
+// ============================================================
+// DATE
+// ============================================================
 
 /**
  * Date locale actuelle au format YYYY-MM-DD.
@@ -112,6 +113,29 @@ const formatDay = (date: string) => {
   })
 }
 
+
+// ============================================================
+// AFFICHAGE HEURE
+// ============================================================
+
+/**
+ * Retourne l'heure métier du workout.
+ *
+ * workoutTime est stocké au format HH:mm.
+ */
+const formatWorkoutTime = (workoutTime: string) => {
+  if (!workoutTime) {
+    return '--:--'
+  }
+
+  return workoutTime.slice(0, 5)
+}
+
+
+// ============================================================
+// JOURNAL
+// ============================================================
+
 /**
  * Indique si le workout est le premier de sa journée.
  */
@@ -135,6 +159,11 @@ const dayTotal = (date: string) => {
     .reduce((total, w) => total + w.reps, 0)
 }
 
+
+// ============================================================
+// MENU
+// ============================================================
+
 /**
  * Ouvre / ferme le menu d'un workout.
  */
@@ -152,6 +181,11 @@ const handleDocumentClick = () => {
   openMenuId.value = null
 }
 
+
+// ============================================================
+// ÉDITION
+// ============================================================
+
 const startEdit = (id: string) => {
   openMenuId.value = null
   editingWorkoutId.value = id
@@ -168,12 +202,21 @@ const saveEdit = async (workout: LocalWorkout) => {
     return
   }
 
+  if (!workout.workoutTime) {
+    return
+  }
+
   await updateWorkout(workout.id, {
-    reps
+    reps,
+    workoutTime: workout.workoutTime
   })
 
   editingWorkoutId.value = null
 }
+
+// ============================================================
+// SUPPRESSION
+// ============================================================
 
 const handleDeleteWorkout = async (workout: LocalWorkout) => {
   openMenuId.value = null
@@ -187,9 +230,11 @@ const handleDeleteWorkout = async (workout: LocalWorkout) => {
   await deleteWorkout(workout.id)
 }
 
-/**
- * Infinite scroll.
- */
+
+// ============================================================
+// INFINITE SCROLL
+// ============================================================
+
 const handleScroll = () => {
   const scrollPosition = window.innerHeight + window.scrollY
   const threshold = document.documentElement.scrollHeight - 500
@@ -210,18 +255,30 @@ onUnmounted(() => {
 })
 </script>
 
+
 <template>
+
   <div class="pb-24">
 
-    <!-- En-tête -->
+    <!-- ========================================================
+         EN-TÊTE
+    ========================================================= -->
+
     <header class="px-5 pt-6 pb-4">
       <h1 class="text-2xl font-bold tracking-tight text-gray-900">
         Journal
       </h1>
     </header>
 
-    <!-- Filtre exercice -->
+    <!-- ========================================================
+         FILTRE EXERCICE
+    ========================================================= -->
     <ExerciseSelector :required="false" />
+
+
+    <!-- ========================================================
+         JOURNAL
+    ========================================================= -->
 
     <main class="px-5 mt-4">
 
@@ -254,7 +311,10 @@ onUnmounted(() => {
           :key="workout.id"
         >
 
-          <!-- Séparateur de journée -->
+          <!-- ==================================================
+               SÉPARATEUR DE JOURNÉE
+          ================================================== -->
+
           <div
             v-if="isFirstOfDay(index)"
             class="flex items-center justify-between pt-2"
@@ -270,7 +330,11 @@ onUnmounted(() => {
             </span>
           </div>
 
-          <!-- Workout -->
+
+          <!-- ==================================================
+               WORKOUT
+          ================================================== -->
+
           <article
             class="relative bg-amber-50/40 border border-amber-100/80 rounded-2xl overflow-visible"
             :class="{
@@ -278,19 +342,27 @@ onUnmounted(() => {
             }"
           >
 
-            <!-- Mode édition -->
+            <!-- ==================================================
+                 MODE ÉDITION
+            ================================================== -->
+
             <div
               v-if="editingWorkoutId === workout.id"
               class="p-4"
             >
               <div class="flex items-center gap-3">
 
-                <span class="text-sm text-gray-500 w-12">
-                  {{ formatTime(workout.createdAt) }}
-                </span>
+                <!-- Heure -->
+                <input
+                  v-model="workout.workoutTime"
+                  type="time"
+                  class="w-[76px] shrink-0 rounded-lg border border-amber-200 bg-white px-2 py-1.5 text-sm font-semibold text-gray-700 outline-none focus:border-amber-500"
+                />
 
-                <div class="flex-1">
-                  <div class="font-semibold text-gray-800">
+                <!-- Exercice + reps -->
+                <div class="flex-1 min-w-0">
+
+                  <div class="font-semibold text-gray-800 truncate">
                     {{ workout.exercise }}
                   </div>
 
@@ -303,7 +375,8 @@ onUnmounted(() => {
                   />
                 </div>
 
-                <div class="flex flex-col gap-2">
+                <!-- Actions -->
+                <div class="flex flex-col gap-2 shrink-0">
                   <button
                     class="text-xs font-bold text-amber-600"
                     @click="saveEdit(workout)"
@@ -322,17 +395,21 @@ onUnmounted(() => {
               </div>
             </div>
 
-            <!-- Mode normal -->
+
+            <!-- ==================================================
+                 MODE NORMAL
+            ================================================== -->
+
             <div
               v-else
               class="flex items-center gap-3 px-4 py-1"
             >
 
-              <!-- Heure -->
+              <!-- Heure du workout -->
               <span
                 class="text-sm font-medium text-gray-400 w-12 shrink-0"
               >
-                {{ formatTime(workout.createdAt) }}
+                {{ formatWorkoutTime(workout.workoutTime) }}
               </span>
 
               <!-- Exercice -->
@@ -353,7 +430,11 @@ onUnmounted(() => {
                 </span>
               </span>
 
-              <!-- Menu -->
+
+              <!-- ==================================================
+                   MENU
+              ================================================== -->
+
               <div class="relative">
 
                 <button
@@ -369,6 +450,7 @@ onUnmounted(() => {
                   class="absolute right-0 top-7 z-50 w-32 bg-white border border-gray-100 rounded-xl shadow-lg overflow-hidden"
                 >
 
+                  <!-- Modifier -->
                   <button
                     class="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-amber-50"
                     @click="startEdit(workout.id)"
@@ -376,6 +458,7 @@ onUnmounted(() => {
                     ✏️ Modifier
                   </button>
 
+                  <!-- Supprimer -->
                   <button
                     class="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50"
                     @click="handleDeleteWorkout(workout)"
@@ -392,7 +475,11 @@ onUnmounted(() => {
 
         </template>
 
-        <!-- Chargement / fin -->
+
+        <!-- ======================================================
+             CHARGEMENT / FIN
+        ======================================================= -->
+
         <div class="py-5 text-center">
 
           <button

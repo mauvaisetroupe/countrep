@@ -1,6 +1,11 @@
 import type { LocalWorkout } from '../db'
 import { workoutRepository } from '../repositories/workoutRepository'
-import { createWorkout, updateWorkout, deleteWorkout, getWorkouts } from '../api/workouts'
+import {
+  createWorkout,
+  updateWorkout,
+  deleteWorkout,
+  getWorkouts
+} from '../api/workouts'
 
 export async function syncWorkout(
   workout: LocalWorkout
@@ -10,6 +15,7 @@ export async function syncWorkout(
     id: workout.id,
     exercise: workout.exercise,
     date: workout.date,
+    workoutTime: workout.workoutTime,
     reps: workout.reps,
     mode: workout.mode,
     createdAt: workout.createdAt,
@@ -60,6 +66,7 @@ export async function syncWorkoutsFromServer(): Promise<void> {
         id: workout.id,
         exercise: workout.exercise,
         date: workout.date,
+        workoutTime: workout.workoutTime,
         reps: workout.reps,
         mode: workout.mode,
         createdAt: workout.createdAt,
@@ -83,6 +90,7 @@ export async function syncUpdatedWorkout(
     id: workout.id,
     exercise: workout.exercise,
     date: workout.date,
+    workoutTime: workout.workoutTime,
     reps: workout.reps,
     mode: workout.mode,
     createdAt: workout.createdAt,

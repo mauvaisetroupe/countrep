@@ -5,6 +5,7 @@ export interface ApiWorkout {
   userId?: string
   exercise: string
   date: string
+  workoutTime: string
   reps: number
   mode: 'add' | 'set'
   createdAt: number

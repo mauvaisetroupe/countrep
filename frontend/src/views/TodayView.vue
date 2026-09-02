@@ -23,6 +23,15 @@ const realYear = now.getFullYear()
 const realMonthIndex = now.getMonth()
 const realDay = now.getDate()
 
+// Heure actuelle
+const getCurrentTime = () => {
+  const date = new Date()
+
+  return `${String(date.getHours()).padStart(2, '0')}:${String(
+    date.getMinutes()
+  ).padStart(2, '0')}`
+}
+
 // Formater une date au format YYYY-MM-DD
 const formatDate = (
   year: number,
@@ -186,6 +195,10 @@ const showModal = ref(false)
 
 const repsValue = ref('')
 
+// Heure du workout
+// Par défaut : heure actuelle
+const workoutTime = ref(getCurrentTime())
+
 // ============================================================
 // WORKOUTS
 // ============================================================
@@ -269,25 +282,30 @@ const saveWorkout = async () => {
   if (!repsNum || isNaN(repsNum)) {
     return
   }
-  const now = Date.now()
+  const timestamp = Date.now()
 
   const workout: LocalWorkout = {
     id: crypto.randomUUID(),
     exercise: exerciseStore.selectedExercise,
     date: selectedDate.value,
+    workoutTime: workoutTime.value,
     reps: repsNum,
     mode: 'add',
-    createdAt: now,
-    updatedAt: now,
+    createdAt: timestamp,
+    updatedAt: timestamp,
     deletedAt: null,
     syncStatus: 'pending',
     syncOperation: 'create'
   }
-  
+
   await createWorkout(workout)
 
   showModal.value = false
   repsValue.value = ''
+
+  // Pour le prochain ajout :
+  // on repart sur l'heure actuelle
+  workoutTime.value = getCurrentTime()
 
   try {
     await syncWorkout(workout)
@@ -313,7 +331,6 @@ const saveWorkout = async () => {
     </h1>
   </header>
 
-
   <!-- ========================================================
        SÉLECTEUR D'EXERCICES
   ========================================================= -->
@@ -331,11 +348,11 @@ const saveWorkout = async () => {
          CALENDRIER
     ====================================================== -->
 
-      <section
-        class="bg-amber-50/40 border border-amber-100/80 rounded-3xl p-5 shadow-xs touch-pan-y"
-        @touchstart="handleTouchStart"
-        @touchend="handleTouchEnd"
-      >
+    <section
+      class="bg-amber-50/40 border border-amber-100/80 rounded-3xl p-5 shadow-xs touch-pan-y"
+      @touchstart="handleTouchStart"
+      @touchend="handleTouchEnd"
+    >
       <!-- En-tête du calendrier -->
       <div class="flex justify-between items-center mb-4">
 
@@ -385,11 +402,6 @@ const saveWorkout = async () => {
 
       <!-- ====================================================
            JOURS DU MOIS
-           
-           IMPORTANT :
-           Chaque case possède une hauteur fixe.
-           L'espace réservé aux reps existe même lorsqu'il
-           n'y a aucune répétition.
       ===================================================== -->
 
       <div class="grid grid-cols-7 gap-y-1 text-center text-sm">
@@ -401,11 +413,11 @@ const saveWorkout = async () => {
 
             <!-- Jour -->
             <button @click="
-              selectedDate = formatDate(
-                currentYear,
-                currentMonthIndex,
-                day
-              )
+                selectedDate = formatDate(
+                  currentYear,
+                  currentMonthIndex,
+                  day
+                )
               " :class="[
                 'w-9 h-9 flex items-center justify-center rounded-full font-medium transition-all',
 
@@ -428,11 +440,7 @@ const saveWorkout = async () => {
             </button>
             <!-- =================================================
                  REPETITIONS
-
-                 On garde TOUJOURS une hauteur de 14px.
-                 Cela empêche les jours avec reps de décaler
-                 verticalement le calendrier.
-            ================================================== -->
+            ================================================= -->
             <span class="h-[14px] text-[10px] font-bold text-amber-600 leading-[14px] mt-0.5">
               {{ repsByDay[day] || '' }}
             </span>
@@ -443,17 +451,23 @@ const saveWorkout = async () => {
 
   </main>
 
-  <!-- Bouton d'action flottant (FAB) -->
+  <!-- ========================================================
+       BOUTON D'ACTION FLOTTANT (FAB)
+  ========================================================= -->
+
   <div class="fixed bottom-20 right-5 z-10">
     <button
       @click="showModal = true"
       class="bg-amber-200 text-amber-950 font-semibold px-5 py-3.5 rounded-full shadow-lg flex items-center gap-2 border border-amber-300/60 active:scale-95 transition-transform"
-      >
+    >
       <span>⚡</span> Add {{ exerciseStore.selectedExercise }}
     </button>
   </div>
 
-  <!-- MODALE D'AJOUT -->
+  <!-- ========================================================
+       MODALE D'AJOUT
+  ========================================================= -->
+
   <div v-if="showModal" class="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
     <div class="bg-[#fdf8f5] w-full max-w-md rounded-t-[32px] sm:rounded-3xl p-6 shadow-2xl space-y-6 border border-amber-100 animate-in fade-in slide-in-from-bottom duration-200">
 
@@ -478,6 +492,30 @@ const saveWorkout = async () => {
         {{ selectedDate }}
       </div>
 
+      <!-- ==================================================
+           HEURE DU WORKOUT
+      ================================================== -->
+
+      <div
+        class="relative border-2 border-amber-600/70 rounded-2xl bg-white px-4 py-3 flex items-center gap-3 shadow-xs"
+      >
+
+        <span class="absolute -top-3 left-4 bg-white px-1.5 text-xs font-semibold text-amber-700">
+          Heure
+        </span>
+
+        <span class="text-amber-600">
+          🕐
+        </span>
+
+        <input
+          type="time"
+          v-model="workoutTime"
+          class="w-full bg-transparent text-lg font-semibold text-gray-900 focus:outline-none"
+        />
+
+      </div>
+
       <!-- Question -->
       <p class="text-sm font-medium text-gray-800 text-center">
         Combien de {{ exerciseStore.selectedExercise }} avez-vous fait ?
@@ -487,13 +525,13 @@ const saveWorkout = async () => {
       <div class="relative border-2 border-amber-600/70 rounded-2xl bg-white px-4 py-3 flex items-center gap-3 shadow-xs">
         <span class="absolute -top-3 left-4 bg-white px-1.5 text-xs font-semibold text-amber-700">Nombre</span>
         <span class="text-amber-600">⚡</span>
-        <input 
+        <input
           type="number"
           v-model="repsValue"
           placeholder="Entrez un nombre"
           min="1"
           class="w-full bg-transparent text-lg font-semibold text-gray-900 focus:outline-none placeholder:text-gray-300"
-          />
+        />
       </div>
 
       <!-- Ajout rapide -->
