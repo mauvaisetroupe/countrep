@@ -59,3 +59,37 @@ export async function loginUser(username: string) {
 
   return verification;
 }
+
+export async function addDevice(token: string) {
+  const res = await fetch(`${API_URL}/api/auth/add-device-challenge`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+
+  if (!res.ok) {
+    const errData = await res.json();
+    throw new Error(errData.error || "Échec de la création du challenge.");
+  }
+
+  const optionsJSON = await res.json();
+  const cred = await startRegistration({ optionsJSON });
+
+  const verificationRes = await fetch(`${API_URL}/api/auth/add-device`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({ cred })
+  });
+
+  const verification = await verificationRes.json();
+
+  if (!verification.verified) {
+    throw new Error(verification.error || "L'ajout de l'appareil a échoué.");
+  }
+
+  return verification;
+}

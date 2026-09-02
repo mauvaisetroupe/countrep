@@ -8,6 +8,7 @@ import {
 } from '@simplewebauthn/server'
 import { pool } from '../db.js'
 import jwt from 'jsonwebtoken'
+import { verifyJWT } from '../middleware/auth.js'
 
 const rpName = 'CountRep App'
 // Récupérez les valeurs depuis les variables d'environnement avec des replis pour le local
@@ -179,6 +180,104 @@ export async function authRoutes(fastify: FastifyInstance) {
         const token = jwt.sign({ userId }, JWT_SECRET, { expiresIn: '7d' })
         return { verified: true, token }
       }
+      return { verified: false }
+    } catch (error: any) {
+      return reply.code(400).send({ error: error.message })
+    }
+  })
+
+  fastify.post('/api/auth/add-device-challenge', { preHandler: verifyJWT }, async (request, reply) => {
+    const userId = request.userId
+
+    if (!userId) {
+      return reply.code(401).send({ error: 'Utilisateur non authentifié' })
+    }
+
+    const userResult = await pool.query(
+      'SELECT id, name FROM users WHERE id = $1',
+      [userId]
+    )
+
+    if (userResult.rows.length === 0) {
+      return reply.code(404).send({ error: 'Utilisateur inconnu' })
+    }
+
+    const user = userResult.rows[0]
+
+    const devicesRes = await pool.query(
+      'SELECT credential_id, transports FROM user_devices WHERE user_id = $1',
+      [userId]
+    )
+
+    const options = await generateRegistrationOptions({
+      rpName,
+      rpID,
+      userID: Buffer.from(userId),
+      userName: user.name,
+      excludeCredentials: devicesRes.rows.map((dev: any) => ({
+        id: dev.credential_id,
+        type: 'public-key',
+        transports: dev.transports,
+      })),
+    })
+
+    currentChallenges.set(`add-device:${userId}`, options.challenge)
+
+    return options
+  })
+
+  fastify.post('/api/auth/add-device', { preHandler: verifyJWT }, async (request, reply) => {
+    const userId = request.userId
+
+    if (!userId) {
+      return reply.code(401).send({ error: 'Utilisateur non authentifié' })
+    }
+
+    const { cred } = request.body as { cred: any }
+
+    if (!cred) {
+      return reply.code(400).send({ error: 'Credential manquante' })
+    }
+
+    const challengeKey = `add-device:${userId}`
+    const expectedChallenge = currentChallenges.get(challengeKey)
+
+    if (!expectedChallenge) {
+      return reply.code(400).send({ error: 'Contexte invalide' })
+    }
+
+    try {
+      const verification = await verifyRegistrationResponse({
+        response: cred,
+        expectedChallenge,
+        expectedOrigin,
+        expectedRPID: rpID,
+      })
+
+      if (verification.verified && verification.registrationInfo) {
+        const { credential } = verification.registrationInfo
+
+        await pool.query(
+          `INSERT INTO user_devices (user_id, credential_id, credential_public_key, counter, transports)
+           VALUES ($1, $2, $3, $4, $5)
+           ON CONFLICT (credential_id) DO NOTHING`,
+          [
+            userId,
+            credential.id,
+            Buffer.from(credential.publicKey),
+            credential.counter,
+            credential.transports || [],
+          ]
+        )
+
+        currentChallenges.delete(challengeKey)
+
+        return {
+          verified: true,
+          credentialId: credential.id,
+        }
+      }
+
       return { verified: false }
     } catch (error: any) {
       return reply.code(400).send({ error: error.message })
