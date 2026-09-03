@@ -248,19 +248,31 @@ onMounted(() => {
             {{ exercise.nameFr }}
           </p>
 
-          <div class="mt-0.5 flex items-center gap-2">
-            <p class="text-xs text-gray-400">
-              {{ exercise.nameEn }}
-            </p>
+        <div class="mt-0.5 flex items-center gap-2">
+          <p class="text-xs text-gray-400">
+            {{ exercise.nameEn }}
+          </p>
 
-            <span
-              v-if="getWorkoutCount(exercise.id) > 0"
-              class="text-[10px] font-semibold text-amber-600"
-            >
-              {{ getWorkoutCount(exercise.id) }}
-              {{ getWorkoutCount(exercise.id) === 1 ? 'séance' : 'séances' }}
-            </span>
-          </div>
+          <span
+            v-if="getWorkoutCount(exercise.id) > 0"
+            class="text-[10px] font-semibold text-amber-600"
+          >
+            {{ getWorkoutCount(exercise.id) }}
+            {{ getWorkoutCount(exercise.id) === 1 ? 'séance' : 'séances' }}
+          </span>
+
+          <a
+            v-if="exercise.liftmanualUrl"
+            :href="exercise.liftmanualUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="ml-auto shrink-0 text-xs font-semibold text-amber-600 hover:text-amber-700"
+            title="Voir l'exercice sur Lift Manual"
+            @click.stop
+          >
+            Guide
+          </a>
+        </div>
         </div>
 
         <div

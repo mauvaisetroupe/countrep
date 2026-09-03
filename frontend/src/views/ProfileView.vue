@@ -248,12 +248,6 @@ const decodedToken = computed(() => {
           {{ error }}
         </p>
         
-        <!-- =====================================================
-            MES EXERCICES
-        ====================================================== -->
-
-        <UserExercises />
-
         <!-- Déconnexion / Changer de profil -->
         <button
           @click="logout"
@@ -261,6 +255,12 @@ const decodedToken = computed(() => {
         >
           Se déconnecter
         </button>
+
+        <!-- =====================================================
+            MES EXERCICES
+        ====================================================== -->
+
+        <UserExercises />
 
       </section>
 

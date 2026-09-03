@@ -82,7 +82,7 @@ onMounted(() => {
           : 'bg-white text-gray-700 border border-gray-200/60'
       ]"
     >
-      <span>{{ ex.nameFr }}</span>
+      <span>{{ ex.id }}</span>
     </button>
   </div>
 
