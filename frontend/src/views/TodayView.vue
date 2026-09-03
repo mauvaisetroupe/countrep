@@ -6,6 +6,7 @@ import { syncWorkout } from '../services/sync'
 import { useExerciseStore } from '../stores/exercise'
 import type { LocalWorkout } from '../db'
 import { getUserExercises, type UserExercise } from '../api/exercises'
+import TodayCalendar from '../components/TodayCalendar.vue'
 
 const exerciseStore = useExerciseStore()
 const userExercises = ref<UserExercise[]>([])
@@ -40,10 +41,6 @@ const loadUserExercises = async () => {
 
 const now = new Date()
 
-// Mois actuellement affiché
-const currentYear = ref(now.getFullYear())
-const currentMonthIndex = ref(now.getMonth())
-
 // Date réelle d'aujourd'hui
 const realYear = now.getFullYear()
 const realMonthIndex = now.getMonth()
@@ -72,146 +69,6 @@ const selectedDate = ref(
   formatDate(realYear, realMonthIndex, realDay)
 )
 
-// Nom du mois affiché
-const currentMonth = computed(() => {
-  const dateObj = new Date(
-    currentYear.value,
-    currentMonthIndex.value,
-    1
-  )
-
-  return new Intl.DateTimeFormat('fr-FR', {
-    month: 'long',
-    year: 'numeric'
-  }).format(dateObj)
-})
-
-// Jours de la semaine
-const daysOfWeek = [
-  'Mon',
-  'Tue',
-  'Wed',
-  'Thu',
-  'Fri',
-  'Sat',
-  'Sun'
-]
-
-// Jours du mois avec les espaces nécessaires
-// pour commencer le mois un lundi
-const daysInMonth = computed(() => {
-  let firstDayIndex = new Date(
-    currentYear.value,
-    currentMonthIndex.value,
-    1
-  ).getDay()
-
-  // Conversion pour commencer la semaine par lundi
-  // Dimanche devient 6
-  firstDayIndex = firstDayIndex === 0
-    ? 6
-    : firstDayIndex - 1
-
-  // Nombre de jours du mois
-  const totalDays = new Date(
-    currentYear.value,
-    currentMonthIndex.value + 1,
-    0
-  ).getDate()
-
-  return [
-    ...Array(firstDayIndex).fill(null),
-    ...Array.from(
-      { length: totalDays },
-      (_, i) => i + 1
-    )
-  ]
-})
-
-// Mois précédent
-const prevMonth = () => {
-  if (currentMonthIndex.value === 0) {
-    currentMonthIndex.value = 11
-    currentYear.value--
-  } else {
-    currentMonthIndex.value--
-  }
-
-  // On sélectionne le premier jour du nouveau mois
-  selectedDate.value = formatDate(
-    currentYear.value,
-    currentMonthIndex.value,
-    1
-  )
-}
-
-// Mois suivant
-const nextMonth = () => {
-  if (currentMonthIndex.value === 11) {
-    currentMonthIndex.value = 0
-    currentYear.value++
-  } else {
-    currentMonthIndex.value++
-  }
-
-  // On sélectionne le premier jour du nouveau mois
-  selectedDate.value = formatDate(
-    currentYear.value,
-    currentMonthIndex.value,
-    1
-  )
-}
-
-// ============================================================
-// SWIPE CALENDRIER
-// ============================================================
-
-const touchStartX = ref(0)
-const touchStartY = ref(0)
-
-const handleTouchStart = (event: TouchEvent) => {
-  const touch = event.touches[0]
-
-  touchStartX.value = touch.clientX
-  touchStartY.value = touch.clientY
-}
-
-const handleTouchEnd = (event: TouchEvent) => {
-  const touch = event.changedTouches[0]
-
-  const deltaX = touch.clientX - touchStartX.value
-  const deltaY = touch.clientY - touchStartY.value
-
-  // On ignore les mouvements principalement verticaux
-  if (Math.abs(deltaX) < Math.abs(deltaY)) {
-    return
-  }
-
-  // Distance minimale pour considérer qu'il s'agit d'un swipe
-  if (Math.abs(deltaX) < 50) {
-    return
-  }
-
-  if (deltaX < 0) {
-    // Swipe vers la gauche → mois suivant
-    nextMonth()
-  } else {
-    // Swipe vers la droite → mois précédent
-    prevMonth()
-  }
-}
-
-// Retour à aujourd'hui
-const goToToday = () => {
-  currentYear.value = realYear
-  currentMonthIndex.value = realMonthIndex
-
-  selectedDate.value = formatDate(
-    realYear,
-    realMonthIndex,
-    realDay
-  )
-}
 
 // ============================================================
 // MODALE
@@ -241,58 +98,6 @@ const {
   createWorkout,
   loadWorkouts
 } = useWorkouts()
-
-
-// ============================================================
-// REPETITIONS PAR JOUR
-// ============================================================
-
-
-
-const getLocalDateKey = (date: string): string => {
-  // Date locale déjà au format YYYY-MM-DD
-  if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-    return date
-  }
-
-  // Date ISO provenant de PostgreSQL
-  const parsed = new Date(date)
-
-  return formatDate(
-    parsed.getFullYear(),
-    parsed.getMonth(),
-    parsed.getDate()
-  )
-}
-
-// Retourne le total des reps pour chaque jour du mois
-// pour l'exercice actuellement sélectionné.
-const repsByDay = computed<Record<number, number>>(() => {
-  const totals: Record<number, number> = {}
-
-  workouts.value
-    .filter(
-      workout =>
-        workout.exercise === exerciseStore.selectedExercise
-    )
-    .forEach(workout => {
-
-      const dateKey = getLocalDateKey(workout.date)
-
-      const [year, month, day] = dateKey
-        .split('-')
-        .map(Number)
-
-      if (
-        year === currentYear.value &&
-        month === currentMonthIndex.value + 1
-      ) {
-        totals[day] = (totals[day] || 0) + workout.reps
-      }
-    })
-
-  return totals
-})
 
 
 // ============================================================
@@ -383,106 +188,12 @@ loadUserExercises()
         CALENDRIER
     ====================================================== -->
 
-    <section
-      class="bg-amber-50/40 border border-amber-100/80 rounded-3xl p-5 shadow-xs touch-pan-y"
-      @touchstart="handleTouchStart"
-      @touchend="handleTouchEnd"
-    >
-      <!-- En-tête du calendrier -->
-      <div class="flex justify-between items-center mb-4">
-
-        <h2 class="text-lg font-bold capitalize text-gray-800">
-          {{ currentMonth }}
-        </h2>
-
-        <div class="flex gap-1">
-
-          <!-- Mois précédent -->
-          <button @click="prevMonth"
-            class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-amber-200/50 text-gray-700 transition-colors"
-            aria-label="Mois précédent">
-            ‹
-          </button>
-
-          <!-- Aujourd'hui -->
-          <button @click="goToToday"
-            class="px-2 h-8 flex items-center justify-center rounded-full hover:bg-amber-200/50 text-xs font-semibold text-gray-700 transition-colors">
-            Aujourd'hui
-          </button>
-
-          <!-- Mois suivant -->
-          <button @click="nextMonth"
-            class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-amber-200/50 text-gray-700 transition-colors"
-            aria-label="Mois suivant">
-            ›
-          </button>
-
-        </div>
-
-      </div>
-
-
-      <!-- ====================================================
-          JOURS DE LA SEMAINE
-      ===================================================== -->
-
-      <div class="grid grid-cols-7 text-center text-xs font-semibold text-gray-400 mb-2">
-
-        <span v-for="day in daysOfWeek" :key="day">
-          {{ day }}
-        </span>
-
-      </div>
-
-
-      <!-- ====================================================
-          JOURS DU MOIS
-      ===================================================== -->
-
-      <div class="grid grid-cols-7 gap-y-1 text-center text-sm">
-
-        <div v-for="(day, index) in daysInMonth" :key="index" class="flex justify-center items-center">
-
-          <!-- Case d'un jour -->
-          <div v-if="day" class="flex flex-col items-center h-[54px]">
-
-            <!-- Jour -->
-            <button @click="
-              selectedDate = formatDate(
-                currentYear,
-                currentMonthIndex,
-                day
-              )
-              " :class="[
-                'w-9 h-9 flex items-center justify-center rounded-full font-medium transition-all',
-
-                selectedDate === formatDate(
-                  currentYear,
-                  currentMonthIndex,
-                  day
-                )
-                  ? 'bg-amber-600 text-white font-bold shadow-sm'
-
-                  : (
-                    day === realDay &&
-                    currentMonthIndex === realMonthIndex &&
-                    currentYear === realYear
-                  )
-                    ? 'border border-amber-600 text-gray-900'
-                    : 'text-gray-700 hover:bg-amber-100/50'
-              ]">
-              {{ day }}
-            </button>
-            <!-- =================================================
-                REPETITIONS
-            ================================================= -->
-            <span class="h-[14px] text-[10px] font-bold text-amber-600 leading-[14px] mt-0.5">
-              {{ repsByDay[day] || '' }}
-            </span>
-          </div>
-        </div>
-      </div>
-    </section>
+    <TodayCalendar
+      :workouts="workouts"
+      :selected-date="selectedDate"
+      :selected-exercise="exerciseStore.selectedExercise"
+      @update:selected-date="selectedDate = $event"
+    />
 
   </main>
 
