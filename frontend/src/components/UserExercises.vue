@@ -8,6 +8,7 @@ import {
   type ApiExercise,
   type UserExercise
 } from '../api/exercises'
+import { useWorkouts } from '../composables/useWorkouts'
 
 const MAX_EXERCISES = 6
 
@@ -22,13 +23,47 @@ const error = ref('')
 const saveMessage = ref('')
 
 const selectedExerciseIds = ref<string[]>([])
+const searchQuery = ref('')
+
+const { workouts } = useWorkouts()
 
 const selectedCount = computed(() => {
   return selectedExerciseIds.value.length
 })
 
+const filteredExercises = computed(() => {
+  const query = searchQuery.value.trim().toLowerCase()
+
+  if (!query) {
+    return exercises.value
+  }
+
+  return exercises.value.filter(exercise =>
+    exercise.nameFr.toLowerCase().includes(query) ||
+    exercise.nameEn.toLowerCase().includes(query)
+  )
+})
+
+const workoutCountByExercise = computed<Record<string, number>>(() => {
+  const counts: Record<string, number> = {}
+
+  workouts.value.forEach(workout => {
+    if (workout.deletedAt) {
+      return
+    }
+
+    counts[workout.exercise] = (counts[workout.exercise] || 0) + 1
+  })
+
+  return counts
+})
+
+const getWorkoutCount = (exerciseId: string) => {
+  return workoutCountByExercise.value[exerciseId] || 0
+}
+
 const hasChanges = computed(() => {
-  const currentIds = userExercises.value
+  const currentIds = [...userExercises.value]
     .sort((a, b) => a.position - b.position)
     .map(exercise => exercise.id)
 
@@ -129,14 +164,11 @@ onMounted(() => {
 
 <template>
   <section class="mt-5 pt-4 border-t border-gray-100">
-
     <div class="flex items-start justify-between gap-3">
-
       <div>
         <p class="text-sm font-semibold text-gray-800">
           Mes exercices
         </p>
-
         <p class="mt-1 text-xs text-gray-500">
           Choisissez jusqu'à {{ MAX_EXERCISES }} exercices à afficher
           dans Today et Journal.
@@ -153,10 +185,23 @@ onMounted(() => {
       >
         {{ selectedCount }} / {{ MAX_EXERCISES }}
       </div>
-
     </div>
 
-    <!-- Chargement -->
+    <div class="relative mt-4">
+      <span
+        class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+      >
+        🔎
+      </span>
+
+      <input
+        v-model="searchQuery"
+        type="search"
+        placeholder="Rechercher un exercice..."
+        class="w-full bg-white border border-gray-200 rounded-2xl pl-10 pr-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+      />
+    </div>
+
     <p
       v-if="loading"
       class="mt-4 text-sm text-gray-500"
@@ -164,7 +209,6 @@ onMounted(() => {
       Chargement des exercices...
     </p>
 
-    <!-- Erreur -->
     <p
       v-else-if="error"
       class="mt-4 text-sm text-red-600"
@@ -172,14 +216,19 @@ onMounted(() => {
       {{ error }}
     </p>
 
-    <!-- Catalogue -->
+    <p
+      v-else-if="filteredExercises.length === 0"
+      class="mt-4 text-sm text-gray-500 text-center"
+    >
+      Aucun exercice trouvé.
+    </p>
+
     <div
       v-else
       class="mt-4 space-y-2"
     >
-
       <button
-        v-for="exercise in exercises"
+        v-for="exercise in filteredExercises"
         :key="exercise.id"
         type="button"
         :disabled="
@@ -194,17 +243,24 @@ onMounted(() => {
         "
         @click="toggleExercise(exercise.id)"
       >
-
         <div class="min-w-0">
-
           <p class="text-sm font-medium text-gray-800">
             {{ exercise.nameFr }}
           </p>
 
-          <p class="mt-0.5 text-xs text-gray-400">
-            {{ exercise.nameEn }}
-          </p>
+          <div class="mt-0.5 flex items-center gap-2">
+            <p class="text-xs text-gray-400">
+              {{ exercise.nameEn }}
+            </p>
 
+            <span
+              v-if="getWorkoutCount(exercise.id) > 0"
+              class="text-[10px] font-semibold text-amber-600"
+            >
+              {{ getWorkoutCount(exercise.id) }}
+              {{ getWorkoutCount(exercise.id) === 1 ? 'séance' : 'séances' }}
+            </span>
+          </div>
         </div>
 
         <div
@@ -224,17 +280,14 @@ onMounted(() => {
           >
             <path
               fill-rule="evenodd"
-              d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-7.25 9a.75.75 0 0 1-1.127.075l-4.25-4a.75.75 0 1 1 1.03-1.09l3.658 3.443 6.722-8.34a.75.75 0 0 1 1.074-.14Z"
+              d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-7.25 9a.75.75 0 0 1-1.127.075l-4.25-4a.75.75 0 1 1 1.03-1.09l3.658 3.443 6.722-8.34a.75.75 0 0 1 1.074-.14.75.75 0 0 1 .14 1.074Z"
               clip-rule="evenodd"
             />
           </svg>
         </div>
-
       </button>
-
     </div>
 
-    <!-- Maximum atteint -->
     <p
       v-if="selectedCount === MAX_EXERCISES"
       class="mt-3 text-xs text-gray-500"
@@ -242,7 +295,6 @@ onMounted(() => {
       Maximum de {{ MAX_EXERCISES }} exercices sélectionnés.
     </p>
 
-    <!-- Sauvegarde -->
     <button
       type="button"
       :disabled="!hasChanges || saving"
@@ -252,13 +304,11 @@ onMounted(() => {
       {{ saving ? 'Enregistrement...' : 'Enregistrer' }}
     </button>
 
-    <!-- Succès -->
     <p
       v-if="saveMessage"
       class="mt-2 text-center text-sm text-green-600"
     >
       {{ saveMessage }}
     </p>
-
   </section>
 </template>
