@@ -30,15 +30,24 @@ const loadExercises = async () => {
     } else {
       const catalog = await getExercises()
 
-      const workoutExerciseIds = new Set(
-        workouts.value
-          .filter(workout => !workout.deletedAt)
-          .map(workout => workout.exercise)
-      )
+      const workoutReps = new Map<string, number>()
 
-      exercises.value = catalog.filter(
-        exercise => workoutExerciseIds.has(exercise.id)
-      )
+      workouts.value
+        .filter(workout => !workout.deletedAt)
+        .forEach(workout => {
+          workoutReps.set(
+            workout.exercise,
+            (workoutReps.get(workout.exercise) ?? 0) + workout.reps
+          )
+        })
+
+      exercises.value = catalog
+        .filter(exercise => workoutReps.has(exercise.id))
+        .sort(
+          (a, b) =>
+            (workoutReps.get(b.id) ?? 0) -
+            (workoutReps.get(a.id) ?? 0)
+        )
     }
 
     const currentExists = exercises.value.some(
