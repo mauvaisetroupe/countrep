@@ -257,7 +257,7 @@ const decodedToken = computed(() => {
       </section>
 
       <div class="mt-8 text-center text-xs text-gray-400">
-        Build : {{ gitHash }}
+        Build :: {{ gitHash }}
      </div>
 
     </main>
