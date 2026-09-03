@@ -22,8 +22,7 @@ export default defineConfig({
     vue(),
 
     VitePWA({
-      registerType: 'autoUpdate',
-
+      registerType: 'prompt',
       manifest: {
         id: '/',
         name: 'CountRep',
