@@ -201,6 +201,7 @@ const workoutTime = ref(getCurrentTime())
 
 const openAddModal = () => {
   workoutTime.value = getCurrentTime()
+  console.log(workoutTime.value)
   repsValue.value = ''
   showModal.value = true
 }
