@@ -168,8 +168,7 @@ const decodedToken = computed(() => {
            PROFIL ACTIF (CONNECTÉ)
       ====================================================== -->
 
-      <section
-        v-else
+      <section v-if="authStore.isAuthenticated"
         class="bg-white border border-gray-200/80 rounded-3xl p-5 shadow-xs"
       >
 
@@ -259,6 +258,12 @@ const decodedToken = computed(() => {
         <!-- =====================================================
             MES EXERCICES
         ====================================================== -->
+
+      </section>
+
+      <section v-if="authStore.isAuthenticated"
+        class="bg-white border border-gray-200/80 rounded-3xl p-5 shadow-xs"
+      >
 
         <UserExercises />
 
