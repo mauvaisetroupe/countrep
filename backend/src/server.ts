@@ -4,6 +4,7 @@ import { pool } from './db.js'
 import { userRoutes } from './routes/users.js'
 import { workoutRoutes } from './routes/workouts.js'
 import { authRoutes } from './routes/auth.js'
+import { exerciseRoutes } from './routes/exercises.js'
 
 const app = Fastify({
   logger: true
@@ -15,7 +16,7 @@ await app.register(cors, {
     'http://192.168.1.109:5173',
     process.env.EXPECTED_ORIGIN || 'https://countrep.architech.lu'
   ],
-  methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
 })
@@ -38,6 +39,7 @@ app.get('/api/health/db', async () => {
 app.register(userRoutes)
 app.register(workoutRoutes)
 app.register(authRoutes)
+app.register(exerciseRoutes)
 
 const start = async () => {
   try {

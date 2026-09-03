@@ -5,6 +5,9 @@ GRANT SELECT, INSERT, UPDATE, DELETE
 ON TABLE users, workouts, user_devices
 TO countrep_app;
 
+GRANT SELECT ON TABLE exercises TO countrep_app;
+GRANT SELECT, INSERT, DELETE ON TABLE user_exercises TO countrep_app;
+
 // 2026-09-02
 ALTER TABLE public.workouts
 ADD COLUMN workout_time time;

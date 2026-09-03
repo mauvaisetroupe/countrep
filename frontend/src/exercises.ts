@@ -1,12 +1,25 @@
-export interface Exercise {
-  name: string
-  shortName: string
-  icon: string
-}
+import { ref } from 'vue'
+import { defineStore } from 'pinia'
 
-export const exercises: Exercise[] = [
-  { name: 'high-bar-inverted-row', shortName: 'Rowing', icon: '↓' },
-  { name: 'biceps-curl-band', shortName: 'Curl', icon: '↓' },
-  { name: 'incline-push-up',  shortName: 'PushUp', icon: '↑' },
-  { name: 'support-hold', shortName: 'Hold', icon: '⏺' },
-]
+const STORAGE_KEY = 'workout_selected_exercise'
+
+export const useExerciseStore = defineStore('exercise', () => {
+  const selectedExercise = ref<string | null>(
+    localStorage.getItem(STORAGE_KEY)
+  )
+
+  const setExercise = (id: string | null) => {
+    selectedExercise.value = id
+
+    if (id) {
+      localStorage.setItem(STORAGE_KEY, id)
+    } else {
+      localStorage.removeItem(STORAGE_KEY)
+    }
+  }
+
+  return {
+    selectedExercise,
+    setExercise
+  }
+})

@@ -2,6 +2,8 @@
 import { ref, computed } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import { registerUser, loginUser, addDevice } from '../services/auth'
+import UserExercises from '../components/UserExercises.vue'
+
 
 const authStore = useAuthStore()
 
@@ -245,6 +247,12 @@ const decodedToken = computed(() => {
         >
           {{ error }}
         </p>
+        
+        <!-- =====================================================
+            MES EXERCICES
+        ====================================================== -->
+
+        <UserExercises />
 
         <!-- Déconnexion / Changer de profil -->
         <button
