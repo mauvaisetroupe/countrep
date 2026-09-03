@@ -204,7 +204,7 @@ const openAddModal = () => {
   repsValue.value = ''
   showModal.value = true
 }
-  
+
 // ============================================================
 // WORKOUTS
 // ============================================================
@@ -463,7 +463,7 @@ const saveWorkout = async () => {
 
   <div class="fixed bottom-20 right-5 z-10">
     <button
-      @click="showModal = true"
+      @click="openAddModal"
       class="bg-amber-200 text-amber-950 font-semibold px-5 py-3.5 rounded-full shadow-lg flex items-center gap-2 border border-amber-300/60 active:scale-95 transition-transform"
     >
       <span>⚡</span> Add {{ exerciseStore.selectedExercise }}
@@ -555,8 +555,7 @@ const saveWorkout = async () => {
 
       <!-- Boutons de validation -->
       <div class="flex gap-3 pt-2">
-        <button @click="openAddModal"
-
+        <button @click="showModal = false"
           class="flex-1 bg-transparent hover:bg-gray-100 text-gray-700 font-semibold py-3.5 rounded-2xl transition-colors">
           Annuler
         </button>
