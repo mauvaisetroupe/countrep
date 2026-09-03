@@ -212,8 +212,11 @@ const monthChartData = computed(() => {
     </header>
 
     <!-- Sélecteur d'exercices -->
-    <ExerciseSelector :required="false"/>
-
+    <ExerciseSelector
+      :required="false"
+      source="workouts"
+    />
+    
     <main class="px-5 mt-4 space-y-4">
       
       <!-- Carte Graphique "30 derniers jours" -->

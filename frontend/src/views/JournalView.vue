@@ -273,7 +273,10 @@ onUnmounted(() => {
     <!-- ========================================================
          FILTRE EXERCICE
     ========================================================= -->
-    <ExerciseSelector :required="false" />
+    <ExerciseSelector
+      :required="false"
+      source="workouts"
+    />
 
 
     <!-- ========================================================

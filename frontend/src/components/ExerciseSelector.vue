@@ -1,29 +1,46 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useExerciseStore } from '../stores/exercise'
-import { getUserExercises, type UserExercise } from '../api/exercises'
+import { getExercises, getUserExercises, type ApiExercise, type UserExercise } from '../api/exercises'
+import { useWorkouts } from '../composables/useWorkouts'
 
 const props = withDefaults(
   defineProps<{
     required?: boolean
+    source?: 'user' | 'workouts'
   }>(),
   {
-    required: true
+    required: true,
+    source: 'user'
   }
 )
 
 const exerciseStore = useExerciseStore()
+const { workouts } = useWorkouts()
 
-const exercises = ref<UserExercise[]>([])
+const exercises = ref<ApiExercise[]>([])
 const loading = ref(false)
 
 const loadExercises = async () => {
   loading.value = true
 
   try {
-    exercises.value = await getUserExercises()
+    if (props.source === 'user') {
+      exercises.value = await getUserExercises()
+    } else {
+      const catalog = await getExercises()
 
-    // L'exercice actuellement mémorisé existe-t-il encore ?
+      const workoutExerciseIds = new Set(
+        workouts.value
+          .filter(workout => !workout.deletedAt)
+          .map(workout => workout.exercise)
+      )
+
+      exercises.value = catalog.filter(
+        exercise => workoutExerciseIds.has(exercise.id)
+      )
+    }
+
     const currentExists = exercises.value.some(
       exercise => exercise.id === exerciseStore.selectedExercise
     )
@@ -94,9 +111,9 @@ onMounted(() => {
   </p>
 
   <p
-    v-else-if="!loading"
+    v-else-if="!loading && !props.required"
     class="px-5 text-sm font-medium text-gray-400 mt-0.5"
   >
-    Aucun exercice sélectionné
+    Tous les exercices
   </p>
 </template>
