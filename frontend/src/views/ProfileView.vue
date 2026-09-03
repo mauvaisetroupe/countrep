@@ -5,6 +5,8 @@ import { registerUser, loginUser, addDevice } from '../services/auth'
 
 const authStore = useAuthStore()
 
+const gitHash = __GIT_HASH__
+
 const name = ref('')
 const loading = ref(false)
 const error = ref('')
@@ -253,6 +255,10 @@ const decodedToken = computed(() => {
         </button>
 
       </section>
+
+      <div class="mt-8 text-center text-xs text-gray-400">
+        Build {{ gitHash }}
+     </div>
 
     </main>
 

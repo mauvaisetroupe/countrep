@@ -1,7 +1,20 @@
+import { execSync } from 'node:child_process'
 import { fileURLToPath, URL } from 'node:url'
 import vue from '@vitejs/plugin-vue'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
+
+const gitHash = execSync('git rev-parse --short HEAD').toString().trim()
+
+console.log('GIT HASH:', gitHash)
+
+function getGitHash(): string {
+  try {
+    return execSync('git rev-parse --short HEAD').toString().trim()
+  } catch {
+    return 'dev'
+  }
+}
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -38,10 +51,13 @@ export default defineConfig({
             purpose: 'any'
           }
         ]
-
       }
     })
   ],
+
+  define: {
+    __GIT_HASH__: JSON.stringify(getGitHash())
+  },
 
   resolve: {
     alias: {
