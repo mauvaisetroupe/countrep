@@ -144,15 +144,22 @@ const toggleExercise = (exerciseId: string) => {
 }
 
 const startDrag = (
-  exerciseId: string,
-  event: PointerEvent,
-  element: HTMLElement
+  id: string,
+  event: PointerEvent
 ) => {
-  if (event.button !== undefined && event.button !== 0) {
+  const target = event.currentTarget
+
+  if (!(target instanceof HTMLElement)) {
     return
   }
 
-  draggedExerciseId.value = exerciseId
+  const element = target.parentElement
+
+  if (!(element instanceof HTMLElement)) {
+    return
+  }
+
+  draggedExerciseId.value = id
   draggedElement.value = element
   dragPointerId.value = event.pointerId
   dragStartY.value = event.clientY
@@ -378,7 +385,7 @@ onUnmounted(() => {
           type="button"
           class="shrink-0 text-gray-300 hover:text-gray-500 text-lg leading-none touch-none select-none cursor-grab active:cursor-grabbing"
           aria-label="Déplacer cet exercice"
-          @pointerdown="startDrag(exercise.id, $event, $event.currentTarget.parentElement as HTMLElement)"
+          @pointerdown="startDrag(exercise.id, $event)"
         >
           ⋮⋮
         </button>
