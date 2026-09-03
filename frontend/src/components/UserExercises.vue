@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import {
   getExercises,
@@ -25,22 +25,39 @@ const saveMessage = ref('')
 const selectedExerciseIds = ref<string[]>([])
 const searchQuery = ref('')
 
+const draggedExerciseId = ref<string | null>(null)
+const draggedElement = ref<HTMLElement | null>(null)
+const dragPointerId = ref<number | null>(null)
+const dragStartY = ref(0)
+const isDragging = ref(false)
+
 const { workouts } = useWorkouts()
 
 const selectedCount = computed(() => {
   return selectedExerciseIds.value.length
 })
 
+const selectedExercises = computed(() => {
+  return selectedExerciseIds.value
+    .map(id => exercises.value.find(exercise => exercise.id === id))
+    .filter((exercise): exercise is ApiExercise => !!exercise)
+})
+
 const filteredExercises = computed(() => {
   const query = searchQuery.value.trim().toLowerCase()
 
   if (!query) {
-    return exercises.value
+    return exercises.value.filter(
+      exercise => !selectedExerciseIds.value.includes(exercise.id)
+    )
   }
 
   return exercises.value.filter(exercise =>
-    exercise.nameFr.toLowerCase().includes(query) ||
-    exercise.nameEn.toLowerCase().includes(query)
+    !selectedExerciseIds.value.includes(exercise.id) &&
+    (
+      exercise.nameFr.toLowerCase().includes(query) ||
+      exercise.nameEn.toLowerCase().includes(query)
+    )
   )
 })
 
@@ -126,6 +143,113 @@ const toggleExercise = (exerciseId: string) => {
   selectedExerciseIds.value.push(exerciseId)
 }
 
+const startDrag = (
+  exerciseId: string,
+  event: PointerEvent,
+  element: HTMLElement
+) => {
+  if (event.button !== undefined && event.button !== 0) {
+    return
+  }
+
+  draggedExerciseId.value = exerciseId
+  draggedElement.value = element
+  dragPointerId.value = event.pointerId
+  dragStartY.value = event.clientY
+  isDragging.value = true
+
+  element.setPointerCapture(event.pointerId)
+
+  event.preventDefault()
+}
+
+const moveDrag = (event: PointerEvent) => {
+  if (
+    !isDragging.value ||
+    !draggedExerciseId.value ||
+    dragPointerId.value !== event.pointerId
+  ) {
+    return
+  }
+
+  event.preventDefault()
+
+  const elements = Array.from(
+    document.querySelectorAll<HTMLElement>('[data-selected-exercise]')
+  )
+
+  const target = elements.find(element => {
+    if (element === draggedElement.value) {
+      return false
+    }
+
+    const rect = element.getBoundingClientRect()
+
+    return (
+      event.clientY >= rect.top &&
+      event.clientY <= rect.bottom
+    )
+  })
+
+  if (!target) {
+    return
+  }
+
+  const targetExerciseId = target.dataset.selectedExercise
+
+  if (!targetExerciseId) {
+    return
+  }
+
+  const fromIndex = selectedExerciseIds.value.indexOf(
+    draggedExerciseId.value
+  )
+
+  const toIndex = selectedExerciseIds.value.indexOf(
+    targetExerciseId
+  )
+
+  if (fromIndex === -1 || toIndex === -1 || fromIndex === toIndex) {
+    return
+  }
+
+  const reordered = [...selectedExerciseIds.value]
+  const [moved] = reordered.splice(fromIndex, 1)
+
+  reordered.splice(toIndex, 0, moved)
+
+  selectedExerciseIds.value = reordered
+  saveMessage.value = ''
+}
+
+const endDrag = (event: PointerEvent) => {
+  if (
+    dragPointerId.value !== null &&
+    event.pointerId !== dragPointerId.value
+  ) {
+    return
+  }
+
+  if (
+    draggedElement.value &&
+    dragPointerId.value !== null
+  ) {
+    try {
+      draggedElement.value.releasePointerCapture(
+        dragPointerId.value
+      )
+    } catch {
+      // Pointer capture may already have been released.
+    }
+  }
+
+  draggedExerciseId.value = null
+  draggedElement.value = null
+  dragPointerId.value = null
+  dragStartY.value = 0
+  isDragging.value = false
+}
+
 const saveExercises = async () => {
   if (selectedExerciseIds.value.length > MAX_EXERCISES) {
     return
@@ -159,6 +283,19 @@ const saveExercises = async () => {
 
 onMounted(() => {
   loadExercises()
+
+  window.addEventListener('pointermove', moveDrag, {
+    passive: false
+  })
+
+  window.addEventListener('pointerup', endDrag)
+  window.addEventListener('pointercancel', endDrag)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('pointermove', moveDrag)
+  window.removeEventListener('pointerup', endDrag)
+  window.removeEventListener('pointercancel', endDrag)
 })
 </script>
 
@@ -170,8 +307,8 @@ onMounted(() => {
           Mes exercices
         </p>
         <p class="mt-1 text-xs text-gray-500">
-          Choisissez jusqu'à {{ MAX_EXERCISES }} exercices à afficher
-          dans Today et Journal.
+          Choisissez jusqu'à {{ MAX_EXERCISES }} exercices à pratiquer
+          régulièrement. Faites-les glisser pour définir votre ordre de priorité.
         </p>
       </div>
 
@@ -187,19 +324,121 @@ onMounted(() => {
       </div>
     </div>
 
-    <div class="relative mt-4">
-      <span
-        class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+    <div
+      v-if="selectedExercises.length > 0"
+      class="mt-4 space-y-2"
+    >
+      <div
+        v-for="(exercise, index) in selectedExercises"
+        :key="exercise.id"
+        :data-selected-exercise="exercise.id"
+        class="flex w-full items-center gap-3 rounded-2xl border px-4 py-3 bg-amber-50 border-amber-400 transition-all"
+        :class="
+          draggedExerciseId === exercise.id
+            ? 'opacity-50 scale-[0.98]'
+            : ''
+        "
       >
-        🔎
-      </span>
+        <div
+          class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-500 text-xs font-bold text-white"
+        >
+          {{ index + 1 }}
+        </div>
 
-      <input
-        v-model="searchQuery"
-        type="search"
-        placeholder="Rechercher un exercice..."
-        class="w-full bg-white border border-gray-200 rounded-2xl pl-10 pr-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
-      />
+        <div class="min-w-0 flex-1">
+          <p class="text-sm font-medium text-gray-800">
+            {{ exercise.nameFr }}
+          </p>
+
+          <div class="mt-0.5 flex items-center gap-2">
+            <p class="text-xs text-gray-400">
+              {{ exercise.nameEn }}
+            </p>
+
+            <span
+              v-if="getWorkoutCount(exercise.id) > 0"
+              class="text-[10px] font-semibold text-amber-600"
+            >
+              {{ getWorkoutCount(exercise.id) }}
+              {{ getWorkoutCount(exercise.id) === 1 ? 'séance' : 'séances' }}
+            </span>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          class="shrink-0 text-gray-400 hover:text-red-500 text-lg"
+          aria-label="Retirer cet exercice"
+          @click.stop="toggleExercise(exercise.id)"
+        >
+          ×
+        </button>
+
+        <button
+          type="button"
+          class="shrink-0 text-gray-300 hover:text-gray-500 text-lg leading-none touch-none select-none cursor-grab active:cursor-grabbing"
+          aria-label="Déplacer cet exercice"
+          @pointerdown="startDrag(exercise.id, $event, $event.currentTarget.parentElement as HTMLElement)"
+        >
+          ⋮⋮
+        </button>
+      </div>
+
+      <p class="pt-1 text-xs text-gray-400 text-center">
+        ↕ Faites glisser les exercices pour modifier leur ordre.
+      </p>
+
+          <button
+      type="button"
+      :disabled="!hasChanges || saving"
+      class="mt-4 w-full bg-amber-500 hover:bg-amber-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-2xl transition-all"
+      @click="saveExercises"
+    >
+      {{ saving ? 'Enregistrement...' : 'Enregistrer' }}
+    </button>
+
+    <p
+      v-if="saveMessage"
+      class="mt-2 text-center text-sm text-green-600"
+    >
+      {{ saveMessage }}
+    </p>
+    
+    </div>
+
+    <div
+      v-else
+      class="mt-4 rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-4 py-5 text-center"
+    >
+      <p class="text-sm font-medium text-gray-600">
+        Aucun exercice sélectionné.
+      </p>
+      <p class="mt-1 text-xs text-gray-400">
+        Ajoutez vos exercices ci-dessous.
+      </p>
+    </div>
+
+    
+
+    <div class="mt-5">
+      <p class="text-sm font-semibold text-gray-800">
+        Ajouter un exercice
+      </p>
+
+      <div class="relative mt-3">
+        <span
+          class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+        >
+          🔎
+        </span>
+
+        <input
+          v-model="searchQuery"
+          type="search"
+          placeholder="Rechercher un exercice..."
+          class="w-full bg-white border border-gray-200 rounded-2xl pl-10 pr-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+        />
+      </div>
     </div>
 
     <p
@@ -292,7 +531,7 @@ onMounted(() => {
           >
             <path
               fill-rule="evenodd"
-              d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-7.25 9a.75.75 0 0 1-1.127.075l-4.25-4a.75.75 0 1 1 1.03-1.09l3.658 3.443 6.722-8.34a.75.75 0 0 1 1.074-.14.75.75 0 0 1 .14 1.074Z"
+              d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-7.25 9a.75.75 0 0 1-1.127.075l-4.25-4a.75.75 0 1 1 1.03-1.09l3.658 3.443 6.722-8.34a.75.75 0 0 1 1.074-.14l.14 1.074Z"
               clip-rule="evenodd"
             />
           </svg>
@@ -307,20 +546,5 @@ onMounted(() => {
       Maximum de {{ MAX_EXERCISES }} exercices sélectionnés.
     </p>
 
-    <button
-      type="button"
-      :disabled="!hasChanges || saving"
-      class="mt-4 w-full bg-amber-500 hover:bg-amber-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-2xl transition-all"
-      @click="saveExercises"
-    >
-      {{ saving ? 'Enregistrement...' : 'Enregistrer' }}
-    </button>
-
-    <p
-      v-if="saveMessage"
-      class="mt-2 text-center text-sm text-green-600"
-    >
-      {{ saveMessage }}
-    </p>
   </section>
 </template>
