@@ -199,6 +199,12 @@ const repsValue = ref('')
 // Par défaut : heure actuelle
 const workoutTime = ref(getCurrentTime())
 
+const openAddModal = () => {
+  workoutTime.value = getCurrentTime()
+  repsValue.value = ''
+  showModal.value = true
+}
+  
 // ============================================================
 // WORKOUTS
 // ============================================================
@@ -549,7 +555,8 @@ const saveWorkout = async () => {
 
       <!-- Boutons de validation -->
       <div class="flex gap-3 pt-2">
-        <button @click="showModal = false"
+        <button @click="openAddModal"
+
           class="flex-1 bg-transparent hover:bg-gray-100 text-gray-700 font-semibold py-3.5 rounded-2xl transition-colors">
           Annuler
         </button>
