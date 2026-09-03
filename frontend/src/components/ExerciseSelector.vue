@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useExerciseStore } from '../stores/exercise'
-import { getExercises, getUserExercises, type ApiExercise, type UserExercise } from '../api/exercises'
+import { getExercises, getUserExercises, type ApiExercise } from '../api/exercises'
 import { useWorkouts } from '../composables/useWorkouts'
 
 const props = withDefaults(
