@@ -5,8 +5,8 @@ export interface Exercise {
 }
 
 export const exercises: Exercise[] = [
-  { name: 'Inverted row', shortName: 'Rowing', icon: '↓' },
-  { name: 'Biceps curl', shortName: 'Curl', icon: '↓' },
-  { name: 'Push-ups', shortName: 'PushUp', icon: '↑' },
-  { name: 'Support Hold', shortName: 'Hold', icon: '⏺' },
+  { name: 'high-bar-inverted-row', shortName: 'Rowing', icon: '↓' },
+  { name: 'biceps-curl-band', shortName: 'Curl', icon: '↓' },
+  { name: 'incline-push-up',  shortName: 'PushUp', icon: '↑' },
+  { name: 'support-hold', shortName: 'Hold', icon: '⏺' },
 ]
