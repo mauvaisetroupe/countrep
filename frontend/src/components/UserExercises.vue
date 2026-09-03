@@ -518,7 +518,7 @@ onUnmounted(() => {
               {{ exercise.nameFr }}
             </p>
 
-            <div class="mt-0.5 flex items-center gap-2">
+            <div class="mt-0.5">
               <p class="text-xs text-gray-400">
                 {{ exercise.nameEn }}
               </p>
@@ -536,7 +536,7 @@ onUnmounted(() => {
                 :href="exercise.liftmanualUrl"
                 target="_blank"
                 rel="noopener noreferrer"
-                class="ml-auto shrink-0 text-xs font-semibold text-amber-600 hover:text-amber-700"
+                class="block mt-1 text-xs font-semibold text-amber-600 hover:text-amber-700"
                 title="Voir l'exercice sur Lift Manual"
                 @click.stop
               >
