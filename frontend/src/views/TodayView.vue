@@ -5,8 +5,34 @@ import { useWorkouts } from '../composables/useWorkouts'
 import { syncWorkout } from '../services/sync'
 import { useExerciseStore } from '../stores/exercise'
 import type { LocalWorkout } from '../db'
+import { getUserExercises, type UserExercise } from '../api/exercises'
 
 const exerciseStore = useExerciseStore()
+const userExercises = ref<UserExercise[]>([])
+
+const selectedExerciseName = computed(() => {
+  if (!exerciseStore.selectedExercise) {
+    return ''
+  }
+
+  return (
+    userExercises.value.find(
+      exercise => exercise.id === exerciseStore.selectedExercise
+    )?.nameFr ||
+    exerciseStore.selectedExercise
+  )
+})
+
+const loadUserExercises = async () => {
+  try {
+    userExercises.value = await getUserExercises()
+  } catch (error) {
+    console.error(
+      'Erreur lors du chargement des exercices',
+      error
+    )
+  }
+}
 
 // ============================================================
 // DATE / CALENDRIER
@@ -324,6 +350,8 @@ const saveWorkout = async () => {
     )
   }
 }
+
+loadUserExercises()
 </script>
 
 <template>
@@ -342,7 +370,7 @@ const saveWorkout = async () => {
        SÉLECTEUR D'EXERCICES
   ========================================================= -->
 
-  <ExerciseSelector/>
+  <ExerciseSelector />
 
 
   <!-- ========================================================
@@ -352,7 +380,7 @@ const saveWorkout = async () => {
   <main class="px-5 mt-4 space-y-4">
 
     <!-- ======================================================
-         CALENDRIER
+        CALENDRIER
     ====================================================== -->
 
     <section
@@ -395,7 +423,7 @@ const saveWorkout = async () => {
 
 
       <!-- ====================================================
-           JOURS DE LA SEMAINE
+          JOURS DE LA SEMAINE
       ===================================================== -->
 
       <div class="grid grid-cols-7 text-center text-xs font-semibold text-gray-400 mb-2">
@@ -408,7 +436,7 @@ const saveWorkout = async () => {
 
 
       <!-- ====================================================
-           JOURS DU MOIS
+          JOURS DU MOIS
       ===================================================== -->
 
       <div class="grid grid-cols-7 gap-y-1 text-center text-sm">
@@ -420,11 +448,11 @@ const saveWorkout = async () => {
 
             <!-- Jour -->
             <button @click="
-                selectedDate = formatDate(
-                  currentYear,
-                  currentMonthIndex,
-                  day
-                )
+              selectedDate = formatDate(
+                currentYear,
+                currentMonthIndex,
+                day
+              )
               " :class="[
                 'w-9 h-9 flex items-center justify-center rounded-full font-medium transition-all',
 
@@ -446,7 +474,7 @@ const saveWorkout = async () => {
               {{ day }}
             </button>
             <!-- =================================================
-                 REPETITIONS
+                REPETITIONS
             ================================================= -->
             <span class="h-[14px] text-[10px] font-bold text-amber-600 leading-[14px] mt-0.5">
               {{ repsByDay[day] || '' }}
@@ -459,21 +487,21 @@ const saveWorkout = async () => {
   </main>
 
   <!-- ========================================================
-       BOUTON D'ACTION FLOTTANT (FAB)
-  ========================================================= -->
+          BOUTON D'ACTION FLOTTANT (FAB)
+      ========================================================= -->
 
   <div class="fixed bottom-20 right-5 z-10">
     <button
       @click="openAddModal"
-      class="bg-amber-200 text-amber-950 font-semibold px-5 py-3.5 rounded-full shadow-lg flex items-center gap-2 border border-amber-300/60 active:scale-95 transition-transform"
+      class="bg-amber-200 text-amber-950 text-sm font-semibold px-5 py-3.5 rounded-full shadow-lg flex items-center gap-2 border border-amber-300/60 active:scale-95 transition-transform"
     >
-      <span>⚡</span> Add {{ exerciseStore.selectedExercise }}
+      <span>⚡</span> Ajouter {{ selectedExerciseName }}
     </button>
   </div>
 
   <!-- ========================================================
-       MODALE D'AJOUT
-  ========================================================= -->
+          MODALE D'AJOUT
+      ========================================================= -->
 
   <div v-if="showModal" class="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
     <div class="bg-[#fdf8f5] w-full max-w-md rounded-t-[32px] sm:rounded-3xl p-6 shadow-2xl space-y-6 border border-amber-100 animate-in fade-in slide-in-from-bottom duration-200">
@@ -483,7 +511,7 @@ const saveWorkout = async () => {
         <div class="flex items-center gap-2.5">
           <span class="bg-amber-500 text-white p-2 rounded-xl text-sm shadow-sm">⚡</span>
           <h3 class="text-xl font-bold text-gray-900">
-            Ajouter {{ exerciseStore.selectedExercise }}
+            Ajouter {{ selectedExerciseName }}
           </h3>
         </div>
         <button @click="showModal = false"
@@ -493,14 +521,14 @@ const saveWorkout = async () => {
 
       </div>
       <!-- ==================================================
-           DATE SÉLECTIONNÉE
+          DATE SÉLECTIONNÉE
       ================================================== -->
       <div class="text-center text-sm text-gray-500">
         {{ selectedDate }}
       </div>
 
       <!-- ==================================================
-           HEURE DU WORKOUT
+          HEURE DU WORKOUT
       ================================================== -->
 
       <div
@@ -525,14 +553,14 @@ const saveWorkout = async () => {
 
       <!-- Question -->
       <p class="text-sm font-medium text-gray-800 text-center">
-        Combien de {{ exerciseStore.selectedExercise }} avez-vous fait ?
+        Combien de {{ selectedExerciseName }} avez-vous fait ?
       </p>
 
       <!-- Champ de saisie -->
       <div class="relative border-2 border-amber-600/70 rounded-2xl bg-white px-4 py-3 flex items-center gap-3 shadow-xs">
         <span class="absolute -top-3 left-4 bg-white px-1.5 text-xs font-semibold text-amber-700">Nombre</span>
         <span class="text-amber-600">⚡</span>
-        <input
+        <input 
           type="number"
           v-model="repsValue"
           placeholder="Entrez un nombre"
