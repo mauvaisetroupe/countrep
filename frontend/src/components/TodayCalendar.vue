@@ -377,39 +377,113 @@ const isToday = (
   >
 
     <!-- EN-TÊTE DU CALENDRIER -->
-    <div class="flex justify-between items-center mb-4 min-h-[32px]">
-      <h2 class="text-base sm:text-lg font-bold capitalize text-gray-800 truncate pr-2">
+
+    <div
+      class="flex justify-between items-center mb-4 min-h-[32px]"
+    >
+      <h2
+        class="text-base sm:text-lg font-bold capitalize text-gray-800 truncate pr-2"
+      >
         {{ currentMonth }}
       </h2>
 
-      <div class="flex gap-1 shrink-0">
+      <div class="flex items-center gap-1.5 shrink-0">
+
+        <!-- Mois précédent -->
+
         <button
           type="button"
           @click="prevMonth"
           :disabled="currentCarouselIndex === 0"
-          class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-amber-200/50 text-gray-700 transition-colors disabled:opacity-30 disabled:pointer-events-none"
+          class="group w-9 h-9 flex items-center justify-center rounded-xl
+                 border border-amber-200/80
+                 bg-white/70
+                 text-gray-500
+                 shadow-sm
+                 transition-all duration-200
+                 hover:border-amber-300
+                 hover:bg-amber-100/70
+                 hover:text-amber-700
+                 hover:shadow
+                 active:scale-95
+                 disabled:opacity-30
+                 disabled:pointer-events-none"
           aria-label="Mois précédent"
         >
-          ‹
+          <svg
+            viewBox="0 0 20 20"
+            fill="none"
+            class="w-4 h-4 transition-transform duration-200 group-hover:-translate-x-0.5"
+          >
+            <path
+              d="M12.5 4.5L7 10L12.5 15.5"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
         </button>
+
+        <!-- Aujourd'hui -->
 
         <button
           type="button"
           @click="goToToday"
-          class="px-2 h-8 flex items-center justify-center rounded-full hover:bg-amber-200/50 text-xs font-semibold text-gray-700 transition-colors whitespace-nowrap"
+          class="px-3 h-9 flex items-center justify-center rounded-xl
+                 border border-amber-200/80
+                 bg-white/70
+                 text-xs font-semibold text-gray-600
+                 shadow-sm
+                 transition-all duration-200
+                 hover:border-amber-300
+                 hover:bg-amber-100/70
+                 hover:text-amber-700
+                 hover:shadow
+                 active:scale-95
+                 whitespace-nowrap"
         >
           Aujourd'hui
         </button>
 
+        <!-- Mois suivant -->
+
         <button
           type="button"
           @click="nextMonth"
-          :disabled="currentCarouselIndex === months.length - 1"
-          class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-amber-200/50 text-gray-700 transition-colors disabled:opacity-30 disabled:pointer-events-none"
+          :disabled="
+            currentCarouselIndex === months.length - 1
+          "
+          class="group w-9 h-9 flex items-center justify-center rounded-xl
+                 border border-amber-200/80
+                 bg-white/70
+                 text-gray-500
+                 shadow-sm
+                 transition-all duration-200
+                 hover:border-amber-300
+                 hover:bg-amber-100/70
+                 hover:text-amber-700
+                 hover:shadow
+                 active:scale-95
+                 disabled:opacity-30
+                 disabled:pointer-events-none"
           aria-label="Mois suivant"
         >
-          ›
+          <svg
+            viewBox="0 0 20 20"
+            fill="none"
+            class="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5"
+          >
+            <path
+              d="M7.5 4.5L13 10L7.5 15.5"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
         </button>
+
       </div>
     </div>
 
