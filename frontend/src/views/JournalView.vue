@@ -14,9 +14,20 @@ const {
 
 const PAGE_SIZE = 30
 
+// ============================================================
+// ESTIMATION DURÉE GARMIN
+// ============================================================
+
+const REPS_PER_SET = 15
+const MINUTES_PER_SET = 1
+const SETS_PER_BLOCK = 10
+const BLOCK_REST_MINUTES = 2
+
 const visibleCount = ref(PAGE_SIZE)
 const editingWorkoutId = ref<string | null>(null)
 const openMenuId = ref<string | null>(null)
+const copiedGarminDate = ref<string | null>(null)
+
 // ============================================================
 // WORKOUTS FILTRÉS ET TRIÉS
 // ============================================================
@@ -30,10 +41,6 @@ const filteredWorkouts = computed(() => {
     )
   }
 
-  // Tri par date du workout,
-  // puis par heure du workout.
-  //
-  // Les workouts les plus récents apparaissent en premier.
   return [...result].sort((a, b) => {
     if (a.date !== b.date) {
       return b.date.localeCompare(a.date)
@@ -56,7 +63,6 @@ const loadMore = () => {
 
   visibleCount.value += PAGE_SIZE
 }
-
 
 // ============================================================
 // DATE
@@ -113,7 +119,6 @@ const formatDay = (date: string) => {
   })
 }
 
-
 // ============================================================
 // AFFICHAGE HEURE
 // ============================================================
@@ -130,7 +135,6 @@ const formatWorkoutTime = (workoutTime: string) => {
 
   return workoutTime.slice(0, 5)
 }
-
 
 // ============================================================
 // JOURNAL
@@ -151,7 +155,7 @@ const isFirstOfDay = (index: number) => {
 /**
  * Total des répétitions pour une journée.
  *
- * Le filtre exercice est déjà appliqué dans filteredWorkouts.
+ * Le filtre exercice est appliqué ici.
  */
 const dayTotal = (date: string) => {
   return filteredWorkouts.value
@@ -159,6 +163,107 @@ const dayTotal = (date: string) => {
     .reduce((total, w) => total + w.reps, 0)
 }
 
+/**
+ * Total réel des répétitions pour une journée,
+ * sans tenir compte du filtre exercice.
+ *
+ * Utilisé pour le résumé Garmin.
+ */
+const garminDayTotal = (date: string) => {
+  return workouts.value
+    .filter(w => !w.deletedAt && w.date === date)
+    .reduce((total, w) => total + w.reps, 0)
+}
+
+/**
+ * Détail des répétitions par exercice pour Garmin.
+ *
+ * Le résultat est trié par nombre de répétitions décroissant.
+ */
+const garminExerciseSummary = (date: string) => {
+  const totals = new Map<string, number>()
+
+  workouts.value
+    .filter(w => !w.deletedAt && w.date === date)
+    .forEach(w => {
+      totals.set(
+        w.exercise,
+        (totals.get(w.exercise) ?? 0) + w.reps
+      )
+    })
+
+  return [...totals.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([exercise, reps]) => `${reps} ${exercise}`)
+    .join(' · ')
+}
+
+/**
+ * Estimation de la durée à saisir dans Garmin.
+ *
+ * Règle :
+ * - 15 reps = 1 minute
+ * - +2 minutes toutes les 10 séries équivalentes
+ *
+ * Le calcul utilise toutes les reps de la journée,
+ * indépendamment du filtre exercice.
+ */
+const garminDuration = (date: string) => {
+  const reps = garminDayTotal(date)
+
+  if (reps <= 0) {
+    return 0
+  }
+
+  const sets = Math.ceil(reps / REPS_PER_SET)
+
+  return (
+    sets * MINUTES_PER_SET +
+    Math.floor(sets / SETS_PER_BLOCK) * BLOCK_REST_MINUTES
+  )
+}
+
+/**
+ * Formatage de la durée Garmin.
+ */
+const formatGarminDuration = (date: string) => {
+  const minutes = garminDuration(date)
+
+  if (minutes < 60) {
+    return `${minutes} min`
+  }
+
+  const hours = Math.floor(minutes / 60)
+  const remainingMinutes = minutes % 60
+
+  if (remainingMinutes === 0) {
+    return `${hours} h`
+  }
+
+  return `${hours} h ${remainingMinutes} min`
+}
+
+/**
+ * Copie le résumé Garmin dans le presse-papier.
+ */
+const copyGarminSummary = async (date: string) => {
+  const text =
+    `Musculation · ${formatGarminDuration(date)} · ${garminExerciseSummary(date)}`
+
+  try {
+    await navigator.clipboard.writeText(text)
+
+    copiedGarminDate.value = date
+
+    setTimeout(() => {
+      if (copiedGarminDate.value === date) {
+        copiedGarminDate.value = null
+      }
+    }, 2000)
+  } catch {
+    copiedGarminDate.value = null
+  }
+}
 
 // ============================================================
 // MENU
@@ -180,7 +285,6 @@ const toggleMenu = (id: string) => {
 const handleDocumentClick = () => {
   openMenuId.value = null
 }
-
 
 // ============================================================
 // ÉDITION
@@ -230,7 +334,6 @@ const handleDeleteWorkout = async (workout: LocalWorkout) => {
   await deleteWorkout(workout.id)
 }
 
-
 // ============================================================
 // INFINITE SCROLL
 // ============================================================
@@ -255,7 +358,6 @@ onUnmounted(() => {
 })
 </script>
 
-
 <template>
 
   <div class="pb-24">
@@ -273,11 +375,11 @@ onUnmounted(() => {
     <!-- ========================================================
          FILTRE EXERCICE
     ========================================================= -->
+
     <ExerciseSelector
       :required="false"
       source="workouts"
     />
-
 
     <!-- ========================================================
          JOURNAL
@@ -286,6 +388,7 @@ onUnmounted(() => {
     <main class="px-5 mt-4">
 
       <!-- Aucun workout -->
+
       <div
         v-if="visibleWorkouts.length === 0"
         class="bg-amber-50/40 border border-amber-100/80 rounded-3xl p-8 text-center"
@@ -320,19 +423,75 @@ onUnmounted(() => {
 
           <div
             v-if="isFirstOfDay(index)"
-            class="flex items-center justify-between pt-2"
+            class="pt-2 pb-1"
           >
-            <h2
-              class="text-sm font-bold uppercase tracking-wide text-gray-500"
-            >
-              {{ formatDay(workout.date) }}
-            </h2>
 
-            <span class="text-xs font-semibold text-amber-600">
-              {{ dayTotal(workout.date) }} reps
-            </span>
+            <div class="flex items-center justify-between">
+
+              <h2
+                class="text-sm font-bold uppercase tracking-wide text-gray-500"
+              >
+                {{ formatDay(workout.date) }}
+              </h2>
+
+              <span class="text-xs font-semibold text-amber-600">
+                {{ dayTotal(workout.date) }} reps
+              </span>
+
+            </div>
+
+            <!-- Résumé Garmin -->
+
+            <div class="mt-1 flex items-center gap-2 text-xs text-gray-400">
+
+              <span class="leading-relaxed">
+                Garmin · Musculation · {{ formatGarminDuration(workout.date) }}
+                ·
+                <span class="font-medium text-gray-500">
+                  {{ garminExerciseSummary(workout.date) }}
+                </span>
+              </span>
+
+              <button
+                type="button"
+                class="shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
+                :aria-label="
+                  copiedGarminDate === workout.date
+                    ? 'Copié'
+                    : 'Copier pour Garmin'
+                "
+                @click.stop="copyGarminSummary(workout.date)"
+              >
+                <span v-if="copiedGarminDate === workout.date">
+                  ✓
+                </span>
+
+                <svg
+                  v-else
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  class="w-4 h-4"
+                >
+                  <rect
+                    x="8"
+                    y="8"
+                    width="11"
+                    height="11"
+                    rx="2"
+                  />
+
+                  <path
+                    d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"
+                  />
+                </svg>
+              </button>
+
+            </div>
+
           </div>
-
 
           <!-- ==================================================
                WORKOUT
@@ -353,9 +512,11 @@ onUnmounted(() => {
               v-if="editingWorkoutId === workout.id"
               class="p-4"
             >
+
               <div class="flex items-center gap-3">
 
                 <!-- Heure -->
+
                 <input
                   v-model="workout.workoutTime"
                   type="time"
@@ -363,6 +524,7 @@ onUnmounted(() => {
                 />
 
                 <!-- Exercice + reps -->
+
                 <div class="flex-1 min-w-0">
 
                   <div class="font-semibold text-gray-800 truncate">
@@ -376,10 +538,13 @@ onUnmounted(() => {
                     inputmode="numeric"
                     class="mt-2 w-full rounded-xl border border-amber-200 bg-white px-3 py-2 text-lg font-bold outline-none focus:border-amber-500"
                   />
+
                 </div>
 
                 <!-- Actions -->
+
                 <div class="flex flex-col gap-2 shrink-0">
+
                   <button
                     class="text-xs font-bold text-amber-600"
                     @click="saveEdit(workout)"
@@ -393,11 +558,12 @@ onUnmounted(() => {
                   >
                     Annuler
                   </button>
+
                 </div>
 
               </div>
-            </div>
 
+            </div>
 
             <!-- ==================================================
                  MODE NORMAL
@@ -409,6 +575,7 @@ onUnmounted(() => {
             >
 
               <!-- Heure du workout -->
+
               <span
                 class="text-sm font-medium text-gray-400 w-12 shrink-0"
               >
@@ -416,13 +583,17 @@ onUnmounted(() => {
               </span>
 
               <!-- Exercice -->
+
               <div class="flex-1 min-w-0">
+
                 <div class="font-semibold text-gray-800 truncate">
                   {{ workout.exercise }}
                 </div>
+
               </div>
 
               <!-- Reps -->
+
               <span
                 class="font-bold text-gray-900 whitespace-nowrap"
               >
@@ -432,7 +603,6 @@ onUnmounted(() => {
                   reps
                 </span>
               </span>
-
 
               <!-- ==================================================
                    MENU
@@ -454,6 +624,7 @@ onUnmounted(() => {
                 >
 
                   <!-- Modifier -->
+
                   <button
                     class="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-amber-50"
                     @click="startEdit(workout.id)"
@@ -462,6 +633,7 @@ onUnmounted(() => {
                   </button>
 
                   <!-- Supprimer -->
+
                   <button
                     class="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50"
                     @click="handleDeleteWorkout(workout)"
@@ -474,10 +646,10 @@ onUnmounted(() => {
               </div>
 
             </div>
+
           </article>
 
         </template>
-
 
         <!-- ======================================================
              CHARGEMENT / FIN
