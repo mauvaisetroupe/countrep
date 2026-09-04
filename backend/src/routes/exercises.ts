@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify'
 import { verifyJWT } from '../middleware/auth.js'
 import { pool } from '../db.js'
 
-const MAX_EXERCISES = 6
+const MAX_EXERCISES = 10
 
 export async function exerciseRoutes(app: FastifyInstance) {
 
