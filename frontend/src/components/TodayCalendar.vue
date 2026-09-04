@@ -69,11 +69,13 @@ const currentCarouselIndex = ref(
 // EMBLA
 // ============================================================
 
-const [, emblaApi] = emblaCarouselVue({
+const [emblaRef, emblaApi] = emblaCarouselVue({
   align: 'start',
   containScroll: 'trimSnaps',
   loop: false
 })
+
+void emblaRef
 
 // ============================================================
 // NOM DU MOIS ACTUEL
