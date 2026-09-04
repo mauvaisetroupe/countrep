@@ -10,7 +10,7 @@ import {
 } from '../api/exercises'
 import { useWorkouts } from '../composables/useWorkouts'
 
-const MAX_EXERCISES = 6
+const MAX_EXERCISES = 10
 
 const authStore = useAuthStore()
 
