@@ -69,7 +69,7 @@ const currentCarouselIndex = ref(
 // EMBLA
 // ============================================================
 
-const [emblaRef, emblaApi] = emblaCarouselVue({
+const [, emblaApi] = emblaCarouselVue({
   align: 'start',
   containScroll: 'trimSnaps',
   loop: false
