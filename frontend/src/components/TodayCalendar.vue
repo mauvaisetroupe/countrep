@@ -1,5 +1,10 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import {
+  computed,
+  onBeforeUnmount,
+  onMounted,
+  ref
+} from 'vue'
 import type { LocalWorkout } from '../db'
 import emblaCarouselVue from 'embla-carousel-vue'
 
@@ -27,7 +32,7 @@ const formatDate = (
   year: number,
   monthIndex: number,
   day: number
-) => {
+): string => {
   return `${year}-${String(monthIndex + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
 }
 
@@ -75,11 +80,21 @@ const [emblaRef, emblaApi] = emblaCarouselVue({
   loop: false
 })
 
+// TypeScript peut ne pas détecter l'utilisation
+// de emblaRef dans le template.
 void emblaRef
 
 // ============================================================
 // NOM DU MOIS ACTUEL
 // ============================================================
+
+const monthFormatter = new Intl.DateTimeFormat(
+  'fr-FR',
+  {
+    month: 'long',
+    year: 'numeric'
+  }
+)
 
 const currentMonth = computed(() => {
   const month =
@@ -89,10 +104,7 @@ const currentMonth = computed(() => {
     return ''
   }
 
-  return new Intl.DateTimeFormat('fr-FR', {
-    month: 'long',
-    year: 'numeric'
-  }).format(
+  return monthFormatter.format(
     new Date(
       month.year,
       month.monthIndex,
@@ -122,8 +134,8 @@ const daysOfWeek = [
 const getDaysInMonth = (
   year: number,
   monthIndex: number
-) => {
-  let firstDayIndex = new Date(
+): Array<number | null> => {
+  const firstDay = new Date(
     year,
     monthIndex,
     1
@@ -131,10 +143,10 @@ const getDaysInMonth = (
 
   // La semaine commence le lundi.
   // Dimanche devient donc 6.
-  firstDayIndex =
-    firstDayIndex === 0
+  const firstDayIndex =
+    firstDay === 0
       ? 6
-      : firstDayIndex - 1
+      : firstDay - 1
 
   const totalDays = new Date(
     year,
@@ -164,7 +176,11 @@ const nextMonth = () => {
 }
 
 const goToToday = () => {
-  emblaApi.value?.scrollTo(
+  if (!emblaApi.value) {
+    return
+  }
+
+  emblaApi.value.scrollTo(
     todayCarouselIndex
   )
 
@@ -179,6 +195,59 @@ const goToToday = () => {
 }
 
 // ============================================================
+// DATE LOCALE
+// ============================================================
+
+const getLocalDateKey = (
+  date: string
+): string => {
+  // Date déjà au format YYYY-MM-DD.
+  if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    return date
+  }
+
+  /*
+   * Pour une date ISO, on conserve la partie
+   * calendrier YYYY-MM-DD.
+   *
+   * Cela évite qu'un timestamp à minuit UTC
+   * change de jour simplement à cause du fuseau
+   * horaire du navigateur.
+   */
+  return date.slice(0, 10)
+}
+
+// ============================================================
+// RÉPÉTITIONS PAR DATE
+// ============================================================
+
+const repsByDate = computed<Record<string, number>>(() => {
+  const totals: Record<string, number> = {}
+
+  if (!props.selectedExercise) {
+    return totals
+  }
+
+  for (const workout of props.workouts) {
+    if (
+      workout.exercise !==
+      props.selectedExercise
+    ) {
+      continue
+    }
+
+    const dateKey =
+      getLocalDateKey(workout.date)
+
+    totals[dateKey] =
+      (totals[dateKey] ?? 0) +
+      workout.reps
+  }
+
+  return totals
+})
+
+// ============================================================
 // SYNCHRONISATION EMBLA
 // ============================================================
 
@@ -187,16 +256,31 @@ const updateCurrentMonth = () => {
     return
   }
 
-  const index = emblaApi.value.selectedScrollSnap()
+  const index =
+    emblaApi.value.selectedScrollSnap()
+
   currentCarouselIndex.value = index
+
   const month = months.value[index]
+
   if (!month) {
     return
   }
+
+  /*
+   * On conserve volontairement le comportement
+   * existant :
+   *
+   * - mois actuel → aujourd'hui
+   * - autre mois → premier jour du mois
+   */
   const isCurrentMonth =
     month.year === realYear &&
     month.monthIndex === realMonthIndex
-  const day = isCurrentMonth ? realDay : 1
+
+  const day = isCurrentMonth
+    ? realDay
+    : 1
 
   emit(
     'update:selectedDate',
@@ -207,7 +291,6 @@ const updateCurrentMonth = () => {
     )
   )
 }
-
 
 onMounted(() => {
   if (!emblaApi.value) {
@@ -225,6 +308,13 @@ onMounted(() => {
   // Mise à jour lors d'un swipe ou d'un clic
   // sur les boutons précédent/suivant.
   emblaApi.value.on(
+    'select',
+    updateCurrentMonth
+  )
+})
+
+onBeforeUnmount(() => {
+  emblaApi.value?.off(
     'select',
     updateCurrentMonth
   )
@@ -250,69 +340,6 @@ const selectDay = (
 }
 
 // ============================================================
-// RÉPÉTITIONS PAR JOUR
-// ============================================================
-
-const getLocalDateKey = (
-  date: string
-): string => {
-  // Date locale déjà au format YYYY-MM-DD.
-  if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-    return date
-  }
-
-  // Date ISO provenant de PostgreSQL.
-  const parsed = new Date(date)
-
-  return formatDate(
-    parsed.getFullYear(),
-    parsed.getMonth(),
-    parsed.getDate()
-  )
-}
-
-const getRepsByDay = (
-  year: number,
-  monthIndex: number
-): Record<number, number> => {
-  const totals: Record<number, number> = {}
-
-  if (!props.selectedExercise) {
-    return totals
-  }
-
-  props.workouts
-    .filter(
-      workout =>
-        workout.exercise ===
-        props.selectedExercise
-    )
-    .forEach(workout => {
-      const dateKey =
-        getLocalDateKey(workout.date)
-
-      const [
-        workoutYear,
-        workoutMonth,
-        day
-      ] = dateKey
-        .split('-')
-        .map(Number)
-
-      if (
-        workoutYear === year &&
-        workoutMonth === monthIndex + 1
-      ) {
-        totals[day] =
-          (totals[day] || 0) +
-          workout.reps
-      }
-    })
-
-  return totals
-}
-
-// ============================================================
 // DATE SÉLECTIONNÉE
 // ============================================================
 
@@ -320,7 +347,7 @@ const isSelectedDay = (
   year: number,
   monthIndex: number,
   day: number
-) => {
+): boolean => {
   return (
     props.selectedDate ===
     formatDate(
@@ -335,7 +362,7 @@ const isToday = (
   year: number,
   monthIndex: number,
   day: number
-) => {
+): boolean => {
   return (
     day === realDay &&
     monthIndex === realMonthIndex &&
@@ -348,7 +375,6 @@ const isToday = (
   <section
     class="bg-amber-50/40 border border-amber-100/80 rounded-3xl p-5 shadow-xs"
   >
-
     <!-- ======================================================
          EN-TÊTE DU CALENDRIER
     ======================================================= -->
@@ -363,7 +389,6 @@ const isToday = (
       </h2>
 
       <div class="flex gap-1">
-
         <!-- Mois précédent -->
 
         <button
@@ -402,7 +427,6 @@ const isToday = (
         >
           ›
         </button>
-
       </div>
     </div>
 
@@ -415,7 +439,6 @@ const isToday = (
       class="overflow-hidden touch-pan-y"
     >
       <div class="flex">
-
         <div
           v-for="month in months"
           :key="
@@ -423,7 +446,6 @@ const isToday = (
           "
           class="min-w-0 flex-[0_0_100%]"
         >
-
           <!-- ==================================================
                JOURS DE LA SEMAINE
           =================================================== -->
@@ -446,7 +468,6 @@ const isToday = (
           <div
             class="grid grid-cols-7 gap-y-1 text-center text-sm"
           >
-
             <div
               v-for="(
                 day,
@@ -455,15 +476,17 @@ const isToday = (
                 month.year,
                 month.monthIndex
               )"
-              :key="index"
+              :key="
+                day
+                  ? `${month.year}-${month.monthIndex}-${day}`
+                  : `empty-${index}`
+              "
               class="flex justify-center items-center"
             >
-
               <div
                 v-if="day"
                 class="flex flex-col items-center h-[54px]"
               >
-
                 <!-- Jour -->
 
                 <button
@@ -504,23 +527,20 @@ const isToday = (
                   class="h-[14px] text-[10px] font-bold text-amber-600 leading-[14px] mt-0.5"
                 >
                   {{
-                    getRepsByDay(
-                      month.year,
-                      month.monthIndex
-                    )[day] || ''
+                    repsByDate[
+                      formatDate(
+                        month.year,
+                        month.monthIndex,
+                        day
+                      )
+                    ] || ''
                   }}
                 </span>
-
               </div>
-
             </div>
-
           </div>
-
         </div>
-
       </div>
     </div>
-
   </section>
 </template>
