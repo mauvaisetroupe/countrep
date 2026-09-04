@@ -18,39 +18,23 @@ const emit = defineEmits<{
 // ============================================================
 
 const now = new Date()
-
 const realYear = now.getFullYear()
 const realMonthIndex = now.getMonth()
 const realDay = now.getDate()
 
-const formatDate = (
-  year: number,
-  monthIndex: number,
-  day: number
-) => {
+const formatDate = (year: number, monthIndex: number, day: number) => {
   return `${year}-${String(monthIndex + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
 }
-
-// ============================================================
-// MOIS DU CAROUSEL
-// ============================================================
 
 type CalendarMonth = {
   year: number
   monthIndex: number
 }
 
-// 12 mois avant + mois actuel + 12 mois après.
+// 12 mois avant + mois actuel + 12 mois après
 const months = computed<CalendarMonth[]>(() => {
   return Array.from({ length: 25 }, (_, index) => {
-    const offset = index - 12
-
-    const date = new Date(
-      realYear,
-      realMonthIndex + offset,
-      1
-    )
-
+    const date = new Date(realYear, realMonthIndex + (index - 12), 1)
     return {
       year: date.getFullYear(),
       monthIndex: date.getMonth()
@@ -58,12 +42,8 @@ const months = computed<CalendarMonth[]>(() => {
   })
 })
 
-// Le mois actuel est au milieu du carousel.
 const todayCarouselIndex = 12
-
-const currentCarouselIndex = ref(
-  todayCarouselIndex
-)
+const currentCarouselIndex = ref(todayCarouselIndex)
 
 // ============================================================
 // EMBLA
@@ -75,77 +55,26 @@ const [emblaRef, emblaApi] = emblaCarouselVue({
   loop: false
 })
 
-// ============================================================
-// NOM DU MOIS ACTUEL
-// ============================================================
-
 const currentMonth = computed(() => {
-  const month =
-    months.value[currentCarouselIndex.value]
-
-  if (!month) {
-    return ''
-  }
+  const month = months.value[currentCarouselIndex.value]
+  if (!month) return ''
 
   return new Intl.DateTimeFormat('fr-FR', {
     month: 'long',
     year: 'numeric'
-  }).format(
-    new Date(
-      month.year,
-      month.monthIndex,
-      1
-    )
-  )
+  }).format(new Date(month.year, month.monthIndex, 1))
 })
 
-// ============================================================
-// JOURS DE LA SEMAINE
-// ============================================================
+const daysOfWeek = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
 
-const daysOfWeek = [
-  'Lun',
-  'Mar',
-  'Mer',
-  'Jeu',
-  'Ven',
-  'Sam',
-  'Dim'
-]
-
-// ============================================================
-// JOURS D'UN MOIS
-// ============================================================
-
-const getDaysInMonth = (
-  year: number,
-  monthIndex: number
-) => {
-  let firstDayIndex = new Date(
-    year,
-    monthIndex,
-    1
-  ).getDay()
-
-  // La semaine commence le lundi.
-  // Dimanche devient donc 6.
-  firstDayIndex =
-    firstDayIndex === 0
-      ? 6
-      : firstDayIndex - 1
-
-  const totalDays = new Date(
-    year,
-    monthIndex + 1,
-    0
-  ).getDate()
+const getDaysInMonth = (year: number, monthIndex: number) => {
+  let firstDayIndex = new Date(year, monthIndex, 1).getDay()
+  firstDayIndex = firstDayIndex === 0 ? 6 : firstDayIndex - 1
+  const totalDays = new Date(year, monthIndex + 1, 0).getDate()
 
   return [
     ...Array(firstDayIndex).fill(null),
-    ...Array.from(
-      { length: totalDays },
-      (_, i) => i + 1
-    )
+    ...Array.from({ length: totalDays }, (_, i) => i + 1)
   ]
 }
 
@@ -153,27 +82,12 @@ const getDaysInMonth = (
 // NAVIGATION
 // ============================================================
 
-const prevMonth = () => {
-  emblaApi.value?.scrollPrev()
-}
-
-const nextMonth = () => {
-  emblaApi.value?.scrollNext()
-}
+const prevMonth = () => emblaApi.value?.scrollPrev()
+const nextMonth = () => emblaApi.value?.scrollNext()
 
 const goToToday = () => {
-  emblaApi.value?.scrollTo(
-    todayCarouselIndex
-  )
-
-  emit(
-    'update:selectedDate',
-    formatDate(
-      realYear,
-      realMonthIndex,
-      realDay
-    )
-  )
+  emblaApi.value?.scrollTo(todayCarouselIndex)
+  emit('update:selectedDate', formatDate(realYear, realMonthIndex, realDay))
 }
 
 // ============================================================
@@ -181,202 +95,93 @@ const goToToday = () => {
 // ============================================================
 
 const updateCurrentMonth = () => {
-  if (!emblaApi.value) {
-    return
-  }
+  if (!emblaApi.value) return
 
   const index = emblaApi.value.selectedScrollSnap()
   currentCarouselIndex.value = index
   const month = months.value[index]
-  if (!month) {
-    return
-  }
+  if (!month) return
+  // Vérifie si le mois affiché est le mois réel en cours
   const isCurrentMonth =
-    month.year === realYear &&
-    month.monthIndex === realMonthIndex
-  const day = isCurrentMonth ? realDay : 1
+    month.year === realYear && month.monthIndex === realMonthIndex
+
+  // Sélectionne le jour réel si mois courant, sinon le 1er du mois
+  const targetDay = isCurrentMonth ? realDay : 1
 
   emit(
     'update:selectedDate',
-    formatDate(
-      month.year,
-      month.monthIndex,
-      day
-    )
+    formatDate(month.year, month.monthIndex, targetDay)
   )
 }
-
 
 onMounted(() => {
-  if (!emblaApi.value) {
-    return
-  }
+  if (!emblaApi.value) return
 
-  // On démarre sur le mois actuel.
-  emblaApi.value.scrollTo(
-    todayCarouselIndex,
-    true
-  )
+  // 1. Positionnement initial sans animation
+  emblaApi.value.scrollTo(todayCarouselIndex, true)
 
-  updateCurrentMonth()
-
-  // Mise à jour lors d'un swipe ou d'un clic
-  // sur les boutons précédent/suivant.
-  emblaApi.value.on(
-    'select',
-    updateCurrentMonth
-  )
+  // 2. Écoute uniquement les interactions de l'utilisateur (Swipe ou Flèches)
+  // Utiliser 'settle' ou 'select' une fois initialisé garantit que ça réagit à la navigation
+  emblaApi.value.on('select', updateCurrentMonth)
 })
 
-// ============================================================
-// SÉLECTION D'UN JOUR
-// ============================================================
+onMounted(() => {
+  if (!emblaApi.value) return
+  emblaApi.value.scrollTo(todayCarouselIndex, true)
+  emblaApi.value.on('select', updateCurrentMonth)
+})
 
-const selectDay = (
-  year: number,
-  monthIndex: number,
-  day: number
-) => {
-  emit(
-    'update:selectedDate',
-    formatDate(
-      year,
-      monthIndex,
-      day
-    )
-  )
+const selectDay = (year: number, monthIndex: number, day: number) => {
+  emit('update:selectedDate', formatDate(year, monthIndex, day))
 }
 
 // ============================================================
-// RÉPÉTITIONS PAR JOUR
+// DÉCOMPTE OPTIMISÉ DES RÉPÉTITIONS (COMPUTED MAP)
 // ============================================================
 
-const getLocalDateKey = (
-  date: string
-): string => {
-  // Date locale déjà au format YYYY-MM-DD.
-  if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-    return date
+const repsByDateMap = computed<Record<string, number>>(() => {
+  const totals: Record<string, number> = {}
+  if (!props.selectedExercise) return totals
+
+  for (const workout of props.workouts) {
+    if (workout.exercise !== props.selectedExercise) continue
+
+    // Normalisation au format YYYY-MM-DD
+    const dateKey = workout.date.substring(0, 10)
+    totals[dateKey] = (totals[dateKey] || 0) + workout.reps
   }
-
-  // Date ISO provenant de PostgreSQL.
-  const parsed = new Date(date)
-
-  return formatDate(
-    parsed.getFullYear(),
-    parsed.getMonth(),
-    parsed.getDate()
-  )
-}
-
-const getRepsByDay = (
-  year: number,
-  monthIndex: number
-): Record<number, number> => {
-  const totals: Record<number, number> = {}
-
-  if (!props.selectedExercise) {
-    return totals
-  }
-
-  props.workouts
-    .filter(
-      workout =>
-        workout.exercise ===
-        props.selectedExercise
-    )
-    .forEach(workout => {
-      const dateKey =
-        getLocalDateKey(workout.date)
-
-      const [
-        workoutYear,
-        workoutMonth,
-        day
-      ] = dateKey
-        .split('-')
-        .map(Number)
-
-      if (
-        workoutYear === year &&
-        workoutMonth === monthIndex + 1
-      ) {
-        totals[day] =
-          (totals[day] || 0) +
-          workout.reps
-      }
-    })
 
   return totals
+})
+
+// Vérifications
+const isSelectedDay = (year: number, monthIndex: number, day: number) => {
+  return props.selectedDate === formatDate(year, monthIndex, day)
 }
 
-// ============================================================
-// DATE SÉLECTIONNÉE
-// ============================================================
-
-const isSelectedDay = (
-  year: number,
-  monthIndex: number,
-  day: number
-) => {
-  return (
-    props.selectedDate ===
-    formatDate(
-      year,
-      monthIndex,
-      day
-    )
-  )
-}
-
-const isToday = (
-  year: number,
-  monthIndex: number,
-  day: number
-) => {
-  return (
-    day === realDay &&
-    monthIndex === realMonthIndex &&
-    year === realYear
-  )
+const isToday = (year: number, monthIndex: number, day: number) => {
+  return day === realDay && monthIndex === realMonthIndex && year === realYear
 }
 </script>
 
 <template>
-  <section
-    class="bg-amber-50/40 border border-amber-100/80 rounded-3xl p-5 shadow-xs"
-  >
-
-    <!-- ======================================================
-         EN-TÊTE DU CALENDRIER
-    ======================================================= -->
-
-    <div
-      class="flex justify-between items-center mb-4"
-    >
-      <h2
-        class="text-lg font-bold capitalize text-gray-800"
-      >
+  <section class="bg-amber-50/40 border border-amber-100/80 rounded-3xl p-5 shadow-xs">
+    <!-- EN-TÊTE DU CALENDRIER -->
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-lg font-bold capitalize text-gray-800">
         {{ currentMonth }}
       </h2>
 
       <div class="flex gap-1">
-
-        <!-- Mois précédent -->
-
         <button
           type="button"
           @click="prevMonth"
-          :disabled="
-            currentCarouselIndex === 0
-          "
+          :disabled="currentCarouselIndex === 0"
           class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-amber-200/50 text-gray-700 transition-colors disabled:opacity-30 disabled:pointer-events-none"
           aria-label="Mois précédent"
         >
           ‹
         </button>
-
-        <!-- Aujourd'hui -->
 
         <button
           type="button"
@@ -386,139 +191,61 @@ const isToday = (
           Aujourd'hui
         </button>
 
-        <!-- Mois suivant -->
-
         <button
           type="button"
           @click="nextMonth"
-          :disabled="
-            currentCarouselIndex ===
-            months.length - 1
-          "
+          :disabled="currentCarouselIndex === months.length - 1"
           class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-amber-200/50 text-gray-700 transition-colors disabled:opacity-30 disabled:pointer-events-none"
           aria-label="Mois suivant"
         >
           ›
         </button>
-
       </div>
     </div>
 
-    <!-- ======================================================
-         CAROUSEL
-    ======================================================= -->
-
-    <div
-      ref="emblaRef"
-      class="overflow-hidden touch-pan-y"
-    >
+    <!-- CAROUSEL -->
+    <div ref="emblaRef" class="overflow-hidden touch-pan-y">
       <div class="flex">
-
         <div
           v-for="month in months"
-          :key="
-            `${month.year}-${month.monthIndex}`
-          "
+          :key="`${month.year}-${month.monthIndex}`"
           class="min-w-0 flex-[0_0_100%]"
         >
-
-          <!-- ==================================================
-               JOURS DE LA SEMAINE
-          =================================================== -->
-
-          <div
-            class="grid grid-cols-7 text-center text-xs font-semibold text-gray-400 mb-2"
-          >
-            <span
-              v-for="day in daysOfWeek"
-              :key="day"
-            >
-              {{ day }}
-            </span>
+          <div class="grid grid-cols-7 text-center text-xs font-semibold text-gray-400 mb-2">
+            <span v-for="day in daysOfWeek" :key="day">{{ day }}</span>
           </div>
 
-          <!-- ==================================================
-               JOURS DU MOIS
-          =================================================== -->
-
-          <div
-            class="grid grid-cols-7 gap-y-1 text-center text-sm"
-          >
-
+          <div class="grid grid-cols-7 gap-y-1 text-center text-sm">
             <div
-              v-for="(
-                day,
-                index
-              ) in getDaysInMonth(
-                month.year,
-                month.monthIndex
-              )"
+              v-for="(day, index) in getDaysInMonth(month.year, month.monthIndex)"
               :key="index"
               class="flex justify-center items-center"
             >
-
-              <div
-                v-if="day"
-                class="flex flex-col items-center h-[54px]"
-              >
-
-                <!-- Jour -->
-
+              <div v-if="day" class="flex flex-col items-center h-[54px]">
                 <button
                   type="button"
-                  @click="
-                    selectDay(
-                      month.year,
-                      month.monthIndex,
-                      day
-                    )
-                  "
+                  @click="selectDay(month.year, month.monthIndex, day)"
                   :class="[
                     'w-9 h-9 flex items-center justify-center rounded-full font-medium transition-all',
-
-                    isSelectedDay(
-                      month.year,
-                      month.monthIndex,
-                      day
-                    )
+                    isSelectedDay(month.year, month.monthIndex, day)
                       ? 'bg-amber-600 text-white font-bold shadow-sm'
-
-                      : isToday(
-                          month.year,
-                          month.monthIndex,
-                          day
-                        )
+                      : isToday(month.year, month.monthIndex, day)
                         ? 'border border-amber-600 text-gray-900'
-
                         : 'text-gray-700 hover:bg-amber-100/50'
                   ]"
                 >
                   {{ day }}
                 </button>
 
-                <!-- Répétitions -->
-
-                <span
-                  class="h-[14px] text-[10px] font-bold text-amber-600 leading-[14px] mt-0.5"
-                >
-                  {{
-                    getRepsByDay(
-                      month.year,
-                      month.monthIndex
-                    )[day] || ''
-                  }}
+                <!-- Affichage via la computed map (performant) -->
+                <span class="h-[14px] text-[10px] font-bold text-amber-600 leading-[14px] mt-0.5">
+                  {{ repsByDateMap[formatDate(month.year, month.monthIndex, day)] || '' }}
                 </span>
-
               </div>
-
             </div>
-
           </div>
-
         </div>
-
       </div>
     </div>
-
   </section>
 </template>
