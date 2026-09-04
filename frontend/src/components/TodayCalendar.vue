@@ -375,53 +375,36 @@ const isToday = (
   <section
     class="bg-amber-50/40 border border-amber-100/80 rounded-3xl p-5 shadow-xs"
   >
-    <!-- ======================================================
-         EN-TÊTE DU CALENDRIER
-    ======================================================= -->
 
-    <div
-      class="flex justify-between items-center mb-4"
-    >
-      <h2
-        class="text-lg font-bold capitalize text-gray-800"
-      >
+    <!-- EN-TÊTE DU CALENDRIER -->
+    <div class="flex justify-between items-center mb-4 min-h-[32px]">
+      <h2 class="text-base sm:text-lg font-bold capitalize text-gray-800 truncate pr-2">
         {{ currentMonth }}
       </h2>
 
-      <div class="flex gap-1">
-        <!-- Mois précédent -->
-
+      <div class="flex gap-1 shrink-0">
         <button
           type="button"
           @click="prevMonth"
-          :disabled="
-            currentCarouselIndex === 0
-          "
+          :disabled="currentCarouselIndex === 0"
           class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-amber-200/50 text-gray-700 transition-colors disabled:opacity-30 disabled:pointer-events-none"
           aria-label="Mois précédent"
         >
           ‹
         </button>
 
-        <!-- Aujourd'hui -->
-
         <button
           type="button"
           @click="goToToday"
-          class="px-2 h-8 flex items-center justify-center rounded-full hover:bg-amber-200/50 text-xs font-semibold text-gray-700 transition-colors"
+          class="px-2 h-8 flex items-center justify-center rounded-full hover:bg-amber-200/50 text-xs font-semibold text-gray-700 transition-colors whitespace-nowrap"
         >
           Aujourd'hui
         </button>
 
-        <!-- Mois suivant -->
-
         <button
           type="button"
           @click="nextMonth"
-          :disabled="
-            currentCarouselIndex ===
-            months.length - 1
-          "
+          :disabled="currentCarouselIndex === months.length - 1"
           class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-amber-200/50 text-gray-700 transition-colors disabled:opacity-30 disabled:pointer-events-none"
           aria-label="Mois suivant"
         >
