@@ -1,11 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import ExerciseSelector from '../components/ExerciseSelector.vue'
-import { useExerciseStore } from '../stores/exercise'
 import { useWorkouts } from '../composables/useWorkouts'
 import type { LocalWorkout } from '../db'
-
-const exerciseStore = useExerciseStore()
+const selectedExercise = ref<string | null>(null)
 const {
   workouts,
   updateWorkout,
@@ -35,9 +33,9 @@ const copiedGarminDate = ref<string | null>(null)
 const filteredWorkouts = computed(() => {
   let result = workouts.value.filter(w => !w.deletedAt)
 
-  if (exerciseStore.selectedExercise) {
+  if (selectedExercise.value) {
     result = result.filter(
-      w => w.exercise === exerciseStore.selectedExercise
+      w => w.exercise === selectedExercise.value
     )
   }
 
@@ -377,6 +375,7 @@ onUnmounted(() => {
     ========================================================= -->
 
     <ExerciseSelector
+      v-model="selectedExercise"
       :required="false"
       source="workouts"
     />

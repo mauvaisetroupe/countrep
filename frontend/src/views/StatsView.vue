@@ -1,18 +1,18 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import ExerciseSelector from '../components/ExerciseSelector.vue'
 import { useWorkouts } from '../composables/useWorkouts'
-import { useExerciseStore } from '../stores/exercise'
 
-const exerciseStore = useExerciseStore()  
 const { workouts } = useWorkouts()
+const selectedExercise = ref<string | null>(null)
 
 // Filtrer les workouts : si aucun exercice n'est sélectionné (null), on prend tout
 const exerciseWorkouts = computed(() => {
-  if (!exerciseStore.selectedExercise) {
+  if (!selectedExercise.value) {
     return workouts.value
   }
-  return workouts.value.filter(w => w.exercise === exerciseStore.selectedExercise)
+
+  return workouts.value.filter(w => w.exercise === selectedExercise.value)
 })
 
 // --- CALCULS STATISTIQUES ---
@@ -213,6 +213,7 @@ const monthChartData = computed(() => {
 
     <!-- Sélecteur d'exercices -->
     <ExerciseSelector
+      v-model="selectedExercise"
       :required="false"
       source="workouts"
     />
@@ -310,7 +311,7 @@ const monthChartData = computed(() => {
       <section class="bg-amber-50/40 border border-amber-100/80 rounded-3xl p-5 shadow-xs space-y-3">
         <div class="flex justify-between items-center">
           <span class="text-gray-600 font-medium">
-            Total {{ exerciseStore.selectedExercise || 'de tous les exercices' }}
+            Total {{ selectedExercise || 'de tous les exercices' }}
           </span>
           <span class="text-xl font-bold text-gray-900">{{ totalRepsAllTime }}</span>
         </div>

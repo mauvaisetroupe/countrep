@@ -175,8 +175,10 @@ loadUserExercises()
        SÉLECTEUR D'EXERCICES
   ========================================================= -->
 
-  <ExerciseSelector />
-
+  <ExerciseSelector
+    :model-value="exerciseStore.selectedExercise"
+    @update:model-value="exerciseStore.setExercise"
+  />
 
   <!-- ========================================================
        CORPS

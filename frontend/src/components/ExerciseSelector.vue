@@ -1,25 +1,36 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { useExerciseStore } from '../stores/exercise'
 import { getExercises, getUserExercises, type ApiExercise } from '../api/exercises'
 import { useWorkouts } from '../composables/useWorkouts'
 
 const props = withDefaults(
   defineProps<{
+    modelValue?: string | null
     required?: boolean
     source?: 'user' | 'workouts'
   }>(),
   {
+    modelValue: null,
     required: true,
     source: 'user'
   }
 )
 
-const exerciseStore = useExerciseStore()
+const emit = defineEmits<{
+  'update:modelValue': [id: string | null]
+}>()
+
 const { workouts } = useWorkouts()
 
 const exercises = ref<ApiExercise[]>([])
 const loading = ref(false)
+
+const selectedExercise = computed({
+  get: () => props.modelValue,
+  set: (id: string | null) => {
+    emit('update:modelValue', id)
+  }
+})
 
 const loadExercises = async () => {
   loading.value = true
@@ -29,7 +40,6 @@ const loadExercises = async () => {
       exercises.value = await getUserExercises()
     } else {
       const catalog = await getExercises()
-
       const workoutReps = new Map<string, number>()
 
       workouts.value
@@ -50,15 +60,15 @@ const loadExercises = async () => {
         )
     }
 
-    const currentExists = exercises.value.some(
-      exercise => exercise.id === exerciseStore.selectedExercise
-    )
+    // Pour une sélection obligatoire, on sélectionne
+    // le premier exercice si la sélection actuelle est invalide.
+    if (props.required) {
+      const currentExists = exercises.value.some(
+        exercise => exercise.id === selectedExercise.value
+      )
 
-    if (!currentExists) {
-      if (props.required && exercises.value.length > 0) {
-        exerciseStore.setExercise(exercises.value[0].id)
-      } else {
-        exerciseStore.setExercise(null)
+      if (!currentExists && exercises.value.length > 0) {
+        selectedExercise.value = exercises.value[0].id
       }
     }
   } catch (error) {
@@ -69,20 +79,20 @@ const loadExercises = async () => {
 }
 
 const handleSelect = (id: string) => {
-  if (!props.required && exerciseStore.selectedExercise === id) {
-    exerciseStore.setExercise(null)
+  if (!props.required && selectedExercise.value === id) {
+    selectedExercise.value = null
   } else {
-    exerciseStore.setExercise(id)
+    selectedExercise.value = id
   }
 }
 
 const currentExercise = computed(() => {
-  if (!exerciseStore.selectedExercise) {
+  if (!selectedExercise.value) {
     return null
   }
 
   return exercises.value.find(
-    exercise => exercise.id === exerciseStore.selectedExercise
+    exercise => exercise.id === selectedExercise.value
   )
 })
 
@@ -103,7 +113,7 @@ onMounted(() => {
       @click="handleSelect(ex.id)"
       :class="[
         'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium shadow-xs transition-all',
-        exerciseStore.selectedExercise === ex.id
+        selectedExercise === ex.id
           ? 'bg-amber-500 text-white shadow-amber-200'
           : 'bg-white text-gray-700 border border-gray-200/60'
       ]"
