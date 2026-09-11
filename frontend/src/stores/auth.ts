@@ -3,10 +3,24 @@ import { defineStore } from 'pinia'
 
 const TOKEN_KEY = 'countrep.token'
 
+function isTokenValid(token: string | null): boolean {
+  if (!token) return false
+
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]))
+
+    if (!payload.exp) return false
+
+    return payload.exp * 1000 > Date.now()
+  } catch {
+    return false
+  }
+}
+
 export const useAuthStore = defineStore('auth', () => {
   const token = ref<string | null>(localStorage.getItem(TOKEN_KEY))
 
-  const isAuthenticated = computed(() => !!token.value)
+  const isAuthenticated = computed(() => isTokenValid(token.value))
 
   const setToken = (newToken: string | null) => {
     token.value = newToken
@@ -34,7 +48,7 @@ export const useAuthStore = defineStore('auth', () => {
       console.warn('La suppression d\'IndexedDB a été bloquée (connexions ouvertes).')
     }
   }
-  
+
   return {
     token,
     isAuthenticated,
