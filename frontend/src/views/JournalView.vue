@@ -3,18 +3,12 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import ExerciseSelector from '../components/ExerciseSelector.vue'
 import { useWorkouts } from '../composables/useWorkouts'
 import type { LocalWorkout } from '../db'
+
 const selectedExercise = ref<string | null>(null)
-const {
-  workouts,
-  updateWorkout,
-  deleteWorkout
-} = useWorkouts()
+
+const { workouts, updateWorkout, deleteWorkout } = useWorkouts()
 
 const PAGE_SIZE = 30
-
-// ============================================================
-// ESTIMATION DURÉE GARMIN
-// ============================================================
 
 const REPS_PER_SET = 15
 const MINUTES_PER_SET = 1
@@ -26,9 +20,7 @@ const editingWorkoutId = ref<string | null>(null)
 const openMenuId = ref<string | null>(null)
 const copiedGarminDate = ref<string | null>(null)
 
-// ============================================================
-// WORKOUTS FILTRÉS ET TRIÉS
-// ============================================================
+const expandedDates = ref<Set<string>>(new Set())
 
 const filteredWorkouts = computed(() => {
   let result = workouts.value.filter(w => !w.deletedAt)
@@ -62,42 +54,42 @@ const loadMore = () => {
   visibleCount.value += PAGE_SIZE
 }
 
-// ============================================================
-// DATE
-// ============================================================
+const visibleDays = computed(() => {
+  const days = new Map<string, LocalWorkout[]>()
 
-/**
- * Date locale actuelle au format YYYY-MM-DD.
- */
+  for (const workout of visibleWorkouts.value) {
+    const dayWorkouts = days.get(workout.date) ?? []
+    dayWorkouts.push(workout)
+    days.set(workout.date, dayWorkouts)
+  }
+
+  return [...days.entries()].map(([date, dayWorkouts]) => ({
+    date,
+    workouts: dayWorkouts
+  }))
+})
+
 const getTodayString = () => {
-  const d = new Date()
+  const today = new Date()
 
-  const year = d.getFullYear()
-  const month = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
+  const year = today.getFullYear()
+  const month = String(today.getMonth() + 1).padStart(2, '0')
+  const day = String(today.getDate()).padStart(2, '0')
 
   return `${year}-${month}-${day}`
 }
 
-/**
- * Date d'hier au format YYYY-MM-DD.
- */
 const getYesterdayString = () => {
-  const d = new Date()
-  d.setDate(d.getDate() - 1)
+  const yesterday = new Date()
+  yesterday.setDate(yesterday.getDate() - 1)
 
-  const year = d.getFullYear()
-  const month = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
+  const year = yesterday.getFullYear()
+  const month = String(yesterday.getMonth() + 1).padStart(2, '0')
+  const day = String(yesterday.getDate()).padStart(2, '0')
 
   return `${year}-${month}-${day}`
 }
 
-/**
- * Formatage de la date métier du workout.
- *
- * workout.date est une string YYYY-MM-DD.
- */
 const formatDay = (date: string) => {
   const day = date.slice(0, 10)
 
@@ -109,75 +101,35 @@ const formatDay = (date: string) => {
     return 'Hier'
   }
 
-  return new Date(`${day}T12:00:00`).toLocaleDateString('fr-FR', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric'
-  })
+  return new Date(`${day}T12:00:00`).toLocaleDateString(
+    'fr-FR',
+    {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    }
+  )
 }
 
-// ============================================================
-// AFFICHAGE HEURE
-// ============================================================
-
-/**
- * Retourne l'heure métier du workout.
- *
- * workoutTime est stocké au format HH:mm.
- */
 const formatWorkoutTime = (workoutTime: string) => {
-  if (!workoutTime) {
-    return '--:--'
-  }
+  if (!workoutTime) return '--:--'
 
   return workoutTime.slice(0, 5)
 }
 
-// ============================================================
-// JOURNAL
-// ============================================================
-
-/**
- * Indique si le workout est le premier de sa journée.
- */
-const isFirstOfDay = (index: number) => {
-  if (index === 0) return true
-
-  const current = visibleWorkouts.value[index]
-  const previous = visibleWorkouts.value[index - 1]
-
-  return current.date !== previous.date
-}
-
-/**
- * Total des répétitions pour une journée.
- *
- * Le filtre exercice est appliqué ici.
- */
 const dayTotal = (date: string) => {
   return filteredWorkouts.value
     .filter(w => w.date === date)
     .reduce((total, w) => total + w.reps, 0)
 }
 
-/**
- * Total réel des répétitions pour une journée,
- * sans tenir compte du filtre exercice.
- *
- * Utilisé pour le résumé Garmin.
- */
 const garminDayTotal = (date: string) => {
   return workouts.value
     .filter(w => !w.deletedAt && w.date === date)
     .reduce((total, w) => total + w.reps, 0)
 }
 
-/**
- * Détail des répétitions par exercice pour Garmin.
- *
- * Le résultat est trié par nombre de répétitions décroissant.
- */
 const garminExerciseSummary = (date: string) => {
   const totals = new Map<string, number>()
 
@@ -196,22 +148,10 @@ const garminExerciseSummary = (date: string) => {
     .join(' · ')
 }
 
-/**
- * Estimation de la durée à saisir dans Garmin.
- *
- * Règle :
- * - 15 reps = 1 minute
- * - +2 minutes toutes les 10 séries équivalentes
- *
- * Le calcul utilise toutes les reps de la journée,
- * indépendamment du filtre exercice.
- */
 const garminDuration = (date: string) => {
   const reps = garminDayTotal(date)
 
-  if (reps <= 0) {
-    return 0
-  }
+  if (reps <= 0) return 0
 
   const sets = Math.ceil(reps / REPS_PER_SET)
 
@@ -221,9 +161,6 @@ const garminDuration = (date: string) => {
   )
 }
 
-/**
- * Formatage de la durée Garmin.
- */
 const formatGarminDuration = (date: string) => {
   const minutes = garminDuration(date)
 
@@ -241,9 +178,6 @@ const formatGarminDuration = (date: string) => {
   return `${hours} h ${remainingMinutes} min`
 }
 
-/**
- * Copie le résumé Garmin dans le presse-papier.
- */
 const copyGarminSummary = async (date: string) => {
   const text =
     `Musculation · ${formatGarminDuration(date)} · ${garminExerciseSummary(date)}`
@@ -263,13 +197,22 @@ const copyGarminSummary = async (date: string) => {
   }
 }
 
-// ============================================================
-// MENU
-// ============================================================
+const isExpanded = (date: string) => {
+  return expandedDates.value.has(date)
+}
 
-/**
- * Ouvre / ferme le menu d'un workout.
- */
+const toggleDay = (date: string) => {
+  const dates = new Set(expandedDates.value)
+
+  if (dates.has(date)) {
+    dates.delete(date)
+  } else {
+    dates.add(date)
+  }
+
+  expandedDates.value = dates
+}
+
 const toggleMenu = (id: string) => {
   openMenuId.value =
     openMenuId.value === id
@@ -277,16 +220,9 @@ const toggleMenu = (id: string) => {
       : id
 }
 
-/**
- * Ferme le menu lorsqu'on clique ailleurs.
- */
 const handleDocumentClick = () => {
   openMenuId.value = null
 }
-
-// ============================================================
-// ÉDITION
-// ============================================================
 
 const startEdit = (id: string) => {
   openMenuId.value = null
@@ -300,13 +236,8 @@ const cancelEdit = () => {
 const saveEdit = async (workout: LocalWorkout) => {
   const reps = Number(workout.reps)
 
-  if (!Number.isFinite(reps) || reps <= 0) {
-    return
-  }
-
-  if (!workout.workoutTime) {
-    return
-  }
+  if (!Number.isFinite(reps) || reps <= 0) return
+  if (!workout.workoutTime) return
 
   await updateWorkout(workout.id, {
     reps,
@@ -315,10 +246,6 @@ const saveEdit = async (workout: LocalWorkout) => {
 
   editingWorkoutId.value = null
 }
-
-// ============================================================
-// SUPPRESSION
-// ============================================================
 
 const handleDeleteWorkout = async (workout: LocalWorkout) => {
   openMenuId.value = null
@@ -332,13 +259,12 @@ const handleDeleteWorkout = async (workout: LocalWorkout) => {
   await deleteWorkout(workout.id)
 }
 
-// ============================================================
-// INFINITE SCROLL
-// ============================================================
-
 const handleScroll = () => {
-  const scrollPosition = window.innerHeight + window.scrollY
-  const threshold = document.documentElement.scrollHeight - 500
+  const scrollPosition =
+    window.innerHeight + window.scrollY
+
+  const threshold =
+    document.documentElement.scrollHeight - 500
 
   if (scrollPosition >= threshold) {
     loadMore()
@@ -357,324 +283,305 @@ onUnmounted(() => {
 </script>
 
 <template>
+  <div class="px-4 pb-24">
 
-  <div class="pb-24">
-
-    <!-- ========================================================
-         EN-TÊTE
-    ========================================================= -->
-
-    <header class="px-5 pt-6 pb-4">
-      <h1 class="text-2xl font-bold tracking-tight text-gray-900">
+    <div class="pt-4 pb-3">
+      <h1 class="text-2xl font-bold text-gray-900">
         Journal
       </h1>
-    </header>
+    </div>
 
-    <!-- ========================================================
-         FILTRE EXERCICE
-    ========================================================= -->
+    <div class="mb-4">
+      <ExerciseSelector
+        v-model="selectedExercise"
+        :required="false"
+        source="workouts"
+      />
+    </div>
 
-    <ExerciseSelector
-      v-model="selectedExercise"
-      :required="false"
-      source="workouts"
-    />
+    <div
+      v-if="visibleDays.length === 0"
+      class="py-12 text-center text-gray-400"
+    >
+      Aucun entraînement.
+    </div>
 
-    <!-- ========================================================
-         JOURNAL
-    ========================================================= -->
+    <div
+      v-for="day in visibleDays"
+      :key="day.date"
+      class="mb-3 overflow-hidden rounded-2xl border border-gray-200/70 bg-white shadow-xs"
+    >
 
-    <main class="px-5 mt-4">
-
-      <!-- Aucun workout -->
-
-      <div
-        v-if="visibleWorkouts.length === 0"
-        class="bg-amber-50/40 border border-amber-100/80 rounded-3xl p-8 text-center"
+      <!-- Day header -->
+      <button
+        type="button"
+        class="w-full px-4 py-3 text-left"
+        @click="toggleDay(day.date)"
       >
-        <div class="text-3xl mb-3">
-          📝
+        <div class="flex items-center gap-3">
+
+          <div class="min-w-0 flex-1">
+            <div
+              class="text-base font-bold capitalize text-gray-900"
+            >
+              {{ formatDay(day.date) }}
+            </div>
+
+            <div
+              class="mt-0.5 text-lg font-bold text-amber-600"
+            >
+              {{ dayTotal(day.date) }}
+              <span class="text-sm font-medium text-gray-400">
+                reps
+              </span>
+            </div>
+          </div>
+
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            class="h-5 w-5 shrink-0 text-gray-400 transition-transform"
+            :class="{
+              'rotate-180': isExpanded(day.date)
+            }"
+          >
+            <path
+              d="m6 9 6 6 6-6"
+            />
+          </svg>
+
         </div>
 
-        <p class="font-semibold text-gray-800">
-          Aucun workout
-        </p>
+        <!-- Garmin summary -->
+        <div
+          class="mt-2 flex items-center gap-2 text-sm leading-relaxed text-gray-500"
+          @click.stop
+        >
+          <span class="min-w-0 flex-1">
+            <span class="font-medium text-gray-600">
+              Garmin · Musculation ·
+              {{ formatGarminDuration(day.date) }}
+            </span>
 
-        <p class="text-sm text-gray-500 mt-1">
-          Tes exercices enregistrés apparaîtront ici.
-        </p>
-      </div>
+            <span class="mx-1">·</span>
 
-      <!-- Journal -->
+            <span>
+              {{ garminExerciseSummary(day.date) }}
+            </span>
+          </span>
+
+          <button
+            type="button"
+            class="shrink-0 text-gray-400 transition-colors hover:text-gray-600"
+            :aria-label="
+              copiedGarminDate === day.date
+                ? 'Copié'
+                : 'Copier pour Garmin'
+            "
+            @click="copyGarminSummary(day.date)"
+          >
+            <span
+              v-if="copiedGarminDate === day.date"
+              class="text-sm font-semibold text-green-600"
+            >
+              ✓
+            </span>
+
+            <svg
+              v-else
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              class="h-4 w-4"
+            >
+              <rect
+                x="8"
+                y="8"
+                width="11"
+                height="11"
+                rx="2"
+              />
+
+              <path
+                d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"
+              />
+            </svg>
+          </button>
+        </div>
+      </button>
+
+      <!-- Workout details -->
       <div
-        v-else
-        class="space-y-2"
+        v-if="isExpanded(day.date)"
+        class="border-t border-gray-100"
       >
 
-        <template
-          v-for="(workout, index) in visibleWorkouts"
+        <article
+          v-for="workout in day.workouts"
           :key="workout.id"
+          class="relative border-b border-gray-100 last:border-b-0"
+          :class="{
+            'z-40': editingWorkoutId === workout.id
+          }"
         >
 
-          <!-- ==================================================
-               SÉPARATEUR DE JOURNÉE
-          ================================================== -->
-
+          <!-- Edit mode -->
           <div
-            v-if="isFirstOfDay(index)"
-            class="pt-2 pb-1"
+            v-if="editingWorkoutId === workout.id"
+            class="px-4 py-3"
           >
+            <div class="flex items-center gap-3">
 
-            <div class="flex items-center justify-between">
+              <input
+                v-model="workout.workoutTime"
+                type="time"
+                class="w-24 rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-sm text-gray-700 outline-none focus:border-amber-400"
+              />
 
-              <h2
-                class="text-sm font-bold uppercase tracking-wide text-gray-500"
-              >
-                {{ formatDay(workout.date) }}
-              </h2>
+              <div class="min-w-0 flex-1">
+                <div
+                  class="truncate font-semibold text-gray-800"
+                >
+                  {{ workout.exercise }}
+                </div>
+              </div>
 
-              <span class="text-xs font-semibold text-amber-600">
-                {{ dayTotal(workout.date) }} reps
-              </span>
+              <input
+                v-model.number="workout.reps"
+                type="number"
+                min="1"
+                class="w-20 rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-right text-sm font-semibold text-gray-800 outline-none focus:border-amber-400"
+              />
 
             </div>
 
-            <!-- Résumé Garmin -->
-
-            <div class="mt-1 flex items-center gap-2 text-xs text-gray-400">
-
-              <span class="leading-relaxed">
-                Garmin · Musculation · {{ formatGarminDuration(workout.date) }}
-                ·
-                <span class="font-medium text-gray-500">
-                  {{ garminExerciseSummary(workout.date) }}
-                </span>
-              </span>
+            <div class="mt-3 flex justify-end gap-2">
 
               <button
                 type="button"
-                class="shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
-                :aria-label="
-                  copiedGarminDate === workout.date
-                    ? 'Copié'
-                    : 'Copier pour Garmin'
-                "
-                @click.stop="copyGarminSummary(workout.date)"
+                class="rounded-lg px-3 py-1.5 text-sm font-medium text-gray-500 hover:bg-gray-100"
+                @click="cancelEdit"
               >
-                <span v-if="copiedGarminDate === workout.date">
-                  ✓
-                </span>
+                Annuler
+              </button>
 
+              <button
+                type="button"
+                class="rounded-lg bg-amber-500 px-3 py-1.5 text-sm font-semibold text-white hover:bg-amber-600"
+                @click="saveEdit(workout)"
+              >
+                Enregistrer
+              </button>
+
+            </div>
+          </div>
+
+          <!-- Normal mode -->
+          <div
+            v-else
+            class="flex items-center gap-3 px-4 py-2.5"
+          >
+            <span
+              class="w-12 shrink-0 text-sm font-medium text-gray-400"
+            >
+              {{ formatWorkoutTime(workout.workoutTime) }}
+            </span>
+
+            <div class="min-w-0 flex-1">
+              <div
+                class="truncate font-semibold text-gray-800"
+              >
+                {{ workout.exercise }}
+              </div>
+            </div>
+
+            <span
+              class="whitespace-nowrap font-bold text-gray-900"
+            >
+              {{ workout.reps }}
+
+              <span
+                class="text-xs font-medium text-gray-400"
+              >
+                reps
+              </span>
+            </span>
+
+            <!-- Menu -->
+            <div class="relative shrink-0">
+
+              <button
+                type="button"
+                class="flex h-8 w-8 items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                aria-label="Options"
+                @click.stop="toggleMenu(workout.id)"
+              >
                 <svg
-                  v-else
                   xmlns="http://www.w3.org/2000/svg"
                   viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.8"
-                  class="w-4 h-4"
+                  fill="currentColor"
+                  class="h-5 w-5"
                 >
-                  <rect
-                    x="8"
-                    y="8"
-                    width="11"
-                    height="11"
-                    rx="2"
+                  <circle
+                    cx="5"
+                    cy="12"
+                    r="1.5"
                   />
-
-                  <path
-                    d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="1.5"
+                  />
+                  <circle
+                    cx="19"
+                    cy="12"
+                    r="1.5"
                   />
                 </svg>
               </button>
 
-            </div>
-
-          </div>
-
-          <!-- ==================================================
-               WORKOUT
-          ================================================== -->
-
-          <article
-            class="relative bg-amber-50/40 border border-amber-100/80 rounded-2xl overflow-visible"
-            :class="{
-              'z-40': editingWorkoutId === workout.id
-            }"
-          >
-
-            <!-- ==================================================
-                 MODE ÉDITION
-            ================================================== -->
-
-            <div
-              v-if="editingWorkoutId === workout.id"
-              class="p-4"
-            >
-
-              <div class="flex items-center gap-3">
-
-                <!-- Heure -->
-
-                <input
-                  v-model="workout.workoutTime"
-                  type="time"
-                  class="w-[76px] shrink-0 rounded-lg border border-amber-200 bg-white px-2 py-1.5 text-sm font-semibold text-gray-700 outline-none focus:border-amber-500"
-                />
-
-                <!-- Exercice + reps -->
-
-                <div class="flex-1 min-w-0">
-
-                  <div class="font-semibold text-gray-800 truncate">
-                    {{ workout.exercise }}
-                  </div>
-
-                  <input
-                    v-model.number="workout.reps"
-                    type="number"
-                    min="0"
-                    inputmode="numeric"
-                    class="mt-2 w-full rounded-xl border border-amber-200 bg-white px-3 py-2 text-lg font-bold outline-none focus:border-amber-500"
-                  />
-
-                </div>
-
-                <!-- Actions -->
-
-                <div class="flex flex-col gap-2 shrink-0">
-
-                  <button
-                    class="text-xs font-bold text-amber-600"
-                    @click="saveEdit(workout)"
-                  >
-                    Enregistrer
-                  </button>
-
-                  <button
-                    class="text-xs text-gray-400"
-                    @click="cancelEdit"
-                  >
-                    Annuler
-                  </button>
-
-                </div>
-
-              </div>
-
-            </div>
-
-            <!-- ==================================================
-                 MODE NORMAL
-            ================================================== -->
-
-            <div
-              v-else
-              class="flex items-center gap-3 px-4 py-1"
-            >
-
-              <!-- Heure du workout -->
-
-              <span
-                class="text-sm font-medium text-gray-400 w-12 shrink-0"
+              <div
+                v-if="openMenuId === workout.id"
+                class="absolute right-0 top-9 z-50 w-32 overflow-hidden rounded-xl border border-gray-200 bg-white py-1 shadow-lg"
+                @click.stop
               >
-                {{ formatWorkoutTime(workout.workoutTime) }}
-              </span>
-
-              <!-- Exercice -->
-
-              <div class="flex-1 min-w-0">
-
-                <div class="font-semibold text-gray-800 truncate">
-                  {{ workout.exercise }}
-                </div>
-
-              </div>
-
-              <!-- Reps -->
-
-              <span
-                class="font-bold text-gray-900 whitespace-nowrap"
-              >
-                {{ workout.reps }}
-
-                <span class="text-xs font-medium text-gray-400">
-                  reps
-                </span>
-              </span>
-
-              <!-- ==================================================
-                   MENU
-              ================================================== -->
-
-              <div class="relative">
-
                 <button
-                  class="w-7 h-7 flex items-center justify-center rounded-full text-gray-400 hover:bg-amber-100 hover:text-gray-700 transition-colors"
-                  aria-label="Actions"
-                  @click.stop="toggleMenu(workout.id)"
+                  type="button"
+                  class="block w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
+                  @click="startEdit(workout.id)"
                 >
-                  ⋮
+                  Modifier
                 </button>
 
-                <div
-                  v-if="openMenuId === workout.id"
-                  class="absolute right-0 top-7 z-50 w-32 bg-white border border-gray-100 rounded-xl shadow-lg overflow-hidden"
+                <button
+                  type="button"
+                  class="block w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50"
+                  @click="handleDeleteWorkout(workout)"
                 >
-
-                  <!-- Modifier -->
-
-                  <button
-                    class="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-amber-50"
-                    @click="startEdit(workout.id)"
-                  >
-                    ✏️ Modifier
-                  </button>
-
-                  <!-- Supprimer -->
-
-                  <button
-                    class="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50"
-                    @click="handleDeleteWorkout(workout)"
-                  >
-                    🗑️ Supprimer
-                  </button>
-
-                </div>
-
+                  Supprimer
+                </button>
               </div>
 
             </div>
+          </div>
 
-          </article>
-
-        </template>
-
-        <!-- ======================================================
-             CHARGEMENT / FIN
-        ======================================================= -->
-
-        <div class="py-5 text-center">
-
-          <button
-            v-if="hasMore"
-            class="text-sm font-semibold text-amber-600"
-            @click="loadMore"
-          >
-            Charger plus
-          </button>
-
-          <span
-            v-else
-            class="text-xs text-gray-400"
-          >
-            Fin du journal
-          </span>
-
-        </div>
+        </article>
 
       </div>
 
-    </main>
+    </div>
+
+    <div
+      v-if="hasMore"
+      class="py-6 text-center text-sm text-gray-400"
+    >
+      Chargement…
+    </div>
+
   </div>
 </template>
