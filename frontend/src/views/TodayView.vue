@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import ExerciseSelector from '../components/ExerciseSelector.vue'
 import { useWorkouts } from '../composables/useWorkouts'
 import { syncWorkout } from '../services/sync'
@@ -82,10 +82,21 @@ const repsValue = ref('')
 // Par défaut : heure actuelle
 const workoutTime = ref(getCurrentTime())
 
+// Illustration de l'exercice
+const exerciseImageAvailable = ref(true)
+
+watch(
+  () => exerciseStore.selectedExercise,
+  () => {
+    exerciseImageAvailable.value = true
+  }
+)
+
 const openAddModal = () => {
   workoutTime.value = getCurrentTime()
   console.log(workoutTime.value)
   repsValue.value = ''
+  exerciseImageAvailable.value = true
   showModal.value = true
 }
 
@@ -233,6 +244,22 @@ loadUserExercises()
         </button>
 
       </div>
+
+      <!-- ==================================================
+           ILLUSTRATION DE L'EXERCICE
+      ================================================== -->
+
+      <img
+        v-if="
+          exerciseStore.selectedExercise &&
+          exerciseImageAvailable
+        "
+        :src="`/exercises/${exerciseStore.selectedExercise}.jpg`"
+        :alt="`Illustration de ${selectedExerciseName}`"
+        class="w-full h-48 object-contain rounded-2xl bg-white border border-amber-100"
+        @error="exerciseImageAvailable = false"
+      />
+
       <!-- ==================================================
           DATE SÉLECTIONNÉE
       ================================================== -->
@@ -273,7 +300,7 @@ loadUserExercises()
       <div class="relative border-2 border-amber-600/70 rounded-2xl bg-white px-4 py-3 flex items-center gap-3 shadow-xs">
         <span class="absolute -top-3 left-4 bg-white px-1.5 text-xs font-semibold text-amber-700">Nombre</span>
         <span class="text-amber-600">⚡</span>
-        <input 
+        <input
           type="number"
           v-model="repsValue"
           placeholder="Entrez un nombre"
