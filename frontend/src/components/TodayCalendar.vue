@@ -523,7 +523,7 @@ const isToday = (
           =================================================== -->
 
           <div
-            class="grid grid-cols-7 gap-y-1 text-center text-sm"
+            class="grid grid-cols-7 gap-y-1 text-center text-base"
           >
             <div
               v-for="(
@@ -581,7 +581,7 @@ const isToday = (
                 <!-- Répétitions -->
 
                 <span
-                  class="h-[14px] text-[10px] font-bold text-amber-600 leading-[14px] mt-0.5"
+                  class="h-[14px] text-xs font-bold text-amber-600 leading-[14px] mt-0.5"
                 >
                   {{
                     repsByDate[

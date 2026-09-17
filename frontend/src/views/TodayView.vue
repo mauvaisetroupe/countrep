@@ -184,7 +184,7 @@ loadUserExercises()
        CORPS
   ========================================================= -->
 
-  <main class="px-2 mt-4 space-y-4">
+  <main class="px-3 mt-4 space-y-4">
 
     <!-- ======================================================
         CALENDRIER

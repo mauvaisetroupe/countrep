@@ -124,7 +124,7 @@ onMounted(() => {
 
   <p
     v-if="currentExercise"
-    class="px-5 text-sm font-medium text-amber-600 mt-0.5"
+    class="px-5 text-base font-medium text-amber-600 mt-0.5"
   >
     {{ currentExercise.nameFr }}
   </p>
