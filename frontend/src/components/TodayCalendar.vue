@@ -373,7 +373,7 @@ const isToday = (
 
 <template>
   <section
-    class="bg-amber-50/40 border border-amber-100/80 rounded-3xl p-5 shadow-xs"
+    class="bg-amber-50/40 border border-amber-100/80 rounded-3xl p-2 shadow-xs"
   >
 
     <!-- EN-TÊTE DU CALENDRIER -->

@@ -112,7 +112,7 @@ onMounted(() => {
       type="button"
       @click="handleSelect(ex.id)"
       :class="[
-        'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium shadow-xs transition-all',
+        'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-base font-medium shadow-xs transition-all',
         selectedExercise === ex.id
           ? 'bg-amber-500 text-white shadow-amber-200'
           : 'bg-white text-gray-700 border border-gray-200/60'
