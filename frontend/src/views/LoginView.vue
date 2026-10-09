@@ -3,6 +3,7 @@ import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { registerUser, loginUser } from '../services/auth'
+import { prepareLocalDataFor } from '../services/session'
 import { workoutRepository } from '../repositories/workoutRepository'
 
 const username = ref('')
@@ -25,6 +26,10 @@ const handleRegister = async () => {
   
   try {
     const verification = await registerUser(username.value)
+    if (!(await prepareLocalDataFor(verification.token))) {
+      error.value = 'Connexion annulée.'
+      return
+    }
     authStore.setToken(verification.token)
     router.push({ name: 'today' })
   } catch (err: any) {
@@ -41,6 +46,10 @@ const handleLogin = async () => {
 
   try {
     const verification = await loginUser(username.value)
+    if (!(await prepareLocalDataFor(verification.token))) {
+      error.value = 'Connexion annulée.'
+      return
+    }
     authStore.setToken(verification.token)
     router.push({ name: 'today' })
   } catch (err: any) {

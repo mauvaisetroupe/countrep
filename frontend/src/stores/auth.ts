@@ -1,19 +1,42 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
+import { db } from '../db'
 
 const TOKEN_KEY = 'countrep.token'
 
-// Date d'expiration du JWT en ms, ou null si illisible
-export function getTokenExpiry(token: string | null): number | null {
+// Compte auquel appartiennent les données locales (IndexedDB)
+const OWNER_KEY = 'countrep.owner'
+
+function decodeTokenPayload(
+  token: string | null
+): { userId?: string, exp?: number } | null {
   if (!token) return null
 
   try {
-    const payload = JSON.parse(atob(token.split('.')[1]))
+    // Le payload JWT est en base64url
+    const base64 = token.split('.')[1]
+      .replace(/-/g, '+')
+      .replace(/_/g, '/')
 
-    return payload.exp ? payload.exp * 1000 : null
+    return JSON.parse(atob(base64))
   } catch {
     return null
   }
+}
+
+// Date d'expiration du JWT en ms, ou null si illisible
+export function getTokenExpiry(token: string | null): number | null {
+  const exp = decodeTokenPayload(token)?.exp
+
+  return exp ? exp * 1000 : null
+}
+
+export function getTokenUserId(token: string | null): string | null {
+  return decodeTokenPayload(token)?.userId ?? null
+}
+
+export function getLocalDataOwner(): string | null {
+  return localStorage.getItem(OWNER_KEY)
 }
 
 function isTokenValid(token: string | null): boolean {
@@ -36,6 +59,11 @@ export const useAuthStore = defineStore('auth', () => {
     sessionExpired.value = false
     if (newToken) {
       localStorage.setItem(TOKEN_KEY, newToken)
+
+      const userId = getTokenUserId(newToken)
+      if (userId) {
+        localStorage.setItem(OWNER_KEY, userId)
+      }
     } else {
       localStorage.removeItem(TOKEN_KEY)
     }
@@ -48,21 +76,19 @@ export const useAuthStore = defineStore('auth', () => {
     sessionExpired.value = true
   }
 
+  // Efface le token et toutes les données locales.
+  // Passer par services/session.ts#logoutSafely, qui protège
+  // les séances non synchronisées.
   const logout = async () => {
     setToken(null)
-    const dbName = 'WorkoutDatabase'
-    const deleteRequest = indexedDB.deleteDatabase(dbName)
+    localStorage.removeItem(OWNER_KEY)
 
-    deleteRequest.onsuccess = () => {
-      console.log('IndexedDB supprimée avec succès lors de la déconnexion.')
-    }
-
-    deleteRequest.onerror = () => {
-      console.error('Erreur lors de la suppression de la base IndexedDB.')
-    }
-
-    deleteRequest.onblocked = () => {
-      console.warn('La suppression d\'IndexedDB a été bloquée (connexions ouvertes).')
+    try {
+      // Dexie ferme proprement ses connexions avant de supprimer,
+      // et la base se rouvre au prochain accès (nouvelle connexion).
+      await db.delete({ disableAutoOpen: false })
+    } catch (error) {
+      console.error('Erreur lors de la suppression de la base IndexedDB.', error)
     }
   }
 

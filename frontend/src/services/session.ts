@@ -1,5 +1,12 @@
 import { apiFetch } from '../api/client'
-import { getTokenExpiry, useAuthStore } from '../stores/auth'
+import {
+  getLocalDataOwner,
+  getTokenExpiry,
+  getTokenUserId,
+  useAuthStore
+} from '../stores/auth'
+import { workoutRepository } from '../repositories/workoutRepository'
+import { syncPendingWorkouts } from './sync'
 
 // Le token dure 7 jours ; on le renouvelle dès qu'il a plus d'un jour.
 // Un utilisateur qui ouvre l'app au moins une fois par semaine
@@ -48,4 +55,70 @@ export async function ensureFreshToken(): Promise<void> {
     })
 
   await inFlight
+}
+
+// Accorde un texte au nombre de séances : plural(n, 'a', 'ont')
+function plural(count: number, one: string, many: string): string {
+  return count > 1 ? many : one
+}
+
+// À appeler avec le token d'une nouvelle connexion, avant setToken.
+// Si les données locales appartiennent à un autre compte, elles sont
+// effacées (après confirmation s'il reste des séances non synchronisées,
+// qui ne pourraient pas être envoyées sur le bon compte).
+// Retourne false si l'utilisateur annule (voir docs/adr/0004).
+export async function prepareLocalDataFor(token: string): Promise<boolean> {
+  const owner = getLocalDataOwner()
+  const userId = getTokenUserId(token)
+
+  // Pas de propriétaire connu (ancienne install) ou même compte : on garde
+  if (!owner || owner === userId) {
+    return true
+  }
+
+  const pendingCount = (await workoutRepository.getPending()).length
+
+  if (
+    pendingCount > 0 &&
+    !window.confirm(
+      `${pendingCount} ${plural(pendingCount, 'séance', 'séances')} d'un autre compte ` +
+      `${plural(pendingCount, "n'a", "n'ont")} pas été ` +
+      `${plural(pendingCount, 'synchronisée', 'synchronisées')} et ` +
+      `${plural(pendingCount, 'sera supprimée', 'seront supprimées')} de cet appareil. Continuer ?`
+    )
+  ) {
+    return false
+  }
+
+  await workoutRepository.clearAll()
+
+  return true
+}
+
+// Déconnexion qui protège les séances non synchronisées :
+// tente d'abord de les envoyer, puis demande confirmation
+// s'il en reste. Retourne false si l'utilisateur annule.
+export async function logoutSafely(): Promise<boolean> {
+  const authStore = useAuthStore()
+
+  await syncPendingWorkouts()
+
+  const pendingCount = (await workoutRepository.getPending()).length
+
+  if (
+    pendingCount > 0 &&
+    !window.confirm(
+      `${pendingCount} ${plural(pendingCount, 'séance', 'séances')} ` +
+      `${plural(pendingCount, "n'a", "n'ont")} pas pu être ` +
+      `${plural(pendingCount, 'synchronisée', 'synchronisées')} et ` +
+      `${plural(pendingCount, 'sera perdue', 'seront perdues')} ` +
+      'si tu te déconnectes. Se déconnecter quand même ?'
+    )
+  ) {
+    return false
+  }
+
+  await authStore.logout()
+
+  return true
 }

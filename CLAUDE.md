@@ -57,7 +57,8 @@ Exercises are **not** offline: `composables/useExercises.ts` (module-level share
 
 - Passwordless: WebAuthn register/login in `backend/src/routes/auth.ts` issues a 7-day JWT `{ userId }`. Additional devices are registered via `/api/auth/add-device*` while authenticated.
 - Sliding session: `POST /api/auth/refresh` swaps a valid token for a fresh one; `services/session.ts#ensureFreshToken` calls it once the token is over a day old (app start, `visibilitychange`, before each sync).
-- Frontend stores the token in `localStorage` (`stores/auth.ts`); `isAuthenticated` checks the JWT `exp` client-side. Logout deletes the whole `WorkoutDatabase` IndexedDB.
+- Frontend stores the token in `localStorage` (`stores/auth.ts`); `isAuthenticated` checks the JWT `exp` client-side.
+- Local data belongs to one account at a time (`localStorage` `countrep.owner`, set by `setToken`). Logins must call `services/session.ts#prepareLocalDataFor(token)` before `setToken` (wipes another account's data, with confirmation if pending). Logout must go through `logoutSafely()` (sync attempt + confirmation) — `authStore.logout()` deletes the whole IndexedDB.
 - All authenticated calls go through `api/client.ts#apiFetch`, which adds the bearer token and, on 401, calls `authStore.markSessionExpired()` (drops the token, keeps IndexedDB); `App.vue` then redirects to login.
 - Backend protection: `verifyJWT` (`middleware/auth.ts`) as an `onRequest` hook per route plugin (whole plugin in `workouts.ts`, a nested `register` scope in `exercises.ts`, `preHandler` on individual auth routes). It sets `request.userId`; every query must filter by `user_id`.
 - Route guarding lives in `router.beforeEach` in `frontend/src/router/router.ts` (routes use `meta.requiresAuth`).

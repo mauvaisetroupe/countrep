@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import { registerUser, loginUser, addDevice } from '../services/auth'
+import { logoutSafely, prepareLocalDataFor } from '../services/session'
 import UserExercises from '../components/UserExercises.vue'
 
 
@@ -29,6 +30,10 @@ const handleAuthAction = async (isRegistration: boolean) => {
       : await loginUser(trimmedName)
 
     if (verification.verified && verification.token) {
+      if (!(await prepareLocalDataFor(verification.token))) {
+        error.value = 'Connexion annulée.'
+        return
+      }
       authStore.setToken(verification.token)
       name.value = ''
     } else {
@@ -60,8 +65,10 @@ const handleAddDevice = async () => {
   }
 }
 
-const logout = () => {
-  authStore.logout()
+const logout = async () => {
+  if (!(await logoutSafely())) {
+    return
+  }
   name.value = ''
   error.value = ''
   deviceMessage.value = ''
