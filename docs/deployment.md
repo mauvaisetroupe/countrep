@@ -20,14 +20,21 @@ Navigateur ──HTTPS──▶ Cloudflare (countrep.architech.lu)
 
 ## Procédure
 
-Le dépôt est cloné sur le LXC dans `/opt/countrep`. Le build se fait sur le serveur, avec le script `/opt/countrep/frontend/deploy.sh` (non versionné) :
+Le dépôt est cloné sur le LXC dans `/opt/countrep`. Le build se fait sur le serveur, avec le script versionné `deploy/deploy.sh` :
 
-1. `git pull`
-2. backend : `npm install`, `npm run build` (→ `backend/dist`)
-3. frontend : `npm install`, `npm run build` (→ `frontend/dist`)
-4. `systemctl restart countrep-api`, puis attente de `GET /api/health` (20 s max)
-5. `systemctl reload nginx`
-6. vérification de `/api/health` en direct (`:3000`) et via Nginx (`:80`)
+```bash
+/opt/countrep/deploy/deploy.sh
+```
+
+1. `git pull --ff-only`
+2. backend : `npm ci`, `npm run build` (→ `backend/dist`)
+3. frontend : `npm ci`, build dans `frontend/dist-next` (Nginx continue de servir `dist/`)
+4. `systemctl restart countrep-api`, puis attente de `GET /api/health` (20 s max) ; en cas d'échec, arrêt sans toucher au frontend
+5. remplacement de `dist/` par `dist-next/` (deux `mv`, coupure quasi nulle)
+6. `systemctl reload nginx`
+7. vérification de `/api/health` en direct (`:3000`) et via Nginx (`:80`)
+
+`npm ci` n'écrit jamais `package-lock.json` : le clone reste propre et `git pull` ne bloque pas. Si un déploiement échoue sur `git pull --ff-only`, quelqu'un a modifié des fichiers suivis directement sur le serveur (`git status` pour voir lesquels).
 
 Pas d'étape de migration : les changements de schéma sont appliqués à la main (voir `backend/database.sql` et `backend/schema.sql`), **avant** de déployer un code qui en dépend.
 
