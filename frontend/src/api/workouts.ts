@@ -1,4 +1,4 @@
-import { useAuthStore } from '../stores/auth'
+import { apiFetch } from './client'
 
 export interface ApiWorkout {
   id: string
@@ -22,23 +22,15 @@ export class ApiError extends Error {
   }
 }
 
-const API_URL = import.meta.env.VITE_API_URL || ''
-
-function getHeaders() {
-  const authStore = useAuthStore()
-  return {
-    'Content-Type': 'application/json',
-    ...(authStore.token ? { 'Authorization': `Bearer ${authStore.token}` } : {})
-  }
-}
+const JSON_HEADERS = { 'Content-Type': 'application/json' }
 
 export async function createWorkout(
   workout: ApiWorkout
 ): Promise<ApiWorkout> {
 
-  const response = await fetch(`${API_URL}/api/workouts`, {
+  const response = await apiFetch('/api/workouts', {
     method: 'POST',
-    headers: getHeaders(),
+    headers: JSON_HEADERS,
     body: JSON.stringify(workout)
   })
 
@@ -50,8 +42,8 @@ export async function createWorkout(
 }
 
 export async function getWorkouts(): Promise<ApiWorkout[]> {
-  const response = await fetch(`${API_URL}/api/workouts`, {
-    headers: getHeaders()
+  const response = await apiFetch('/api/workouts', {
+    headers: JSON_HEADERS
   })
 
   if (!response.ok) {
@@ -66,9 +58,9 @@ export async function updateWorkout(
   changes: Partial<ApiWorkout>
 ): Promise<ApiWorkout> {
 
-  const response = await fetch(`${API_URL}/api/workouts/${id}`, {
+  const response = await apiFetch(`/api/workouts/${id}`, {
     method: 'PATCH',
-    headers: getHeaders(),
+    headers: JSON_HEADERS,
     body: JSON.stringify(changes)
   })
 
@@ -80,15 +72,8 @@ export async function updateWorkout(
 }
 
 export async function deleteWorkout(id: string): Promise<void> {
-  const authStore = useAuthStore()
-
-  const response = await fetch(`${API_URL}/api/workouts/${id}`, {
-    method: 'DELETE',
-    headers: {
-      ...(authStore.token
-        ? { 'Authorization': `Bearer ${authStore.token}` }
-        : {})
-    }
+  const response = await apiFetch(`/api/workouts/${id}`, {
+    method: 'DELETE'
   })
 
   if (!response.ok) {

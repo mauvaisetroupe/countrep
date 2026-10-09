@@ -1,4 +1,4 @@
-import { useAuthStore } from '../stores/auth'
+import { apiFetch } from './client'
 
 export interface ApiExercise {
   id: string
@@ -11,24 +11,15 @@ export interface UserExercise extends ApiExercise {
   position: number
 }
 
-const API_URL = import.meta.env.VITE_API_URL || ''
-
-function getHeaders() {
-  const authStore = useAuthStore()
-
-  return {
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${authStore.token}`
-  }
-}
+const JSON_HEADERS = { 'Content-Type': 'application/json' }
 
 // ============================================================
 // CATALOG
 // ============================================================
 
 export async function getExercises(): Promise<ApiExercise[]> {
-  const response = await fetch(`${API_URL}/api/exercises`, {
-    headers: getHeaders()
+  const response = await apiFetch('/api/exercises', {
+    headers: JSON_HEADERS
   })
 
   if (!response.ok) {
@@ -43,8 +34,8 @@ export async function getExercises(): Promise<ApiExercise[]> {
 // ============================================================
 
 export async function getUserExercises(): Promise<UserExercise[]> {
-  const response = await fetch(`${API_URL}/api/user/exercises`, {
-    headers: getHeaders()
+  const response = await apiFetch('/api/user/exercises', {
+    headers: JSON_HEADERS
   })
 
   if (!response.ok) {
@@ -61,9 +52,9 @@ export async function getUserExercises(): Promise<UserExercise[]> {
 export async function updateUserExercises(
   exerciseIds: string[]
 ): Promise<UserExercise[]> {
-  const response = await fetch(`${API_URL}/api/user/exercises`, {
+  const response = await apiFetch('/api/user/exercises', {
     method: 'PUT',
-    headers: getHeaders(),
+    headers: JSON_HEADERS,
     body: JSON.stringify({
       exerciseIds
     })

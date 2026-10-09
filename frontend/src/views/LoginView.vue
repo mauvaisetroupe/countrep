@@ -1,14 +1,22 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { registerUser, loginUser } from '../services/auth'
+import { workoutRepository } from '../repositories/workoutRepository'
 
 const username = ref('')
 const error = ref('')
 const loading = ref(false)
 const router = useRouter()
 const authStore = useAuthStore()
+
+// Séances saisies localement mais pas encore envoyées au serveur
+const pendingCount = ref(0)
+
+onMounted(async () => {
+  pendingCount.value = (await workoutRepository.getPending()).length
+})
 
 const handleRegister = async () => {
   if (!username.value.trim()) return
@@ -56,6 +64,19 @@ const handleLogin = async () => {
         <p class="mt-1 text-sm text-gray-500">
           Entrez votre identifiant pour vous connecter ou créer une clé.
         </p>
+
+        <!-- Session expirée -->
+        <div
+          v-if="authStore.sessionExpired"
+          class="mt-4 rounded-2xl bg-amber-50 border border-amber-200 p-3 text-sm text-amber-800"
+        >
+          Ta session a expiré, reconnecte-toi.
+          <template v-if="pendingCount > 0">
+            {{ pendingCount }} séance{{ pendingCount > 1 ? 's' : '' }} en attente
+            {{ pendingCount > 1 ? 'sont conservées' : 'est conservée' }} sur cet appareil
+            et {{ pendingCount > 1 ? 'seront synchronisées' : 'sera synchronisée' }} après la connexion.
+          </template>
+        </div>
 
         <!-- Identifiant -->
         <div class="mt-5">

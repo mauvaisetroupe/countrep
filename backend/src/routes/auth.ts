@@ -186,6 +186,20 @@ export async function authRoutes(fastify: FastifyInstance) {
     }
   })
 
+  // Renouvellement glissant : un token encore valide est échangé
+  // contre un nouveau token de 7 jours (voir docs/adr/0003).
+  fastify.post('/api/auth/refresh', { preHandler: verifyJWT }, async (request, reply) => {
+    const userId = request.userId
+
+    const userResult = await pool.query('SELECT id FROM users WHERE id = $1', [userId])
+    if (userResult.rows.length === 0) {
+      return reply.code(401).send({ error: 'Utilisateur inconnu' })
+    }
+
+    const token = jwt.sign({ userId }, JWT_SECRET, { expiresIn: '7d' })
+    return { token }
+  })
+
   fastify.post('/api/auth/add-device-challenge', { preHandler: verifyJWT }, async (request, reply) => {
     const userId = request.userId
 

@@ -1,8 +1,41 @@
 <script setup lang="ts">
-import { useRoute } from 'vue-router'
+import { onMounted, onUnmounted, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { needRefresh, updateSW } from './composables/usePwaUpdate'
+import { useAuthStore } from './stores/auth'
+import { ensureFreshToken } from './services/session'
 
 const route = useRoute()
+const router = useRouter()
+const authStore = useAuthStore()
+
+// Session refusée par le serveur (401) pendant l'utilisation :
+// retour à la connexion, les données locales sont conservées.
+watch(
+  () => authStore.sessionExpired,
+  expired => {
+    if (expired && route.meta.requiresAuth) {
+      router.replace({ name: 'login' })
+    }
+  }
+)
+
+// Une PWA reste souvent ouverte en arrière-plan :
+// on renouvelle aussi le token au retour au premier plan.
+function handleVisibilityChange() {
+  if (document.visibilityState === 'visible') {
+    ensureFreshToken()
+  }
+}
+
+onMounted(() => {
+  ensureFreshToken()
+  document.addEventListener('visibilitychange', handleVisibilityChange)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
+})
 
 async function updateApp() {
   await updateSW(true)

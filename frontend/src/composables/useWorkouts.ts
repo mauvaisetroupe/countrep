@@ -6,6 +6,7 @@ import {
   syncWorkoutsFromServer,
   syncOne
 } from '../services/sync'
+import { ensureFreshToken } from '../services/session'
 
 export function useWorkouts() {
 
@@ -137,6 +138,8 @@ const deleteWorkout = async (id: string) => {
     try {
       // Toujours commencer par les données locales
       await loadWorkouts()
+
+      await ensureFreshToken()
 
       // Envoyer les workouts locaux non synchronisés
       await syncPendingWorkouts()
