@@ -236,7 +236,9 @@ const cancelEdit = () => {
 const saveEdit = async (workout: LocalWorkout) => {
   const reps = Number(workout.reps)
 
-  if (!Number.isFinite(reps) || reps <= 0) return
+  // reps est un integer > 0 en base : une valeur décimale
+  // serait refusée par le serveur et resterait pending
+  if (!Number.isInteger(reps) || reps <= 0) return
   if (!workout.workoutTime) return
 
   await updateWorkout(workout.id, {
@@ -455,6 +457,8 @@ onUnmounted(() => {
                 v-model.number="workout.reps"
                 type="number"
                 min="1"
+                step="1"
+                inputmode="numeric"
                 class="w-20 rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-right text-sm font-semibold text-gray-800 outline-none focus:border-amber-400"
               />
 
