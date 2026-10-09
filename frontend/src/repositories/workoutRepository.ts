@@ -6,6 +6,10 @@ export const workoutRepository = {
     return db.workouts.toArray()
   },
 
+  async getById(id: string): Promise<LocalWorkout | undefined> {
+    return db.workouts.get(id)
+  },
+
   async create(workout: LocalWorkout): Promise<void> {
     await db.workouts.add(workout)
   },
@@ -22,6 +26,23 @@ export const workoutRepository = {
       .where('syncStatus')
       .equals('pending')
       .toArray()
+  },
+
+  // Marque le workout comme synchronisé, sauf s'il a été modifié
+  // localement pendant l'appel réseau (il reste alors pending).
+  async markSynced(workout: LocalWorkout): Promise<void> {
+    await db.transaction('rw', db.workouts, async () => {
+      const current = await db.workouts.get(workout.id)
+
+      if (!current || current.updatedAt !== workout.updatedAt) {
+        return
+      }
+
+      await db.workouts.update(workout.id, {
+        syncStatus: 'synced',
+        syncOperation: 'none'
+      })
+    })
   },
 
   async saveSynced(workout: LocalWorkout): Promise<void> {

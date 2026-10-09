@@ -26,7 +26,10 @@ export async function workoutRoutes(app: FastifyInstance) {
       deletedAt?: number | null
     }
 
-    await pool.query(
+    // Upsert idempotent : le client peut rejouer la création
+    // (réponse perdue, synchro concurrente) sans erreur de clé dupliquée.
+    // La clause WHERE empêche d'écraser le workout d'un autre utilisateur.
+    const result = await pool.query(
       `
       INSERT INTO workouts (
         id,
@@ -55,6 +58,27 @@ export async function workoutRoutes(app: FastifyInstance) {
           ELSE to_timestamp($10::bigint / 1000.0)
         END
       )
+      ON CONFLICT (id) DO UPDATE
+      SET
+        exercise = EXCLUDED.exercise,
+        date = EXCLUDED.date,
+        workout_time = EXCLUDED.workout_time,
+        reps = EXCLUDED.reps,
+        mode = EXCLUDED.mode,
+        updated_at = EXCLUDED.updated_at,
+        deleted_at = EXCLUDED.deleted_at
+      WHERE workouts.user_id = EXCLUDED.user_id
+      RETURNING
+        id,
+        user_id,
+        exercise,
+        date::text AS date,
+        workout_time::text AS workout_time,
+        reps,
+        mode,
+        created_at,
+        updated_at,
+        deleted_at
       `,
       [
         body.id,
@@ -70,25 +94,11 @@ export async function workoutRoutes(app: FastifyInstance) {
       ]
     )
 
-    const result = await pool.query(
-      `
-      SELECT
-        id,
-        user_id,
-        exercise,
-        date::text AS date,
-        workout_time::text AS workout_time,
-        reps,
-        mode,
-        created_at,
-        updated_at,
-        deleted_at
-      FROM workouts
-      WHERE id = $1
-        AND user_id = $2
-      `,
-      [body.id, userId]
-    )
+    if (result.rowCount === 0) {
+      return reply.code(409).send({
+        error: 'Workout id already used'
+      })
+    }
 
     const workout = result.rows[0]
 

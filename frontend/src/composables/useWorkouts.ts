@@ -4,8 +4,7 @@ import { workoutRepository } from '../repositories/workoutRepository'
 import {
   syncPendingWorkouts,
   syncWorkoutsFromServer,
-  syncUpdatedWorkout,
-  syncDeletedWorkout
+  syncOne
 } from '../services/sync'
 
 export function useWorkouts() {
@@ -39,11 +38,22 @@ const updateWorkout = async (
   changes: Partial<LocalWorkout>
 ): Promise<void> => {
 
+  const existing = await workoutRepository.getById(id)
+
+  if (!existing) {
+    return
+  }
+
+  // Tant que le workout n'a jamais atteint le serveur,
+  // l'opération en attente reste une création.
+  const syncOperation =
+    existing.syncOperation === 'create' ? 'create' : 'update'
+
   await workoutRepository.update(id, {
     ...changes,
     updatedAt: Date.now(),
     syncStatus: 'pending',
-    syncOperation: 'update'
+    syncOperation
   })
 
   await loadWorkouts()
@@ -57,7 +67,7 @@ const updateWorkout = async (
   }
 
   try {
-    await syncUpdatedWorkout(workout)
+    await syncOne(workout)
     await loadWorkouts()
   } catch (error) {
     console.warn(
@@ -68,6 +78,19 @@ const updateWorkout = async (
 }
 
 const deleteWorkout = async (id: string) => {
+
+  const existing = await workoutRepository.getById(id)
+
+  if (!existing) {
+    return
+  }
+
+  // Jamais envoyé au serveur : rien à synchroniser
+  if (existing.syncOperation === 'create') {
+    await workoutRepository.remove(id)
+    await loadWorkouts()
+    return
+  }
 
   const now = Date.now()
 
@@ -89,7 +112,7 @@ const deleteWorkout = async (id: string) => {
   }
 
   try {
-    await syncDeletedWorkout(workout)
+    await syncOne(workout)
     await loadWorkouts()
   } catch (error) {
     console.warn(

@@ -1,17 +1,16 @@
 import type { LocalWorkout } from '../db'
 import { workoutRepository } from '../repositories/workoutRepository'
 import {
+  ApiError,
   createWorkout,
   updateWorkout,
   deleteWorkout,
-  getWorkouts
+  getWorkouts,
+  type ApiWorkout
 } from '../api/workouts'
 
-export async function syncWorkout(
-  workout: LocalWorkout
-): Promise<void> {
-
-  const apiWorkout = {
+function toApiWorkout(workout: LocalWorkout): ApiWorkout {
+  return {
     id: workout.id,
     exercise: workout.exercise,
     date: workout.date,
@@ -22,13 +21,35 @@ export async function syncWorkout(
     updatedAt: workout.updatedAt,
     deletedAt: workout.deletedAt ?? null
   }
+}
 
-  await createWorkout(apiWorkout)
+// Le POST est idempotent côté serveur (upsert sur l'id) :
+// on peut le rejouer sans risque après une réponse perdue.
+export async function syncWorkout(
+  workout: LocalWorkout
+): Promise<void> {
 
-  await workoutRepository.update(workout.id, {
-    syncStatus: 'synced',
-    syncOperation: 'none'
-  })
+  await createWorkout(toApiWorkout(workout))
+
+  await workoutRepository.markSynced(workout)
+}
+
+// Synchronise un workout selon l'opération en attente
+export async function syncOne(
+  workout: LocalWorkout
+): Promise<void> {
+
+  if (workout.syncOperation === 'create') {
+    await syncWorkout(workout)
+  }
+
+  if (workout.syncOperation === 'update') {
+    await syncUpdatedWorkout(workout)
+  }
+
+  if (workout.syncOperation === 'delete') {
+    await syncDeletedWorkout(workout)
+  }
 }
 
 export async function syncPendingWorkouts(): Promise<void> {
@@ -36,19 +57,7 @@ export async function syncPendingWorkouts(): Promise<void> {
 
   for (const workout of pendingWorkouts) {
     try {
-
-      if (workout.syncOperation === 'create') {
-        await syncWorkout(workout)
-      }
-
-      if (workout.syncOperation === 'update') {
-        await syncUpdatedWorkout(workout)
-      }
-
-      if (workout.syncOperation === 'delete') {
-        await syncDeletedWorkout(workout)
-      }
-
+      await syncOne(workout)
     } catch (error) {
       console.warn(
         `Impossible de synchroniser le workout ${workout.id}`,
@@ -131,22 +140,21 @@ export async function syncUpdatedWorkout(
   workout: LocalWorkout
 ): Promise<void> {
 
-  await updateWorkout(workout.id, {
-    id: workout.id,
-    exercise: workout.exercise,
-    date: workout.date,
-    workoutTime: workout.workoutTime,
-    reps: workout.reps,
-    mode: workout.mode,
-    createdAt: workout.createdAt,
-    updatedAt: workout.updatedAt,
-    deletedAt: workout.deletedAt ?? null
-  })
+  try {
+    await updateWorkout(workout.id, toApiWorkout(workout))
+  } catch (error) {
 
-  await workoutRepository.update(workout.id, {
-    syncStatus: 'synced',
-    syncOperation: 'none'
-  })
+    // Le workout n'existe pas sur le serveur : il a été modifié
+    // localement avant d'avoir été créé (ancien comportement).
+    // On le crée avec son état actuel.
+    if (error instanceof ApiError && error.status === 404) {
+      await createWorkout(toApiWorkout(workout))
+    } else {
+      throw error
+    }
+  }
+
+  await workoutRepository.markSynced(workout)
 }
 
 export async function syncDeletedWorkout(
@@ -159,15 +167,9 @@ export async function syncDeletedWorkout(
 
     // Si le workout n'existe déjà plus sur le serveur,
     // la suppression est considérée comme réussie.
-    if (
-      error instanceof Error &&
-      error.message === 'API error: 404'
-    ) {
-      await workoutRepository.remove(workout.id)
-      return
+    if (!(error instanceof ApiError && error.status === 404)) {
+      throw error
     }
-
-    throw error
   }
 
   await workoutRepository.remove(workout.id)

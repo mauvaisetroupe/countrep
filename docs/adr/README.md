@@ -1,0 +1,8 @@
+# Architecture Decision Records
+
+Voir [ADR 0001](0001-enregistrer-les-decisions-d-architecture.md) pour le format et les règles.
+
+| N° | Titre | Statut |
+| -- | ----- | ------ |
+| 0001 | [Enregistrer les décisions d'architecture](0001-enregistrer-les-decisions-d-architecture.md) | Accepté |
+| 0002 | [Création idempotente et opération de synchro conservée](0002-creation-idempotente-et-operation-de-synchro.md) | Accepté |

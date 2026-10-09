@@ -13,6 +13,15 @@ export interface ApiWorkout {
   deletedAt: number | null
 }
 
+export class ApiError extends Error {
+  readonly status: number
+
+  constructor(status: number) {
+    super(`API error: ${status}`)
+    this.status = status
+  }
+}
+
 const API_URL = import.meta.env.VITE_API_URL || ''
 
 function getHeaders() {
@@ -34,7 +43,7 @@ export async function createWorkout(
   })
 
   if (!response.ok) {
-    throw new Error(`API error: ${response.status}`)
+    throw new ApiError(response.status)
   }
 
   return response.json()
@@ -46,7 +55,7 @@ export async function getWorkouts(): Promise<ApiWorkout[]> {
   })
 
   if (!response.ok) {
-    throw new Error(`API error: ${response.status}`)
+    throw new ApiError(response.status)
   }
 
   return response.json()
@@ -64,7 +73,7 @@ export async function updateWorkout(
   })
 
   if (!response.ok) {
-    throw new Error(`API error: ${response.status}`)
+    throw new ApiError(response.status)
   }
 
   return response.json()
@@ -83,6 +92,6 @@ export async function deleteWorkout(id: string): Promise<void> {
   })
 
   if (!response.ok) {
-    throw new Error(`API error: ${response.status}`)
+    throw new ApiError(response.status)
   }
 }

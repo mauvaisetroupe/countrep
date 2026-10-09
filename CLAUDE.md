@@ -43,10 +43,11 @@ View → composables/useWorkouts → repositories/workoutRepository → db.ts (D
                                ↘ services/sync.ts → api/workouts.ts → Fastify → PostgreSQL
 ```
 
-- Each `LocalWorkout` (`frontend/src/db.ts`) carries `syncStatus` (`pending`|`synced`) and `syncOperation` (`none`|`create`|`update`|`delete`). Local writes mark the record pending; sync functions reset it to `synced`/`none` (or remove the row for deletes).
+- Each `LocalWorkout` (`frontend/src/db.ts`) carries `syncStatus` (`pending`|`synced`) and `syncOperation` (`none`|`create`|`update`|`delete`). Local writes mark the record pending; `services/sync.ts#syncOne` dispatches on the operation, and `workoutRepository.markSynced` resets it only if `updatedAt` did not change during the request.
+- A record never pushed keeps `syncOperation: 'create'` when edited, and is removed locally (no API call) when deleted. A PATCH that gets 404 is replayed as a create.
 - Deletes are soft locally (`deletedAt` set, pending `delete`) until the server confirms; a 404 on DELETE counts as success. UI code must filter out `deletedAt` records.
 - `useWorkouts().sync()` runs on mount and on the `online` event: push pending → pull all from server → reload. Pull never overwrites a pending local record, and removes local `synced` records missing on the server.
-- IDs are client-generated UUIDs; the server `POST` is a plain `INSERT` (not idempotent).
+- IDs are client-generated UUIDs; the server `POST` is an idempotent upsert on `id` (scoped to `user_id`), so creates can be replayed safely.
 - Timestamps cross the API as epoch milliseconds; the backend converts with `to_timestamp($n / 1000.0)`. `date` is `YYYY-MM-DD`, `workoutTime` is `HH:MM[:SS]` (Postgres `time`).
 - Bump the Dexie `version(n)` in `db.ts` when changing indexed fields.
 
@@ -70,6 +71,10 @@ Exercises are **not** offline: `composables/useExercises.ts` (module-level share
 
 - One Fastify plugin per file in `backend/src/routes/`, registered in `server.ts`. ESM: local imports use the `.js` extension.
 - SQL rows (snake_case) are mapped by hand to camelCase API objects in each route; request bodies are cast with `as`, no Fastify schemas.
+
+## Architecture Decision Records
+
+Significant decisions (API/schema/local-data contracts, security, anything costly to undo) are recorded as ADRs in `docs/adr/` (Nygard format, in French, numbered `NNNN-kebab-title.md`, index in `docs/adr/README.md`). Read the relevant ADRs before changing sync or auth behavior, and add a new ADR when making such a decision — never rewrite an accepted one, supersede it.
 
 ## Further reading
 
