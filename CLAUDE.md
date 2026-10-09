@@ -9,7 +9,7 @@ CountRep is an offline-first PWA for logging daily exercise repetitions (bodywei
 - `frontend/` — Vue 3 + TypeScript, Vite, Pinia, Vue Router, Tailwind 4, Dexie (IndexedDB), `vite-plugin-pwa`
 - `backend/` — Fastify 5 + raw SQL via `pg` (no ORM), JWT auth, WebAuthn passkeys (`@simplewebauthn`)
 
-Production: `https://countrep.architech.lu`. UI text, comments and log messages are mostly in French.
+Production: `https://countrep.architech.lu` (Cloudflare → Nginx + systemd `countrep-api` on a Proxmox LXC, built and deployed from a git clone in `/opt/countrep`; see `docs/deployment.md`). Frontend and backend deploy together, but installed PWAs keep running their cached frontend until the user accepts the update prompt, so keep API changes backward compatible. UI text, comments and log messages are mostly in French.
 
 ## Commands
 
@@ -28,7 +28,7 @@ There are no tests and no linter configured. Use `npm run build` in each package
 ## Configuration
 
 - `backend/.env` (gitignored, loaded by `dotenv` in `src/db.ts`): `DATABASE_HOST/PORT/NAME/USER/PASSWORD`, `JWT_SECRET`, `RP_ID` (WebAuthn relying party, default `localhost`), `EXPECTED_ORIGIN` (WebAuthn origin + CORS).
-- `frontend/.env.development`: `VITE_API_URL` points to the backend (LAN IP). In production `VITE_API_URL` is empty and the API is served same-origin under `/api`.
+- `frontend/.env.development` (and the local, gitignored `.env.production`): `VITE_API_URL` points to the LAN backend. Production is built on the server, where the API is same-origin under `/api` behind Nginx.
 - CORS allow-list is hard-coded in `backend/src/server.ts`; update it when the dev host changes.
 - `backend/schema.sql` is the full current schema (reference, from a dump). `backend/database.sql` holds GRANTs for the `countrep_app` role and ad-hoc dated migrations. Schema changes are applied manually: append the migration to `database.sql` with a date comment **and** update `schema.sql`.
 - DB constraints the client must respect or a pending workout gets stuck (server 500): `reps` integer > 0, `exercise` must exist in `exercises` (FK).
