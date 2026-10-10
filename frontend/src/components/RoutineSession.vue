@@ -2,6 +2,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import AddRepsModal from './AddRepsModal.vue'
+import RoutineTile from './RoutineTile.vue'
 import { getRoutines, type Routine } from '../api/routines'
 import { useExerciseStore } from '../stores/exercise'
 import { usePreview } from '../composables/usePreview'
@@ -42,6 +43,15 @@ const completedRounds = computed(() =>
 )
 
 const roundsToAdd = ref(1)
+
+// Séance commencée : plein écran, sauf si l'utilisateur l'a réduite
+const minimized = ref(false)
+const fullscreen = computed(() => !!preview.value && !minimized.value)
+
+// Une nouvelle séance s'ouvre en plein écran
+watch(() => preview.value?.id, () => {
+  minimized.value = false
+})
 
 const getCurrentTime = () => {
   const date = new Date()
@@ -138,22 +148,30 @@ onMounted(async () => {
       </router-link>
     </div>
 
+    <!-- Séance en cours, réduite -->
+    <button
+      v-else-if="preview"
+      type="button"
+      class="mx-2 flex w-[calc(100%-1rem)] items-center justify-between gap-3 rounded-3xl bg-amber-500 px-5 py-4 text-left text-white shadow-md shadow-amber-200 active:scale-[0.98] transition-transform"
+      @click="minimized = false"
+    >
+      <div class="min-w-0">
+        <p class="text-xs opacity-90">Séance en cours · {{ preview.date }}</p>
+        <p class="text-base font-bold truncate">{{ preview.routine.name }}</p>
+      </div>
+      <span class="shrink-0 text-sm font-semibold">
+        {{ completedRounds }}/{{ preview.routine.rounds }} · Reprendre ›
+      </span>
+    </button>
+
+    <!-- Choix de la séance, avant de commencer -->
     <template v-else>
 
       <p v-if="offline" class="px-2 text-xs text-gray-400">
         Hors ligne : dernière version connue des séances.
       </p>
 
-      <!-- Séance en cours : elle s'impose jusqu'à son enregistrement -->
-      <div
-        v-if="preview"
-        class="mx-2 rounded-2xl bg-amber-100/70 border border-amber-200 px-4 py-2.5 text-sm text-amber-900"
-      >
-        Séance en cours : <strong>{{ preview.routine.name }}</strong> du {{ preview.date }}
-      </div>
-
-      <!-- Choix de la séance -->
-      <div v-else class="flex gap-2 overflow-x-auto px-2 pb-1 no-scrollbar">
+      <div class="flex gap-2 overflow-x-auto px-2 pb-1 no-scrollbar">
         <button
           v-for="r in routines"
           :key="r.id"
@@ -172,54 +190,77 @@ onMounted(async () => {
         v-if="current"
         class="bg-white border border-gray-200/80 rounded-3xl p-4 shadow-xs"
       >
-        <div class="flex items-baseline justify-between gap-3 px-1">
-          <p class="text-sm text-gray-500">
-            Séance du {{ sessionDate }}
-          </p>
-          <p class="text-sm font-semibold text-gray-800">
-            {{ completedRounds }} / {{ current.rounds }} séries
-          </p>
-        </div>
+        <p class="px-1 text-sm text-gray-500">
+          {{ current.rounds }} {{ current.rounds > 1 ? 'séries' : 'série' }} ·
+          appuie sur un exercice pour commencer
+        </p>
 
-        <!-- Un bouton par exercice -->
-        <div class="mt-3 space-y-2">
-          <button
+        <div class="mt-3 grid grid-cols-2 gap-2">
+          <RoutineTile
             v-for="(exercise, index) in current.exercises"
             :key="index"
-            type="button"
-            class="flex w-full items-center gap-3 rounded-2xl border px-4 py-3.5 text-left transition-all active:scale-[0.98]"
-            :class="doneCount(index) >= current.rounds
-              ? 'border-green-300 bg-green-50'
-              : 'border-amber-300 bg-amber-50'"
+            :name="exercise.nameFr"
+            :reps="exercise.reps"
+            :done="0"
+            :rounds="current.rounds"
             @click="modalPosition = index"
-          >
-            <div class="min-w-0 flex-1">
-              <p class="text-base font-semibold text-gray-900 truncate">
-                {{ exercise.nameFr }}
-              </p>
-              <p class="text-xs text-gray-500">
-                {{ exercise.reps }} reps
-              </p>
-            </div>
+          />
+        </div>
+      </section>
 
-            <span
-              class="shrink-0 rounded-full px-3 py-1 text-sm font-bold"
-              :class="doneCount(index) >= current.rounds
-                ? 'bg-green-500 text-white'
-                : 'bg-white text-amber-700 border border-amber-300'"
-            >
-              {{ doneCount(index) >= current.rounds ? '✓ ' : '' }}{{ doneCount(index) }} / {{ current.rounds }}
-            </span>
+    </template>
+
+    <!-- ======================================================
+         SÉANCE EN COURS : PLEIN ÉCRAN
+    ====================================================== -->
+
+    <Teleport to="body">
+      <div
+        v-if="fullscreen && current"
+        class="fixed inset-0 z-40 flex flex-col bg-[#fdf8f5] pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]"
+      >
+        <!-- En-tête -->
+        <header class="flex items-center gap-3 px-4 pt-4 pb-3">
+          <button
+            type="button"
+            class="shrink-0 text-sm font-medium text-amber-600"
+            @click="minimized = true"
+          >
+            ‹ Réduire
           </button>
+
+          <div class="min-w-0 flex-1 text-center">
+            <p class="text-base font-bold text-gray-900 truncate">{{ current.name }}</p>
+            <p class="text-xs text-gray-500">{{ sessionDate }}</p>
+          </div>
+
+          <span class="shrink-0 rounded-full bg-white border border-gray-200 px-3 py-1 text-sm font-bold text-gray-800">
+            {{ completedRounds }}/{{ current.rounds }}
+          </span>
+        </header>
+
+        <!-- Exercices -->
+        <div class="flex-1 overflow-y-auto px-4">
+          <div class="grid grid-cols-2 gap-2 pb-2">
+            <RoutineTile
+              v-for="(exercise, index) in current.exercises"
+              :key="index"
+              :name="exercise.nameFr"
+              :reps="exercise.reps"
+              :done="doneCount(index)"
+              :rounds="current.rounds"
+              @click="modalPosition = index"
+            />
+          </div>
         </div>
 
-        <!-- Série complète -->
-        <div class="mt-4 rounded-2xl bg-gray-50 p-3">
+        <!-- Actions -->
+        <footer class="space-y-2 border-t border-gray-200/70 bg-white/80 px-4 pt-3 pb-4">
           <div class="flex items-center gap-3">
             <div class="flex items-center gap-1.5">
               <button
                 type="button"
-                class="h-9 w-9 rounded-full border border-gray-200 bg-white text-lg font-semibold text-gray-700 disabled:opacity-30"
+                class="h-10 w-10 rounded-full border border-gray-200 bg-white text-lg font-semibold text-gray-700 disabled:opacity-30"
                 :disabled="roundsToAdd <= 1"
                 aria-label="Une série de moins"
                 @click="changeRoundsToAdd(-1)"
@@ -229,7 +270,7 @@ onMounted(async () => {
               <span class="w-7 text-center text-lg font-bold text-gray-900">{{ roundsToAdd }}</span>
               <button
                 type="button"
-                class="h-9 w-9 rounded-full border border-gray-200 bg-white text-lg font-semibold text-gray-700"
+                class="h-10 w-10 rounded-full border border-gray-200 bg-white text-lg font-semibold text-gray-700"
                 aria-label="Une série de plus"
                 @click="changeRoundsToAdd(1)"
               >
@@ -245,23 +286,17 @@ onMounted(async () => {
               Ajouter {{ roundsToAdd > 1 ? `${roundsToAdd} séries` : 'la série' }}
             </button>
           </div>
-          <p class="mt-2 text-xs text-gray-500 text-center">
-            Chaque exercice avec son nombre de reps prévu.
-          </p>
-        </div>
 
-        <!-- Fin de séance -->
-        <button
-          type="button"
-          :disabled="!preview || preview.entries.length === 0"
-          class="mt-4 w-full bg-amber-500 hover:bg-amber-600 disabled:bg-gray-300 disabled:shadow-none text-white font-semibold py-3.5 rounded-2xl shadow-md shadow-amber-200 transition-all active:scale-[0.98]"
-          @click="router.push('/preview')"
-        >
-          Terminer la séance
-        </button>
-      </section>
-
-    </template>
+          <button
+            type="button"
+            class="w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold py-3.5 rounded-2xl shadow-md shadow-amber-200 transition-all active:scale-[0.98]"
+            @click="router.push('/preview')"
+          >
+            Terminer la séance
+          </button>
+        </footer>
+      </div>
+    </Teleport>
 
     <AddRepsModal
       v-if="modalExercise"
