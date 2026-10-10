@@ -31,16 +31,10 @@ const router = createRouter({
   routes,
 })
 
-// Mode développement sans connexion (VITE_DEV_NO_AUTH=true, avec DEV_USER_ID
-// côté backend). import.meta.env.DEV le désactive dans tout build de production.
-const devNoAuth = import.meta.env.DEV && import.meta.env.VITE_DEV_NO_AUTH === 'true'
-
 router.beforeEach((to, _from, next) => {
   const authStore = useAuthStore()
 
-  if (devNoAuth) {
-    next()
-  } else if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     next({ name: 'login' })
   } else if (to.name === 'login' && authStore.isAuthenticated) {
     next({ name: 'today' })

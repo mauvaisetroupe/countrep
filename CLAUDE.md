@@ -30,7 +30,6 @@ There are no tests and no linter configured. Use `npm run build` in each package
 - `backend/.env` (gitignored, loaded by `dotenv` in `src/db.ts`): `DATABASE_HOST/PORT/NAME/USER/PASSWORD`, `JWT_SECRET`, `RP_ID` (WebAuthn relying party, default `localhost`), `EXPECTED_ORIGIN` (WebAuthn origin + CORS).
 - `frontend/.env.development` (and the local, gitignored `.env.production`): `VITE_API_URL` points to the LAN backend. Production is built on the server, where the API is same-origin under `/api` behind Nginx.
 - CORS allow-list is hard-coded in `backend/src/server.ts`; update it when the dev host changes.
-- Dev without login (e.g. testing from a phone over LAN HTTP, where passkeys can't work): set `DEV_USER_ID=<uuid>` in `backend/.env` (requests without a token are attributed to that user) and `VITE_DEV_NO_AUTH=true` in `frontend/.env.development.local` (skips the route guard; ignored in production builds). Never set `DEV_USER_ID` in production.
 - `backend/schema.sql` is the full current schema (reference, from a dump). `backend/database.sql` holds GRANTs for the `countrep_app` role and ad-hoc dated migrations. Schema changes are applied manually: append the migration to `database.sql` with a date comment **and** update `schema.sql`.
 - DB constraints the client must respect or a pending workout gets stuck (server 500): `reps` integer > 0, `exercise` must exist in `exercises` (FK).
 
