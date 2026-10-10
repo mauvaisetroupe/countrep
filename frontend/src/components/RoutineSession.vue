@@ -21,7 +21,7 @@ const MAX_ROUNDS_AT_ONCE = 50
 
 const router = useRouter()
 const exerciseStore = useExerciseStore()
-const { preview, counts, load, addEntries, discard } = usePreview()
+const { preview, counts, load, start, addEntries, discard } = usePreview()
 
 const routines = ref<Routine[]>([])
 const loading = ref(false)
@@ -72,7 +72,7 @@ const saveOne = async ({ reps, workoutTime }: { reps: number, workoutTime: strin
   if (position === null || !current.value) return
 
   modalPosition.value = null
-  await addEntries(current.value, sessionDate.value, [{ position, reps, workoutTime }])
+  await addEntries([{ position, reps, workoutTime }])
 }
 
 // Série complète : chaque exercice avec son objectif, `roundsToAdd` fois
@@ -89,7 +89,13 @@ const addRounds = async () => {
   }
 
   roundsToAdd.value = 1
-  await addEntries(current.value, sessionDate.value, items)
+  await addEntries(items)
+}
+
+const startSession = async () => {
+  if (selectedRoutine.value) {
+    await start(selectedRoutine.value, props.date)
+  }
 }
 
 const abandon = async () => {
@@ -197,8 +203,7 @@ onMounted(async () => {
         class="bg-white border border-gray-200/80 rounded-3xl p-4 shadow-xs"
       >
         <p class="px-1 text-sm text-gray-500">
-          {{ current.rounds }} {{ current.rounds > 1 ? 'séries' : 'série' }} ·
-          appuie sur un exercice pour commencer
+          {{ current.rounds }} {{ current.rounds > 1 ? 'séries' : 'série' }}
         </p>
 
         <div class="mt-3 grid grid-cols-2 gap-2">
@@ -209,9 +214,17 @@ onMounted(async () => {
             :reps="exercise.reps"
             :done="0"
             :rounds="current.rounds"
-            @click="modalPosition = index"
+            disabled
           />
         </div>
+
+        <button
+          type="button"
+          class="mt-4 w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold py-3.5 rounded-2xl shadow-md shadow-amber-200 transition-all active:scale-[0.98]"
+          @click="startSession"
+        >
+          Démarrer la séance
+        </button>
       </section>
 
     </template>
@@ -304,7 +317,8 @@ onMounted(async () => {
 
             <button
               type="button"
-              class="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-semibold py-3.5 rounded-2xl shadow-md shadow-amber-200 transition-all active:scale-[0.98]"
+              :disabled="!preview || preview.entries.length === 0"
+              class="flex-1 bg-amber-500 hover:bg-amber-600 disabled:bg-gray-300 disabled:shadow-none text-white font-semibold py-3.5 rounded-2xl shadow-md shadow-amber-200 transition-all active:scale-[0.98]"
               @click="router.push('/preview')"
             >
               Terminer la séance

@@ -8,6 +8,8 @@ const props = defineProps<{
   reps: number
   done: number
   rounds: number
+  // Séance pas encore démarrée : visible mais pas cliquable
+  disabled?: boolean
 }>()
 
 const complete = computed(() => props.done >= props.rounds)
@@ -17,8 +19,9 @@ const fill = computed(() => `${Math.min(props.done / props.rounds, 1) * 100}%`)
 <template>
   <button
     type="button"
-    class="relative flex h-24 w-full flex-col justify-between overflow-hidden rounded-2xl border p-3 text-left transition-transform active:scale-[0.97]"
-    :class="complete ? 'border-green-400 bg-white' : 'border-amber-300 bg-white'"
+    :disabled="disabled"
+    class="relative flex h-24 w-full flex-col justify-between overflow-hidden rounded-2xl border p-3 text-left transition-transform enabled:active:scale-[0.97] disabled:opacity-60"
+    :class="complete ? 'border-green-400 bg-white' : disabled ? 'border-gray-200 bg-white' : 'border-amber-300 bg-white'"
   >
     <!-- Jauge -->
     <div

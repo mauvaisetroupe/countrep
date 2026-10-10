@@ -61,15 +61,13 @@ export function usePreview() {
     )
   })
 
-  // Ajoute des saisies ; démarre la séance si besoin
-  const addEntries = async (
-    routine: LocalPreview['routine'],
-    date: string,
-    items: NewEntry[]
-  ) => {
+  // Démarre une séance vide (copie figée de la séance choisie)
+  const start = async (routine: LocalPreview['routine'], date: string) => {
+    if (preview.value) return
+
     const now = Date.now()
 
-    const current: LocalPreview = preview.value ?? {
+    await persist({
       id: crypto.randomUUID(),
       date,
       startedAt: now,
@@ -85,7 +83,15 @@ export function usePreview() {
         }))
       },
       entries: []
-    }
+    })
+  }
+
+  // Ajoute des saisies à la séance en cours
+  const addEntries = async (items: NewEntry[]) => {
+    const current = preview.value
+    if (!current) return
+
+    const now = Date.now()
 
     // createdAt croissant même pour des saisies ajoutées d'un coup
     const entries = items.map((item, index) => ({
@@ -174,6 +180,7 @@ export function usePreview() {
     counts,
     grid,
     load,
+    start,
     addEntries,
     updateReps,
     removeEntry,
