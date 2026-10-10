@@ -9,12 +9,14 @@ import SettingsRoutinesView from '../views/SettingsRoutinesView.vue'
 import SettingsRoutineEditView from '../views/SettingsRoutineEditView.vue'
 import LoginView from '../views/LoginView.vue'
 import JournalView from '../views/JournalView.vue'
+import PreviewView from '../views/PreviewView.vue'
 
 const routes: Array<RouteRecordRaw> = [
   { path: '/login', name: 'login', component: LoginView },
   { path: '/', redirect: '/today' },
   { path: '/today', name: 'today', component: TodayView, meta: { requiresAuth: true } },
   { path: '/journal', name: 'journal', component: JournalView, meta: { requiresAuth: true } },
+  { path: '/preview', name: 'preview', component: PreviewView, meta: { requiresAuth: true } },
   { path: '/stats', name: 'stats', component: StatsView, meta: { requiresAuth: true } },
   { path: '/settings', name: 'settings', component: SettingsView, meta: { requiresAuth: true } },
   { path: '/settings/account', name: 'settings-account', component: SettingsAccountView, meta: { requiresAuth: true } },

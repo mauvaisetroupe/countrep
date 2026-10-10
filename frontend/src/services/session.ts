@@ -6,6 +6,7 @@ import {
   useAuthStore
 } from '../stores/auth'
 import { workoutRepository } from '../repositories/workoutRepository'
+import { previewRepository } from '../repositories/previewRepository'
 import { syncPendingWorkouts } from './sync'
 
 // Le token dure 7 jours ; on le renouvelle dès qu'il a plus d'un jour.
@@ -112,6 +113,17 @@ export async function logoutSafely(): Promise<boolean> {
       `${plural(pendingCount, "n'a", "n'ont")} pas pu être ` +
       `${plural(pendingCount, 'synchronisée', 'synchronisées')} et ` +
       `${plural(pendingCount, 'sera perdue', 'seront perdues')} ` +
+      'si tu te déconnectes. Se déconnecter quand même ?'
+    )
+  ) {
+    return false
+  }
+
+  // Séance en cours pas encore enregistrée (brouillon local)
+  if (
+    (await previewRepository.count()) > 0 &&
+    !window.confirm(
+      "Une séance en cours n'a pas été enregistrée et sera perdue " +
       'si tu te déconnectes. Se déconnecter quand même ?'
     )
   ) {

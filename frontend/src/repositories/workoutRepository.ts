@@ -54,9 +54,10 @@ export const workoutRepository = {
   },
 
   async clearAll(): Promise<void> {
-    await db.transaction('rw', db.workouts, db.syncState, async () => {
+    await db.transaction('rw', [db.workouts, db.syncState, db.previews], async () => {
       await db.workouts.clear()
       await db.syncState.clear()
+      await db.previews.clear()
     })
   }  
 

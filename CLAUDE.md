@@ -51,6 +51,7 @@ View → composables/useWorkouts → repositories/workoutRepository → db.ts (D
 - IDs are client-generated UUIDs; the server `POST` is an idempotent upsert on `id` (scoped to `user_id`), so creates can be replayed safely.
 - Timestamps cross the API as epoch milliseconds; the backend converts with `to_timestamp($n / 1000.0)`. `date` is `YYYY-MM-DD`, `workoutTime` is `HH:MM[:SS]` (Postgres `time`).
 - Bump the Dexie `version(n)` in `db.ts` when changing indexed fields.
+- Routine sessions on the home screen ("Séance" mode) are drafted in the Dexie `previews` table (`composables/usePreview.ts`): nothing reaches `workouts` until the user saves from `/preview`, which converts the entries to pending workouts and deletes the draft in one transaction. Round n of an exercise is its n-th entry (rounds are not stored).
 
 Exercises are **not** offline: `composables/useExercises.ts` (module-level shared refs) fetches the public catalog (`GET /api/exercises`) and the user's selection (`/api/user/exercises`, max `MAX_EXERCISES = 10`, duplicated in frontend and backend — keep them in sync).
 
