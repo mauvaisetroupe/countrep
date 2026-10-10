@@ -53,3 +53,54 @@ CREATE TABLE routine_exercises (
 );
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE routines, routine_exercises TO countrep_app;
+
+-- 2026-10-10 : vocabulaire du domaine (ADR 0006)
+--   workouts (saisies)          -> sets
+--   routines (modèles)          -> workouts
+--   routine_exercises           -> workout_exercises
+--   sets.workout_time           -> sets.time ; suppression de sets.mode
+-- Ordre important : libérer le nom « workouts » avant de le réutiliser.
+BEGIN;
+
+ALTER TABLE workouts RENAME TO sets;
+ALTER TABLE sets RENAME COLUMN workout_time TO time;
+ALTER TABLE sets DROP COLUMN mode;
+ALTER TABLE sets RENAME CONSTRAINT workouts_pkey TO sets_pkey;
+ALTER TABLE sets RENAME CONSTRAINT workouts_reps_check TO sets_reps_check;
+ALTER TABLE sets RENAME CONSTRAINT workouts_user_id_fkey TO sets_user_id_fkey;
+ALTER TABLE sets RENAME CONSTRAINT fk_workouts_exercise TO sets_exercise_fkey;
+ALTER INDEX idx_workouts_user_id RENAME TO idx_sets_user_id;
+ALTER INDEX idx_workouts_user_date RENAME TO idx_sets_user_date;
+-- PostgreSQL 18 : les NOT NULL sont des contraintes nommées
+ALTER TABLE sets RENAME CONSTRAINT workouts_id_not_null TO sets_id_not_null;
+ALTER TABLE sets RENAME CONSTRAINT workouts_user_id_not_null TO sets_user_id_not_null;
+ALTER TABLE sets RENAME CONSTRAINT workouts_exercise_not_null TO sets_exercise_not_null;
+ALTER TABLE sets RENAME CONSTRAINT workouts_date_not_null TO sets_date_not_null;
+ALTER TABLE sets RENAME CONSTRAINT workouts_reps_not_null TO sets_reps_not_null;
+ALTER TABLE sets RENAME CONSTRAINT workouts_created_at_not_null TO sets_created_at_not_null;
+ALTER TABLE sets RENAME CONSTRAINT workouts_updated_at_not_null TO sets_updated_at_not_null;
+
+ALTER TABLE routines RENAME TO workouts;
+ALTER TABLE workouts RENAME CONSTRAINT routines_pkey TO workouts_pkey;
+ALTER TABLE workouts RENAME CONSTRAINT routines_rounds_check TO workouts_rounds_check;
+ALTER TABLE workouts RENAME CONSTRAINT routines_user_id_fkey TO workouts_user_id_fkey;
+ALTER INDEX idx_routines_user_id RENAME TO idx_workouts_user_id;
+ALTER TABLE workouts RENAME CONSTRAINT routines_id_not_null TO workouts_id_not_null;
+ALTER TABLE workouts RENAME CONSTRAINT routines_user_id_not_null TO workouts_user_id_not_null;
+ALTER TABLE workouts RENAME CONSTRAINT routines_name_not_null TO workouts_name_not_null;
+ALTER TABLE workouts RENAME CONSTRAINT routines_rounds_not_null TO workouts_rounds_not_null;
+ALTER TABLE workouts RENAME CONSTRAINT routines_created_at_not_null TO workouts_created_at_not_null;
+ALTER TABLE workouts RENAME CONSTRAINT routines_updated_at_not_null TO workouts_updated_at_not_null;
+
+ALTER TABLE routine_exercises RENAME TO workout_exercises;
+ALTER TABLE workout_exercises RENAME COLUMN routine_id TO workout_id;
+ALTER TABLE workout_exercises RENAME CONSTRAINT routine_exercises_pkey TO workout_exercises_pkey;
+ALTER TABLE workout_exercises RENAME CONSTRAINT routine_exercises_reps_check TO workout_exercises_reps_check;
+ALTER TABLE workout_exercises RENAME CONSTRAINT routine_exercises_routine_id_fkey TO workout_exercises_workout_id_fkey;
+ALTER TABLE workout_exercises RENAME CONSTRAINT routine_exercises_exercise_id_fkey TO workout_exercises_exercise_id_fkey;
+ALTER TABLE workout_exercises RENAME CONSTRAINT routine_exercises_routine_id_not_null TO workout_exercises_workout_id_not_null;
+ALTER TABLE workout_exercises RENAME CONSTRAINT routine_exercises_position_not_null TO workout_exercises_position_not_null;
+ALTER TABLE workout_exercises RENAME CONSTRAINT routine_exercises_exercise_id_not_null TO workout_exercises_exercise_id_not_null;
+ALTER TABLE workout_exercises RENAME CONSTRAINT routine_exercises_reps_not_null TO workout_exercises_reps_not_null;
+
+COMMIT;

@@ -43,47 +43,47 @@ CREATE TABLE user_exercises (
 
 CREATE UNIQUE INDEX user_exercises_user_id_position_key ON user_exercises USING btree (user_id, position);
 
--- id généré par le client (UUID) : clé de l'upsert POST /api/workouts (ADR 0002)
-CREATE TABLE workouts (
+-- Set : une saisie (un exercice, N répétitions, date et heure) — ADR 0006.
+-- id généré par le client (UUID) : clé de l'upsert POST /api/sets (ADR 0002)
+CREATE TABLE sets (
     id uuid NOT NULL,
     user_id uuid NOT NULL,
     exercise character varying(100) NOT NULL,
     date date NOT NULL,
     reps integer NOT NULL,
-    mode character varying(20) NOT NULL,
     created_at timestamptz NOT NULL,
     updated_at timestamptz NOT NULL,
     deleted_at timestamptz,
-    workout_time time without time zone,
-    CONSTRAINT workouts_pkey PRIMARY KEY (id),
-    CONSTRAINT workouts_reps_check CHECK (reps > 0)
+    time time without time zone,
+    CONSTRAINT sets_pkey PRIMARY KEY (id),
+    CONSTRAINT sets_reps_check CHECK (reps > 0)
 );
 
-CREATE INDEX idx_workouts_user_id ON workouts USING btree (user_id);
-CREATE INDEX idx_workouts_user_date ON workouts USING btree (user_id, date);
+CREATE INDEX idx_sets_user_id ON sets USING btree (user_id);
+CREATE INDEX idx_sets_user_date ON sets USING btree (user_id, date);
 
--- Séances : modèles de workout (exercices + reps, nombre de séries global)
-CREATE TABLE routines (
+-- Workout : modèle de séance (exercices + reps, nombre de séries global)
+CREATE TABLE workouts (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     user_id uuid NOT NULL,
     name character varying(100) NOT NULL,
     rounds smallint NOT NULL,
     created_at timestamptz DEFAULT now() NOT NULL,
     updated_at timestamptz DEFAULT now() NOT NULL,
-    CONSTRAINT routines_pkey PRIMARY KEY (id),
-    CONSTRAINT routines_rounds_check CHECK (rounds > 0)
+    CONSTRAINT workouts_pkey PRIMARY KEY (id),
+    CONSTRAINT workouts_rounds_check CHECK (rounds > 0)
 );
 
-CREATE INDEX idx_routines_user_id ON routines USING btree (user_id);
+CREATE INDEX idx_workouts_user_id ON workouts USING btree (user_id);
 
 -- Un même exercice peut apparaître plusieurs fois : la clé est la position
-CREATE TABLE routine_exercises (
-    routine_id uuid NOT NULL,
+CREATE TABLE workout_exercises (
+    workout_id uuid NOT NULL,
     position smallint NOT NULL,
     exercise_id text NOT NULL,
     reps integer NOT NULL,
-    CONSTRAINT routine_exercises_pkey PRIMARY KEY (routine_id, position),
-    CONSTRAINT routine_exercises_reps_check CHECK (reps > 0)
+    CONSTRAINT workout_exercises_pkey PRIMARY KEY (workout_id, position),
+    CONSTRAINT workout_exercises_reps_check CHECK (reps > 0)
 );
 
 ALTER TABLE ONLY user_devices ADD CONSTRAINT user_devices_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
@@ -91,10 +91,10 @@ ALTER TABLE ONLY user_devices ADD CONSTRAINT user_devices_user_id_fkey FOREIGN K
 ALTER TABLE ONLY user_exercises ADD CONSTRAINT user_exercises_exercise_id_fkey FOREIGN KEY (exercise_id) REFERENCES exercises(id) ON DELETE RESTRICT;
 ALTER TABLE ONLY user_exercises ADD CONSTRAINT user_exercises_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 
-ALTER TABLE ONLY workouts ADD CONSTRAINT fk_workouts_exercise FOREIGN KEY (exercise) REFERENCES exercises(id) ON DELETE RESTRICT;
-ALTER TABLE ONLY workouts ADD CONSTRAINT workouts_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id);
+ALTER TABLE ONLY sets ADD CONSTRAINT sets_exercise_fkey FOREIGN KEY (exercise) REFERENCES exercises(id) ON DELETE RESTRICT;
+ALTER TABLE ONLY sets ADD CONSTRAINT sets_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id);
 
-ALTER TABLE ONLY routines ADD CONSTRAINT routines_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+ALTER TABLE ONLY workouts ADD CONSTRAINT workouts_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 
-ALTER TABLE ONLY routine_exercises ADD CONSTRAINT routine_exercises_routine_id_fkey FOREIGN KEY (routine_id) REFERENCES routines(id) ON DELETE CASCADE;
-ALTER TABLE ONLY routine_exercises ADD CONSTRAINT routine_exercises_exercise_id_fkey FOREIGN KEY (exercise_id) REFERENCES exercises(id) ON DELETE RESTRICT;
+ALTER TABLE ONLY workout_exercises ADD CONSTRAINT workout_exercises_workout_id_fkey FOREIGN KEY (workout_id) REFERENCES workouts(id) ON DELETE CASCADE;
+ALTER TABLE ONLY workout_exercises ADD CONSTRAINT workout_exercises_exercise_id_fkey FOREIGN KEY (exercise_id) REFERENCES exercises(id) ON DELETE RESTRICT;

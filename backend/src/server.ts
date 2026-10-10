@@ -2,10 +2,10 @@ import Fastify from 'fastify'
 import cors from '@fastify/cors'
 import { pool } from './db.js'
 import { userRoutes } from './routes/users.js'
-import { workoutRoutes } from './routes/workouts.js'
+import { setRoutes } from './routes/sets.js'
 import { authRoutes } from './routes/auth.js'
 import { exerciseRoutes } from './routes/exercises.js'
-import { routineRoutes } from './routes/routines.js'
+import { workoutRoutes } from './routes/workouts.js'
 
 const app = Fastify({
   logger: true
@@ -38,10 +38,10 @@ app.get('/api/health/db', async () => {
 })
 
 app.register(userRoutes)
-app.register(workoutRoutes)
+app.register(setRoutes)
 app.register(authRoutes)
 app.register(exerciseRoutes)
-app.register(routineRoutes)
+app.register(workoutRoutes)
 
 const start = async () => {
   try {
