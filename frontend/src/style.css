@@ -36,3 +36,8 @@ body {
   opacity: 1 !important;
   box-shadow: 0 16px 32px -12px rgb(0 0 0 / 0.35);
 }
+
+/* Titre de page, identique sur tous les écrans */
+.page-title {
+  @apply text-2xl font-bold tracking-tight text-gray-900;
+}

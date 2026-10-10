@@ -142,8 +142,8 @@ loadUserExercises()
   ========================================================= -->
 
   <header class="px-5 pt-6 pb-4">
-    <h1 class="text-2xl font-bold tracking-tight text-gray-900">
-      Aujourd'hui
+    <h1 class="page-title">
+      Entraînement
     </h1>
 
     <!-- Mode : un exercice au fil de la journée, ou une séance complète -->

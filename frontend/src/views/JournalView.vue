@@ -287,8 +287,8 @@ onUnmounted(() => {
 <template>
   <div class="px-4 pb-24">
 
-    <div class="pt-4 pb-3">
-      <h1 class="text-2xl font-bold text-gray-900">
+    <div class="px-1 pt-6 pb-3">
+      <h1 class="page-title">
         Journal
       </h1>
     </div>

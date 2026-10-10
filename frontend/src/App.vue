@@ -53,7 +53,7 @@ function dismissUpdate() {
     <nav
       class="fixed bottom-0 left-0 right-0 bg-[#fdf8f5]/90 backdrop-blur-md border-t border-amber-100/60 px-4 py-3 flex justify-around items-center z-20"
     >
-      <!-- Aujourd'hui -->
+      <!-- Entraînement -->
       <router-link
         to="/today"
         :class="[
@@ -64,7 +64,7 @@ function dismissUpdate() {
         ]"
       >
         <span class="text-xl">📅</span>
-        <span class="text-xs">Aujourd'hui</span>
+        <span class="text-xs">Entraînement</span>
       </router-link>
 
       <!-- Journal -->

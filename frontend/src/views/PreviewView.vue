@@ -95,7 +95,7 @@ onMounted(load)
         Continuer la séance
       </router-link>
 
-      <h1 class="mt-2 text-2xl font-bold text-gray-900">
+      <h1 class="mt-2 page-title">
         Aperçu de la séance
       </h1>
 
