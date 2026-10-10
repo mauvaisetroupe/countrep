@@ -316,7 +316,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <section class="mt-5 pt-4 border-t border-gray-100">
+  <section>
     <div class="flex items-start justify-between gap-3">
       <div>
         <p class="text-sm font-semibold text-gray-800">

@@ -2,7 +2,9 @@ import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import TodayView from '../views/TodayView.vue'
 import StatsView from '../views/StatsView.vue'
-import ProfileView from '../views/ProfileView.vue'
+import SettingsView from '../views/SettingsView.vue'
+import SettingsAccountView from '../views/SettingsAccountView.vue'
+import SettingsExercisesView from '../views/SettingsExercisesView.vue'
 import LoginView from '../views/LoginView.vue'
 import JournalView from '../views/JournalView.vue'
 
@@ -12,7 +14,11 @@ const routes: Array<RouteRecordRaw> = [
   { path: '/today', name: 'today', component: TodayView, meta: { requiresAuth: true } },
   { path: '/journal', name: 'journal', component: JournalView, meta: { requiresAuth: true } },
   { path: '/stats', name: 'stats', component: StatsView, meta: { requiresAuth: true } },
-  { path: '/profile', name: 'profile', component: ProfileView, meta: { requiresAuth: true } },
+  { path: '/settings', name: 'settings', component: SettingsView, meta: { requiresAuth: true } },
+  { path: '/settings/account', name: 'settings-account', component: SettingsAccountView, meta: { requiresAuth: true } },
+  { path: '/settings/exercises', name: 'settings-exercises', component: SettingsExercisesView, meta: { requiresAuth: true } },
+  // Ancienne page Profil (favoris, PWA installées)
+  { path: '/profile', redirect: '/settings' },
 ]
 
 const router = createRouter({

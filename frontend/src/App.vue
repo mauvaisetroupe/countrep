@@ -95,18 +95,18 @@ function dismissUpdate() {
         <span class="text-xs">Statistiques</span>
       </router-link>
 
-      <!-- Profil -->
+      <!-- Réglages -->
       <router-link
-        to="/profile"
+        to="/settings"
         :class="[
           'flex flex-col items-center gap-1 transition-colors',
-          route.name === 'profile'
+          route.path.startsWith('/settings')
             ? 'text-amber-600 font-bold'
             : 'text-gray-400'
         ]"
       >
-        <span class="text-xl">👤</span>
-        <span class="text-xs">Profil</span>
+        <span class="text-xl">⚙️</span>
+        <span class="text-xs">Réglages</span>
       </router-link>
     </nav>
 
