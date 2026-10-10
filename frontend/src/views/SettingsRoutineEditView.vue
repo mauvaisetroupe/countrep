@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import SettingsHeader from '../components/SettingsHeader.vue'
+import RepsPicker from '../components/RepsPicker.vue'
 import { VueDraggable } from 'vue-draggable-plus'
 import { reorderOptions } from '../reorder'
 import { getExercises, type ApiExercise } from '../api/exercises'
@@ -24,7 +25,7 @@ interface EditedExercise {
   // Clé locale : un même exercice peut apparaître plusieurs fois
   key: number
   exerciseId: string
-  reps: number | null
+  reps: number
 }
 
 const router = useRouter()
@@ -62,22 +63,14 @@ const filteredCatalog = computed(() => {
   )
 })
 
-const isValidReps = (reps: number | null) => {
-  return Number.isInteger(reps) && (reps as number) > 0
-}
-
 const repsPerRound = computed(() => {
-  return exercises.value.reduce(
-    (total, exercise) => total + (isValidReps(exercise.reps) ? exercise.reps! : 0),
-    0
-  )
+  return exercises.value.reduce((total, exercise) => total + exercise.reps, 0)
 })
 
 const canSave = computed(() => {
   return (
     name.value.trim().length > 0 &&
     exercises.value.length > 0 &&
-    exercises.value.every(exercise => isValidReps(exercise.reps)) &&
     Number.isInteger(rounds.value) &&
     rounds.value >= 1 &&
     rounds.value <= MAX_ROUNDS &&
@@ -85,10 +78,30 @@ const canSave = computed(() => {
   )
 })
 
+// Exercice dont on règle les reps (panneau RepsPicker)
+const repsEditKey = ref<number | null>(null)
+
+const repsEdited = computed(() =>
+  exercises.value.find(exercise => exercise.key === repsEditKey.value) ?? null
+)
+
+const confirmReps = (reps: number) => {
+  if (repsEdited.value) {
+    repsEdited.value.reps = reps
+  }
+  repsEditKey.value = null
+}
+
+// Ajoute l'exercice et propose tout de suite de régler ses reps,
+// en partant de la valeur du dernier exercice de la séance
 const addExercise = (exerciseId: string) => {
-  exercises.value.push({ key: nextKey++, exerciseId, reps: DEFAULT_REPS })
+  const key = nextKey++
+  const reps = exercises.value.at(-1)?.reps ?? DEFAULT_REPS
+
+  exercises.value.push({ key, exerciseId, reps })
   showPicker.value = false
   searchQuery.value = ''
+  repsEditKey.value = key
 }
 
 const removeExercise = (index: number) => {
@@ -111,7 +124,7 @@ const save = async () => {
     rounds: rounds.value,
     exercises: exercises.value.map(exercise => ({
       exerciseId: exercise.exerciseId,
-      reps: exercise.reps!
+      reps: exercise.reps
     }))
   }
 
@@ -245,17 +258,14 @@ onMounted(async () => {
                 {{ exerciseName(exercise.exerciseId) }}
               </p>
 
-              <input
-                v-model.number="exercise.reps"
-                type="number"
-                min="1"
-                step="1"
-                inputmode="numeric"
-                aria-label="Répétitions"
-                class="w-16 rounded-lg border bg-white px-2 py-1.5 text-right text-sm font-semibold text-gray-800 outline-none focus:border-amber-400"
-                :class="isValidReps(exercise.reps) ? 'border-gray-200' : 'border-red-400'"
-              />
-              <span class="text-xs text-gray-500">reps</span>
+              <button
+                type="button"
+                class="shrink-0 rounded-full border border-amber-300 bg-white px-3 py-1.5 text-sm font-semibold text-amber-800 active:scale-95 transition-transform"
+                :aria-label="`Répétitions de ${exerciseName(exercise.exerciseId)}`"
+                @click="repsEditKey = exercise.key"
+              >
+                {{ exercise.reps }} reps
+              </button>
 
               <button
                 type="button"
@@ -404,6 +414,15 @@ onMounted(async () => {
       </template>
 
     </main>
+
+    <RepsPicker
+      v-if="repsEdited"
+      :key="repsEdited.key"
+      :title="exerciseName(repsEdited.exerciseId)"
+      :value="repsEdited.reps"
+      @close="repsEditKey = null"
+      @confirm="confirmReps"
+    />
 
   </div>
 </template>
