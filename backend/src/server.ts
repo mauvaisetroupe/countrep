@@ -5,6 +5,7 @@ import { userRoutes } from './routes/users.js'
 import { workoutRoutes } from './routes/workouts.js'
 import { authRoutes } from './routes/auth.js'
 import { exerciseRoutes } from './routes/exercises.js'
+import { routineRoutes } from './routes/routines.js'
 
 const app = Fastify({
   logger: true
@@ -40,6 +41,7 @@ app.register(userRoutes)
 app.register(workoutRoutes)
 app.register(authRoutes)
 app.register(exerciseRoutes)
+app.register(routineRoutes)
 
 const start = async () => {
   try {

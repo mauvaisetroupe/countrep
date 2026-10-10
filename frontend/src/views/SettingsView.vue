@@ -10,6 +10,12 @@ const items = [
     description: 'Choix et ordre des exercices pratiqués'
   },
   {
+    to: '/settings/routines',
+    icon: '📋',
+    title: 'Mes séances',
+    description: 'Enchaînements d’exercices sur plusieurs séries'
+  },
+  {
     to: '/settings/account',
     icon: '🔒',
     title: 'Compte et sécurité',

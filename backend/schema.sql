@@ -62,6 +62,30 @@ CREATE TABLE workouts (
 CREATE INDEX idx_workouts_user_id ON workouts USING btree (user_id);
 CREATE INDEX idx_workouts_user_date ON workouts USING btree (user_id, date);
 
+-- Séances : modèles de workout (exercices + reps, nombre de séries global)
+CREATE TABLE routines (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    user_id uuid NOT NULL,
+    name character varying(100) NOT NULL,
+    rounds smallint NOT NULL,
+    created_at timestamptz DEFAULT now() NOT NULL,
+    updated_at timestamptz DEFAULT now() NOT NULL,
+    CONSTRAINT routines_pkey PRIMARY KEY (id),
+    CONSTRAINT routines_rounds_check CHECK (rounds > 0)
+);
+
+CREATE INDEX idx_routines_user_id ON routines USING btree (user_id);
+
+-- Un même exercice peut apparaître plusieurs fois : la clé est la position
+CREATE TABLE routine_exercises (
+    routine_id uuid NOT NULL,
+    position smallint NOT NULL,
+    exercise_id text NOT NULL,
+    reps integer NOT NULL,
+    CONSTRAINT routine_exercises_pkey PRIMARY KEY (routine_id, position),
+    CONSTRAINT routine_exercises_reps_check CHECK (reps > 0)
+);
+
 ALTER TABLE ONLY user_devices ADD CONSTRAINT user_devices_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY user_exercises ADD CONSTRAINT user_exercises_exercise_id_fkey FOREIGN KEY (exercise_id) REFERENCES exercises(id) ON DELETE RESTRICT;
@@ -69,3 +93,8 @@ ALTER TABLE ONLY user_exercises ADD CONSTRAINT user_exercises_user_id_fkey FOREI
 
 ALTER TABLE ONLY workouts ADD CONSTRAINT fk_workouts_exercise FOREIGN KEY (exercise) REFERENCES exercises(id) ON DELETE RESTRICT;
 ALTER TABLE ONLY workouts ADD CONSTRAINT workouts_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id);
+
+ALTER TABLE ONLY routines ADD CONSTRAINT routines_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY routine_exercises ADD CONSTRAINT routine_exercises_routine_id_fkey FOREIGN KEY (routine_id) REFERENCES routines(id) ON DELETE CASCADE;
+ALTER TABLE ONLY routine_exercises ADD CONSTRAINT routine_exercises_exercise_id_fkey FOREIGN KEY (exercise_id) REFERENCES exercises(id) ON DELETE RESTRICT;
