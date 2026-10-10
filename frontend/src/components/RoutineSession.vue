@@ -21,7 +21,7 @@ const MAX_ROUNDS_AT_ONCE = 50
 
 const router = useRouter()
 const exerciseStore = useExerciseStore()
-const { preview, counts, load, addEntries } = usePreview()
+const { preview, counts, load, addEntries, discard } = usePreview()
 
 const routines = ref<Routine[]>([])
 const loading = ref(false)
@@ -90,6 +90,12 @@ const addRounds = async () => {
 
   roundsToAdd.value = 1
   await addEntries(current.value, sessionDate.value, items)
+}
+
+const abandon = async () => {
+  if (window.confirm('Abandonner cette séance ? Les séries saisies seront perdues.')) {
+    await discard()
+  }
 }
 
 const changeRoundsToAdd = (offset: -1 | 1) => {
@@ -287,13 +293,23 @@ onMounted(async () => {
             </button>
           </div>
 
-          <button
-            type="button"
-            class="w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold py-3.5 rounded-2xl shadow-md shadow-amber-200 transition-all active:scale-[0.98]"
-            @click="router.push('/preview')"
-          >
-            Terminer la séance
-          </button>
+          <div class="flex gap-2">
+            <button
+              type="button"
+              class="shrink-0 bg-gray-100 hover:bg-gray-200 text-red-600 font-semibold px-4 py-3.5 rounded-2xl transition-colors"
+              @click="abandon"
+            >
+              Abandonner
+            </button>
+
+            <button
+              type="button"
+              class="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-semibold py-3.5 rounded-2xl shadow-md shadow-amber-200 transition-all active:scale-[0.98]"
+              @click="router.push('/preview')"
+            >
+              Terminer la séance
+            </button>
+          </div>
         </footer>
       </div>
     </Teleport>
