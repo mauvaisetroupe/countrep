@@ -31,27 +31,36 @@ There are no tests and no linter configured. Use `npm run build` in each package
 - `frontend/.env.development` (and the local, gitignored `.env.production`): `VITE_API_URL` points to the LAN backend. Production is built on the server, where the API is same-origin under `/api` behind Nginx.
 - CORS allow-list is hard-coded in `backend/src/server.ts`; update it when the dev host changes.
 - `backend/schema.sql` is the full current schema (reference, from a dump). `backend/database.sql` holds GRANTs for the `countrep_app` role and ad-hoc dated migrations. Schema changes are applied manually: append the migration to `database.sql` with a date comment **and** update `schema.sql`.
-- DB constraints the client must respect or a pending workout gets stuck (server 500): `reps` integer > 0, `exercise` must exist in `exercises` (FK).
+- DB constraints the client must respect or a pending set gets stuck (server 500): `reps` integer > 0, `exercise` must exist in `exercises` (FK).
 
 ## Architecture
 
-### Offline-first workout data flow
+### Domain vocabulary (ADR 0006)
+
+- **set**: one logged entry — one exercise, N reps, at a date and time (table `sets`, `/api/sets`, Dexie `sets`). French UI: « saisie » / « série ».
+- **workout**: a template — ordered exercises with target reps, repeated `rounds` times (tables `workouts` + `workout_exercises`, `/api/workouts`). French UI: « séance ».
+- **round**: one pass through all exercises of a workout. French UI: « série ».
+- **preview**: the workout session in progress, a local draft until saved.
+
+The IndexedDB database is still named `WorkoutDatabase` (renaming it would create an empty database); ADRs 0002–0004 predate the vocabulary and say « workout » for a set.
+
+### Offline-first set data flow
 
 IndexedDB is the source of truth for the UI; the server is a sync target.
 
 ```
-View → composables/useWorkouts → repositories/workoutRepository → db.ts (Dexie)
-                               ↘ services/sync.ts → api/workouts.ts → Fastify → PostgreSQL
+View → composables/useSets → repositories/setRepository → db.ts (Dexie)
+                           ↘ services/sync.ts → api/sets.ts → Fastify → PostgreSQL
 ```
 
-- Each `LocalWorkout` (`frontend/src/db.ts`) carries `syncStatus` (`pending`|`synced`) and `syncOperation` (`none`|`create`|`update`|`delete`). Local writes mark the record pending; `services/sync.ts#syncOne` dispatches on the operation, and `workoutRepository.markSynced` resets it only if `updatedAt` did not change during the request.
+- Each `LocalSet` (`frontend/src/db.ts`) carries `syncStatus` (`pending`|`synced`) and `syncOperation` (`none`|`create`|`update`|`delete`). Local writes mark the record pending; `services/sync.ts#syncOne` dispatches on the operation, and `setRepository.markSynced` resets it only if `updatedAt` did not change during the request.
 - A record never pushed keeps `syncOperation: 'create'` when edited, and is removed locally (no API call) when deleted. A PATCH that gets 404 is replayed as a create.
 - Deletes are soft locally (`deletedAt` set, pending `delete`) until the server confirms; a 404 on DELETE counts as success. UI code must filter out `deletedAt` records.
-- `useWorkouts().sync()` runs on mount and on the `online` event: push pending → pull all from server → reload. Pull never overwrites a pending local record, and removes local `synced` records missing on the server.
+- `useSets().sync()` runs on mount and on the `online` event: push pending → pull all from server → reload. Pull never overwrites a pending local record, and removes local `synced` records missing on the server.
 - IDs are client-generated UUIDs; the server `POST` is an idempotent upsert on `id` (scoped to `user_id`), so creates can be replayed safely.
-- Timestamps cross the API as epoch milliseconds; the backend converts with `to_timestamp($n / 1000.0)`. `date` is `YYYY-MM-DD`, `workoutTime` is `HH:MM[:SS]` (Postgres `time`).
+- Timestamps cross the API as epoch milliseconds; the backend converts with `to_timestamp($n / 1000.0)`. `date` is `YYYY-MM-DD`, `time` is `HH:MM[:SS]` (Postgres `time`).
 - Bump the Dexie `version(n)` in `db.ts` when changing indexed fields.
-- Routine sessions on the home screen ("Séance" mode) are drafted in the Dexie `previews` table (`composables/usePreview.ts`): nothing reaches `workouts` until the user saves from `/preview`, which converts the entries to pending workouts and deletes the draft in one transaction. Round n of an exercise is its n-th entry (rounds are not stored).
+- Workout sessions on the home screen ("Séance" mode) are drafted in the Dexie `previews` table (`composables/usePreview.ts`): nothing reaches `sets` until the user saves from `/preview`, which converts the entries to pending sets and deletes the draft in one transaction. Round n of an exercise is its n-th entry (rounds are not stored).
 
 Exercises are **not** offline: `composables/useExercises.ts` (module-level shared refs) fetches the public catalog (`GET /api/exercises`) and the user's selection (`/api/user/exercises`, max `MAX_EXERCISES = 10`, duplicated in frontend and backend — keep them in sync).
 
@@ -62,7 +71,7 @@ Exercises are **not** offline: `composables/useExercises.ts` (module-level share
 - Frontend stores the token in `localStorage` (`stores/auth.ts`); `isAuthenticated` checks the JWT `exp` client-side.
 - Local data belongs to one account at a time (`localStorage` `countrep.owner`, set by `setToken`). Logins must call `services/session.ts#prepareLocalDataFor(token)` before `setToken` (wipes another account's data, with confirmation if pending). Logout must go through `logoutSafely()` (sync attempt + confirmation) — `authStore.logout()` deletes the whole IndexedDB.
 - All authenticated calls go through `api/client.ts#apiFetch`, which adds the bearer token and, on 401, calls `authStore.markSessionExpired()` (drops the token, keeps IndexedDB); `App.vue` then redirects to login.
-- Backend protection: `verifyJWT` (`middleware/auth.ts`) as an `onRequest` hook per route plugin (whole plugin in `workouts.ts`, a nested `register` scope in `exercises.ts`, `preHandler` on individual auth routes). It sets `request.userId`; every query must filter by `user_id`.
+- Backend protection: `verifyJWT` (`middleware/auth.ts`) as an `onRequest` hook per route plugin (whole plugin in `sets.ts` and `workouts.ts`, a nested `register` scope in `exercises.ts`, `preHandler` on individual auth routes). It sets `request.userId`; every query must filter by `user_id`.
 - Route guarding lives in `router.beforeEach` in `frontend/src/router/router.ts` (routes use `meta.requiresAuth`).
 
 ### Frontend UI
