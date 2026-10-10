@@ -86,6 +86,34 @@ const handleSelect = (id: string) => {
   }
 }
 
+// Au-delà de VISIBLE_COUNT exercices, les autres sont dans un panneau.
+// L'exercice sélectionné reste toujours visible.
+const VISIBLE_COUNT = 4
+
+const showAll = ref(false)
+
+const visibleExercises = computed(() => {
+  const first = exercises.value.slice(0, VISIBLE_COUNT)
+
+  if (
+    !selectedExercise.value ||
+    first.some(exercise => exercise.id === selectedExercise.value)
+  ) {
+    return first
+  }
+
+  const selected = exercises.value.find(exercise => exercise.id === selectedExercise.value)
+
+  return selected ? [...first.slice(0, VISIBLE_COUNT - 1), selected] : first
+})
+
+const hiddenCount = computed(() => exercises.value.length - visibleExercises.value.length)
+
+const selectFromAll = (id: string) => {
+  handleSelect(id)
+  showAll.value = false
+}
+
 const currentExercise = computed(() => {
   if (!selectedExercise.value) {
     return null
@@ -107,7 +135,7 @@ onMounted(() => {
     class="px-5 flex flex-wrap gap-2 pb-2"
   >
     <button
-      v-for="ex in exercises"
+      v-for="ex in visibleExercises"
       :key="ex.id"
       type="button"
       @click="handleSelect(ex.id)"
@@ -119,6 +147,15 @@ onMounted(() => {
       ]"
     >
       <span>{{ ex.id }}</span>
+    </button>
+
+    <button
+      v-if="hiddenCount > 0"
+      type="button"
+      class="px-3 py-1.5 rounded-xl text-base font-medium text-amber-700 border border-dashed border-amber-300 bg-white transition-all"
+      @click="showAll = true"
+    >
+      +{{ hiddenCount }}
     </button>
   </div>
 
@@ -135,4 +172,47 @@ onMounted(() => {
   >
     Tous les exercices
   </p>
+
+  <!-- Tous les exercices -->
+  <Teleport to="body">
+    <div
+      v-if="showAll"
+      class="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-xs sm:items-center sm:p-4"
+      @click.self="showAll = false"
+    >
+      <div class="w-full max-w-md max-h-[80dvh] flex flex-col rounded-t-[32px] border border-amber-100 bg-[#fdf8f5] p-6 shadow-2xl sm:rounded-3xl">
+        <div class="flex items-center justify-between gap-3">
+          <h3 class="text-lg font-bold text-gray-900">
+            Exercices
+          </h3>
+          <button
+            type="button"
+            class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-200/60 text-gray-600"
+            aria-label="Fermer"
+            @click="showAll = false"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div class="mt-4 flex flex-wrap gap-2 overflow-y-auto">
+          <button
+            v-for="ex in exercises"
+            :key="ex.id"
+            type="button"
+            :title="ex.nameFr"
+            @click="selectFromAll(ex.id)"
+            :class="[
+              'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-base font-medium shadow-xs transition-all',
+              selectedExercise === ex.id
+                ? 'bg-amber-500 text-white shadow-amber-200'
+                : 'bg-white text-gray-700 border border-gray-200/60'
+            ]"
+          >
+            <span>{{ ex.id }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </Teleport>
 </template>
