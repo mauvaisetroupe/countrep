@@ -1,53 +1,53 @@
 import { apiFetch } from './client'
 
-export interface ApiWorkout {
-  id: string
-  userId?: string
-  exercise: string
-  date: string
-  workoutTime: string
+export interface WorkoutExercise {
+  exerciseId: string
+  nameEn: string
+  nameFr: string
   reps: number
-  mode: 'add' | 'set'
-  createdAt: number
-  updatedAt: number
-  deletedAt: number | null
 }
 
-export class ApiError extends Error {
-  readonly status: number
+export interface Workout {
+  id: string
+  name: string
+  rounds: number
+  createdAt: number
+  updatedAt: number
+  exercises: WorkoutExercise[]
+}
 
-  constructor(status: number) {
-    super(`API error: ${status}`)
-    this.status = status
-  }
+export interface WorkoutInput {
+  name: string
+  rounds: number
+  exercises: { exerciseId: string, reps: number }[]
 }
 
 const JSON_HEADERS = { 'Content-Type': 'application/json' }
 
-export async function createWorkout(
-  workout: ApiWorkout
-): Promise<ApiWorkout> {
+async function errorFrom(response: Response, fallback: string): Promise<Error> {
+  const body = await response.json().catch(() => null)
+  return new Error(body?.error || `${fallback}: ${response.status}`)
+}
 
-  const response = await apiFetch('/api/workouts', {
-    method: 'POST',
-    headers: JSON_HEADERS,
-    body: JSON.stringify(workout)
-  })
+export async function getWorkouts(): Promise<Workout[]> {
+  const response = await apiFetch('/api/workouts')
 
   if (!response.ok) {
-    throw new ApiError(response.status)
+    throw await errorFrom(response, 'Failed to load workouts')
   }
 
   return response.json()
 }
 
-export async function getWorkouts(): Promise<ApiWorkout[]> {
+export async function createWorkout(input: WorkoutInput): Promise<Workout> {
   const response = await apiFetch('/api/workouts', {
-    headers: JSON_HEADERS
+    method: 'POST',
+    headers: JSON_HEADERS,
+    body: JSON.stringify(input)
   })
 
   if (!response.ok) {
-    throw new ApiError(response.status)
+    throw await errorFrom(response, 'Failed to create workout')
   }
 
   return response.json()
@@ -55,17 +55,16 @@ export async function getWorkouts(): Promise<ApiWorkout[]> {
 
 export async function updateWorkout(
   id: string,
-  changes: Partial<ApiWorkout>
-): Promise<ApiWorkout> {
-
+  input: WorkoutInput
+): Promise<Workout> {
   const response = await apiFetch(`/api/workouts/${id}`, {
-    method: 'PATCH',
+    method: 'PUT',
     headers: JSON_HEADERS,
-    body: JSON.stringify(changes)
+    body: JSON.stringify(input)
   })
 
   if (!response.ok) {
-    throw new ApiError(response.status)
+    throw await errorFrom(response, 'Failed to update workout')
   }
 
   return response.json()
@@ -77,6 +76,6 @@ export async function deleteWorkout(id: string): Promise<void> {
   })
 
   if (!response.ok) {
-    throw new ApiError(response.status)
+    throw await errorFrom(response, 'Failed to delete workout')
   }
 }

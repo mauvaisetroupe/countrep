@@ -1,21 +1,21 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import SettingsHeader from '../components/SettingsHeader.vue'
-import { getRoutines, type Routine } from '../api/routines'
+import { getWorkouts, type Workout } from '../api/workouts'
 
-const routines = ref<Routine[]>([])
+const workouts = ref<Workout[]>([])
 const loading = ref(false)
 const error = ref('')
 
-const repsPerRound = (routine: Routine) => {
-  return routine.exercises.reduce((total, exercise) => total + exercise.reps, 0)
+const repsPerRound = (workout: Workout) => {
+  return workout.exercises.reduce((total, exercise) => total + exercise.reps, 0)
 }
 
 onMounted(async () => {
   loading.value = true
 
   try {
-    routines.value = await getRoutines()
+    workouts.value = await getWorkouts()
   } catch (err: any) {
     console.error(err)
     error.value = err.message || 'Erreur lors du chargement des séances'
@@ -48,28 +48,28 @@ onMounted(async () => {
       <template v-else>
 
         <router-link
-          v-for="routine in routines"
-          :key="routine.id"
-          :to="`/settings/routines/${routine.id}`"
+          v-for="workout in workouts"
+          :key="workout.id"
+          :to="`/settings/workouts/${workout.id}`"
           class="block bg-white border border-gray-200/80 rounded-3xl p-5 shadow-xs active:bg-amber-50 transition-colors"
         >
           <div class="flex items-center justify-between gap-3">
             <p class="text-base font-semibold text-gray-800 truncate">
-              {{ routine.name }}
+              {{ workout.name }}
             </p>
             <span class="text-xl text-gray-300">›</span>
           </div>
 
           <p class="mt-1 text-xs text-gray-500">
-            {{ routine.rounds }} {{ routine.rounds > 1 ? 'séries' : 'série' }}
-            · {{ routine.exercises.length }}
-            {{ routine.exercises.length > 1 ? 'exercices' : 'exercice' }}
-            · {{ repsPerRound(routine) }} reps par série
+            {{ workout.rounds }} {{ workout.rounds > 1 ? 'séries' : 'série' }}
+            · {{ workout.exercises.length }}
+            {{ workout.exercises.length > 1 ? 'exercices' : 'exercice' }}
+            · {{ repsPerRound(workout) }} reps par série
           </p>
 
           <div class="mt-3 flex flex-wrap gap-1.5">
             <span
-              v-for="(exercise, index) in routine.exercises"
+              v-for="(exercise, index) in workout.exercises"
               :key="index"
               class="rounded-full bg-amber-50 border border-amber-200 px-2.5 py-1 text-xs text-amber-800"
             >
@@ -79,7 +79,7 @@ onMounted(async () => {
         </router-link>
 
         <div
-          v-if="routines.length === 0"
+          v-if="workouts.length === 0"
           class="rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-4 py-5 text-center"
         >
           <p class="text-sm font-medium text-gray-600">
@@ -88,7 +88,7 @@ onMounted(async () => {
         </div>
 
         <router-link
-          to="/settings/routines/new"
+          to="/settings/workouts/new"
           class="flex w-full items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-white font-semibold py-3.5 rounded-2xl shadow-md shadow-amber-200 transition-all active:scale-[0.98]"
         >
           <span class="text-lg leading-none">+</span>

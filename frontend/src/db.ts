@@ -1,12 +1,11 @@
 import Dexie, { type Table } from 'dexie'
 
-export interface LocalWorkout {
+export interface LocalSet {
   id: string
   exercise: string
   date: string
-  workoutTime: string
+  time: string
   reps: number
-  mode: 'add' | 'set'
   createdAt: number
   updatedAt: number
   deletedAt?: number | null
@@ -15,13 +14,13 @@ export interface LocalWorkout {
 }
 
 // Séance en cours, gardée en brouillon sur l'appareil jusqu'à ce qu'elle
-// soit enregistrée (ses séries deviennent alors des workouts) ou abandonnée.
+// soit enregistrée (ses séries deviennent alors des sets) ou abandonnée.
 export interface PreviewEntry {
   id: string
   // Position de l'exercice dans la séance
   position: number
   reps: number
-  workoutTime: string
+  time: string
   createdAt: number
 }
 
@@ -32,7 +31,7 @@ export interface LocalPreview {
   updatedAt: number
   // Copie de la séance au démarrage : la modifier dans les réglages
   // ne casse pas la séance en cours
-  routine: {
+  workout: {
     id: string
     name: string
     rounds: number
@@ -46,23 +45,59 @@ export interface SyncState {
   lastSync: number
 }
 
-export class WorkoutDatabase extends Dexie {
-  workouts!: Table<LocalWorkout, string>
+// Base IndexedDB de l'application. Son nom (« WorkoutDatabase ») date
+// d'avant le renommage de l'ADR 0006 : le changer créerait une base vide.
+export class CountRepDatabase extends Dexie {
+  sets!: Table<LocalSet, string>
   syncState!: Table<SyncState, string>
   previews!: Table<LocalPreview, string>
 
   constructor() {
     super('WorkoutDatabase')
+
+    // Versions historiques : les sets s'appelaient alors « workouts »
     this.version(2).stores({
-        workouts: 'id, exercise, date, createdAt, updatedAt, syncStatus, syncOperation',
-        syncState: 'id'
+      workouts: 'id, exercise, date, createdAt, updatedAt, syncStatus, syncOperation',
+      syncState: 'id'
     })
     this.version(3).stores({
-        workouts: 'id, exercise, date, createdAt, updatedAt, syncStatus, syncOperation',
-        syncState: 'id',
-        previews: 'id'
+      workouts: 'id, exercise, date, createdAt, updatedAt, syncStatus, syncOperation',
+      syncState: 'id',
+      previews: 'id'
+    })
+
+    // ADR 0006 : workouts -> sets (workoutTime -> time, plus de champ mode),
+    // et dans une séance en cours : routine -> workout, workoutTime -> time.
+    // Dexie ne sait pas renommer une table : on copie, puis on supprime (v5).
+    this.version(4).stores({
+      sets: 'id, exercise, date, createdAt, updatedAt, syncStatus, syncOperation'
+    }).upgrade(async tx => {
+      const legacySets = await tx.table('workouts').toArray()
+
+      await tx.table('sets').bulkAdd(
+        legacySets.map(({ workoutTime, mode: _mode, ...rest }) => ({
+          ...rest,
+          time: workoutTime
+        }))
+      )
+
+      await tx.table('previews').toCollection().modify((preview: any) => {
+        if (preview.routine) {
+          preview.workout = preview.routine
+          delete preview.routine
+        }
+        for (const entry of preview.entries ?? []) {
+          if ('workoutTime' in entry) {
+            entry.time = entry.workoutTime
+            delete entry.workoutTime
+          }
+        }
+      })
+    })
+    this.version(5).stores({
+      workouts: null
     })
   }
 }
 
-export const db = new WorkoutDatabase()
+export const db = new CountRepDatabase()

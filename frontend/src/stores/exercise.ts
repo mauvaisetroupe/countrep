@@ -1,13 +1,19 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 
-const STORAGE_KEY = 'workout_selected_exercise'
+const EXERCISE_KEY = 'countrep.selectedExercise'
 const MODE_KEY = 'countrep.homeMode'
-const ROUTINE_KEY = 'countrep.selectedRoutine'
+const WORKOUT_KEY = 'countrep.selectedWorkout'
+
+// Anciennes clés et valeurs (avant le renommage de l'ADR 0006),
+// reprises une fois puis supprimées
+const LEGACY_EXERCISE_KEY = 'workout_selected_exercise'
+const LEGACY_WORKOUT_KEY = 'countrep.selectedRoutine'
+const LEGACY_WORKOUT_MODE = 'routine'
 
 // Mode de l'écran d'accueil : un exercice au fil de la journée,
 // ou une séance complète
-export type HomeMode = 'exercise' | 'routine'
+export type HomeMode = 'exercise' | 'workout'
 
 const persist = (key: string, value: string | null) => {
   if (value) {
@@ -17,22 +23,38 @@ const persist = (key: string, value: string | null) => {
   }
 }
 
+const migrateKey = (legacyKey: string, key: string) => {
+  const legacy = localStorage.getItem(legacyKey)
+
+  if (legacy !== null) {
+    if (localStorage.getItem(key) === null) {
+      localStorage.setItem(key, legacy)
+    }
+    localStorage.removeItem(legacyKey)
+  }
+}
+
+migrateKey(LEGACY_EXERCISE_KEY, EXERCISE_KEY)
+migrateKey(LEGACY_WORKOUT_KEY, WORKOUT_KEY)
+localStorage.removeItem('countrep.routinesCache')
+
 export const useExerciseStore = defineStore('exercise', () => {
   const selectedExercise = ref<string | null>(
-    localStorage.getItem(STORAGE_KEY)
+    localStorage.getItem(EXERCISE_KEY)
   )
 
+  const storedMode = localStorage.getItem(MODE_KEY)
   const mode = ref<HomeMode>(
-    localStorage.getItem(MODE_KEY) === 'routine' ? 'routine' : 'exercise'
+    storedMode === 'workout' || storedMode === LEGACY_WORKOUT_MODE ? 'workout' : 'exercise'
   )
 
-  const selectedRoutine = ref<string | null>(
-    localStorage.getItem(ROUTINE_KEY)
+  const selectedWorkout = ref<string | null>(
+    localStorage.getItem(WORKOUT_KEY)
   )
 
-  const setExercise = (name: string | null) => {
-    selectedExercise.value = name
-    persist(STORAGE_KEY, name)
+  const setExercise = (id: string | null) => {
+    selectedExercise.value = id
+    persist(EXERCISE_KEY, id)
   }
 
   const setMode = (value: HomeMode) => {
@@ -40,17 +62,17 @@ export const useExerciseStore = defineStore('exercise', () => {
     persist(MODE_KEY, value)
   }
 
-  const setRoutine = (id: string | null) => {
-    selectedRoutine.value = id
-    persist(ROUTINE_KEY, id)
+  const setWorkout = (id: string | null) => {
+    selectedWorkout.value = id
+    persist(WORKOUT_KEY, id)
   }
 
   return {
     selectedExercise,
     mode,
-    selectedRoutine,
+    selectedWorkout,
     setExercise,
     setMode,
-    setRoutine
+    setWorkout
   }
 })

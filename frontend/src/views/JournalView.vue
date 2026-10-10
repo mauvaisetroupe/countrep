@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import ExerciseSelector from '../components/ExerciseSelector.vue'
-import { useWorkouts } from '../composables/useWorkouts'
-import type { LocalWorkout } from '../db'
+import { useSets } from '../composables/useSets'
+import type { LocalSet } from '../db'
 
 const selectedExercise = ref<string | null>(null)
 
-const { workouts, updateWorkout, deleteWorkout } = useWorkouts()
+const { sets, updateSet, deleteSet } = useSets()
 
 const PAGE_SIZE = 30
 
@@ -16,14 +16,14 @@ const SETS_PER_BLOCK = 10
 const BLOCK_REST_MINUTES = 2
 
 const visibleCount = ref(PAGE_SIZE)
-const editingWorkoutId = ref<string | null>(null)
+const editingSetId = ref<string | null>(null)
 const openMenuId = ref<string | null>(null)
 const copiedGarminDate = ref<string | null>(null)
 
 const expandedDates = ref<Set<string>>(new Set())
 
-const filteredWorkouts = computed(() => {
-  let result = workouts.value.filter(w => !w.deletedAt)
+const filteredSets = computed(() => {
+  let result = sets.value.filter(w => !w.deletedAt)
 
   if (selectedExercise.value) {
     result = result.filter(
@@ -36,16 +36,16 @@ const filteredWorkouts = computed(() => {
       return b.date.localeCompare(a.date)
     }
 
-    return b.workoutTime.localeCompare(a.workoutTime)
+    return b.time.localeCompare(a.time)
   })
 })
 
-const visibleWorkouts = computed(() => {
-  return filteredWorkouts.value.slice(0, visibleCount.value)
+const visibleSets = computed(() => {
+  return filteredSets.value.slice(0, visibleCount.value)
 })
 
 const hasMore = computed(() => {
-  return visibleCount.value < filteredWorkouts.value.length
+  return visibleCount.value < filteredSets.value.length
 })
 
 const loadMore = () => {
@@ -55,17 +55,17 @@ const loadMore = () => {
 }
 
 const visibleDays = computed(() => {
-  const days = new Map<string, LocalWorkout[]>()
+  const days = new Map<string, LocalSet[]>()
 
-  for (const workout of visibleWorkouts.value) {
-    const dayWorkouts = days.get(workout.date) ?? []
-    dayWorkouts.push(workout)
-    days.set(workout.date, dayWorkouts)
+  for (const set of visibleSets.value) {
+    const daySets = days.get(set.date) ?? []
+    daySets.push(set)
+    days.set(set.date, daySets)
   }
 
-  return [...days.entries()].map(([date, dayWorkouts]) => ({
+  return [...days.entries()].map(([date, daySets]) => ({
     date,
-    workouts: dayWorkouts
+    sets: daySets
   }))
 })
 
@@ -112,20 +112,20 @@ const formatDay = (date: string) => {
   )
 }
 
-const formatWorkoutTime = (workoutTime: string) => {
-  if (!workoutTime) return '--:--'
+const formatSetTime = (time: string) => {
+  if (!time) return '--:--'
 
-  return workoutTime.slice(0, 5)
+  return time.slice(0, 5)
 }
 
 const dayTotal = (date: string) => {
-  return filteredWorkouts.value
+  return filteredSets.value
     .filter(w => w.date === date)
     .reduce((total, w) => total + w.reps, 0)
 }
 
 const garminDayTotal = (date: string) => {
-  return workouts.value
+  return sets.value
     .filter(w => !w.deletedAt && w.date === date)
     .reduce((total, w) => total + w.reps, 0)
 }
@@ -133,7 +133,7 @@ const garminDayTotal = (date: string) => {
 const garminExerciseSummary = (date: string) => {
   const totals = new Map<string, number>()
 
-  workouts.value
+  sets.value
     .filter(w => !w.deletedAt && w.date === date)
     .forEach(w => {
       totals.set(
@@ -226,39 +226,39 @@ const handleDocumentClick = () => {
 
 const startEdit = (id: string) => {
   openMenuId.value = null
-  editingWorkoutId.value = id
+  editingSetId.value = id
 }
 
 const cancelEdit = () => {
-  editingWorkoutId.value = null
+  editingSetId.value = null
 }
 
-const saveEdit = async (workout: LocalWorkout) => {
-  const reps = Number(workout.reps)
+const saveEdit = async (set: LocalSet) => {
+  const reps = Number(set.reps)
 
   // reps est un integer > 0 en base : une valeur décimale
   // serait refusée par le serveur et resterait pending
   if (!Number.isInteger(reps) || reps <= 0) return
-  if (!workout.workoutTime) return
+  if (!set.time) return
 
-  await updateWorkout(workout.id, {
+  await updateSet(set.id, {
     reps,
-    workoutTime: workout.workoutTime
+    time: set.time
   })
 
-  editingWorkoutId.value = null
+  editingSetId.value = null
 }
 
-const handleDeleteWorkout = async (workout: LocalWorkout) => {
+const handleDeleteSet = async (set: LocalSet) => {
   openMenuId.value = null
 
   const confirmed = window.confirm(
-    `Supprimer ${workout.exercise} — ${workout.reps} reps ?`
+    `Supprimer ${set.exercise} — ${set.reps} reps ?`
   )
 
   if (!confirmed) return
 
-  await deleteWorkout(workout.id)
+  await deleteSet(set.id)
 }
 
 const handleScroll = () => {
@@ -297,7 +297,7 @@ onUnmounted(() => {
       <ExerciseSelector
         v-model="selectedExercise"
         :required="false"
-        source="workouts"
+        source="sets"
       />
     </div>
 
@@ -417,30 +417,30 @@ onUnmounted(() => {
         </div>
       </button>
 
-      <!-- Workout details -->
+      <!-- Set details -->
       <div
         v-if="isExpanded(day.date)"
         class="border-t border-gray-100"
       >
 
         <article
-          v-for="workout in day.workouts"
-          :key="workout.id"
+          v-for="set in day.sets"
+          :key="set.id"
           class="relative border-b border-gray-100 last:border-b-0"
           :class="{
-            'z-40': editingWorkoutId === workout.id
+            'z-40': editingSetId === set.id
           }"
         >
 
           <!-- Edit mode -->
           <div
-            v-if="editingWorkoutId === workout.id"
+            v-if="editingSetId === set.id"
             class="px-4 py-3"
           >
             <div class="flex items-center gap-3">
 
               <input
-                v-model="workout.workoutTime"
+                v-model="set.time"
                 type="time"
                 class="w-24 rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-sm text-gray-700 outline-none focus:border-amber-400"
               />
@@ -449,12 +449,12 @@ onUnmounted(() => {
                 <div
                   class="truncate font-semibold text-gray-800"
                 >
-                  {{ workout.exercise }}
+                  {{ set.exercise }}
                 </div>
               </div>
 
               <input
-                v-model.number="workout.reps"
+                v-model.number="set.reps"
                 type="number"
                 min="1"
                 step="1"
@@ -477,7 +477,7 @@ onUnmounted(() => {
               <button
                 type="button"
                 class="rounded-lg bg-amber-500 px-3 py-1.5 text-sm font-semibold text-white hover:bg-amber-600"
-                @click="saveEdit(workout)"
+                @click="saveEdit(set)"
               >
                 Enregistrer
               </button>
@@ -493,21 +493,21 @@ onUnmounted(() => {
             <span
               class="w-12 shrink-0 text-sm font-medium text-gray-400"
             >
-              {{ formatWorkoutTime(workout.workoutTime) }}
+              {{ formatSetTime(set.time) }}
             </span>
 
             <div class="min-w-0 flex-1">
               <div
                 class="truncate font-semibold text-gray-800"
               >
-                {{ workout.exercise }}
+                {{ set.exercise }}
               </div>
             </div>
 
             <span
               class="whitespace-nowrap font-bold text-gray-900"
             >
-              {{ workout.reps }}
+              {{ set.reps }}
 
               <span
                 class="text-xs font-medium text-gray-400"
@@ -523,7 +523,7 @@ onUnmounted(() => {
                 type="button"
                 class="flex h-8 w-8 items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600"
                 aria-label="Options"
-                @click.stop="toggleMenu(workout.id)"
+                @click.stop="toggleMenu(set.id)"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -550,14 +550,14 @@ onUnmounted(() => {
               </button>
 
               <div
-                v-if="openMenuId === workout.id"
+                v-if="openMenuId === set.id"
                 class="absolute right-0 top-9 z-50 w-32 overflow-hidden rounded-xl border border-gray-200 bg-white py-1 shadow-lg"
                 @click.stop
               >
                 <button
                   type="button"
                   class="block w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
-                  @click="startEdit(workout.id)"
+                  @click="startEdit(set.id)"
                 >
                   Modifier
                 </button>
@@ -565,7 +565,7 @@ onUnmounted(() => {
                 <button
                   type="button"
                   class="block w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50"
-                  @click="handleDeleteWorkout(workout)"
+                  @click="handleDeleteSet(set)"
                 >
                   Supprimer
                 </button>

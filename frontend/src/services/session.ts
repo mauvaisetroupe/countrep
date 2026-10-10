@@ -5,9 +5,9 @@ import {
   getTokenUserId,
   useAuthStore
 } from '../stores/auth'
-import { workoutRepository } from '../repositories/workoutRepository'
+import { setRepository } from '../repositories/setRepository'
 import { previewRepository } from '../repositories/previewRepository'
-import { syncPendingWorkouts } from './sync'
+import { syncPendingSets } from './sync'
 
 // Le token dure 7 jours ; on le renouvelle dès qu'il a plus d'un jour.
 // Un utilisateur qui ouvre l'app au moins une fois par semaine
@@ -77,7 +77,7 @@ export async function prepareLocalDataFor(token: string): Promise<boolean> {
     return true
   }
 
-  const pendingCount = (await workoutRepository.getPending()).length
+  const pendingCount = (await setRepository.getPending()).length
 
   if (
     pendingCount > 0 &&
@@ -91,7 +91,7 @@ export async function prepareLocalDataFor(token: string): Promise<boolean> {
     return false
   }
 
-  await workoutRepository.clearAll()
+  await setRepository.clearAll()
 
   return true
 }
@@ -102,9 +102,9 @@ export async function prepareLocalDataFor(token: string): Promise<boolean> {
 export async function logoutSafely(): Promise<boolean> {
   const authStore = useAuthStore()
 
-  await syncPendingWorkouts()
+  await syncPendingSets()
 
-  const pendingCount = (await workoutRepository.getPending()).length
+  const pendingCount = (await setRepository.getPending()).length
 
   if (
     pendingCount > 0 &&

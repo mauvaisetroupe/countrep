@@ -1,86 +1,86 @@
 import { ref, onMounted, onUnmounted } from 'vue'
-import { type LocalWorkout } from '../db'
-import { workoutRepository } from '../repositories/workoutRepository'
+import { type LocalSet } from '../db'
+import { setRepository } from '../repositories/setRepository'
 import {
-  syncPendingWorkouts,
-  syncWorkoutsFromServer,
+  syncPendingSets,
+  syncSetsFromServer,
   syncOne
 } from '../services/sync'
 import { ensureFreshToken } from '../services/session'
 
-export function useWorkouts() {
+export function useSets() {
 
-  const workouts = ref<LocalWorkout[]>([])
+  const sets = ref<LocalSet[]>([])
   const loading = ref(false)
 
   // ============================================================
   // CHARGER DEPUIS INDEXEDDB
   // ============================================================
 
-  const loadWorkouts = async () => {
-    workouts.value = await workoutRepository.getAll()
+  const loadSets = async () => {
+    sets.value = await setRepository.getAll()
   }
 
   // ============================================================
   // CRÉER UN WORKOUT
   // ============================================================
 
-  const createWorkout = async (
-    workout: LocalWorkout
+  const createSet = async (
+    set: LocalSet
   ): Promise<void> => {
 
-    await workoutRepository.create(workout)
+    await setRepository.create(set)
 
-    workouts.value.push(workout)
+    sets.value.push(set)
   }
 
-const updateWorkout = async (
+const updateSet = async (
   id: string,
-  changes: Partial<LocalWorkout>
+  changes: Partial<LocalSet>
 ): Promise<void> => {
 
-  const existing = await workoutRepository.getById(id)
+  const existing = await setRepository.getById(id)
 
   if (!existing) {
     return
   }
 
-  // Tant que le workout n'a jamais atteint le serveur,
+  // Tant que le set n'a jamais atteint le serveur,
   // l'opération en attente reste une création.
   const syncOperation =
     existing.syncOperation === 'create' ? 'create' : 'update'
 
-  await workoutRepository.update(id, {
+  await setRepository.update(id, {
     ...changes,
     updatedAt: Date.now(),
     syncStatus: 'pending',
     syncOperation
   })
 
-  await loadWorkouts()
+  await loadSets()
 
-  const workout = workouts.value.find(
-    workout => workout.id === id
+  const set = sets.value.find(
+    set => set.id === id
   )
 
-  if (!workout) {
+  if (!set) {
     return
   }
 
   try {
-    await syncOne(workout)
-    await loadWorkouts()
+    await syncOne(set)
+    await loadSets()
   } catch (error) {
     console.warn(
-      `Workout ${id} modifié localement mais non synchronisé`,
+      `Set ${id} modifié localement mais non synchronisé`,
       error
     )
   }
 }
 
-const deleteWorkout = async (id: string) => {
+const deleteSet = async (id: string) => {
 
-  const existing = await workoutRepository.getById(id)
+  const existing = await setRepository.getById(id)
 
   if (!existing) {
     return
@@ -88,36 +88,36 @@ const deleteWorkout = async (id: string) => {
 
   // Jamais envoyé au serveur : rien à synchroniser
   if (existing.syncOperation === 'create') {
-    await workoutRepository.remove(id)
-    await loadWorkouts()
+    await setRepository.remove(id)
+    await loadSets()
     return
   }
 
   const now = Date.now()
 
-  await workoutRepository.update(id, {
+  await setRepository.update(id, {
     deletedAt: now,
     updatedAt: now,
     syncStatus: 'pending',
     syncOperation: 'delete'
   })
 
-  await loadWorkouts()
+  await loadSets()
 
-  const workout = workouts.value.find(
-    workout => workout.id === id
+  const set = sets.value.find(
+    set => set.id === id
   )
 
-  if (!workout) {
+  if (!set) {
     return
   }
 
   try {
-    await syncOne(workout)
-    await loadWorkouts()
+    await syncOne(set)
+    await loadSets()
   } catch (error) {
     console.warn(
-      `Workout ${id} supprimé localement mais non synchronisé`,
+      `Set ${id} supprimé localement mais non synchronisé`,
       error
     )
   }
@@ -137,18 +137,18 @@ const deleteWorkout = async (id: string) => {
 
     try {
       // Toujours commencer par les données locales
-      await loadWorkouts()
+      await loadSets()
 
       await ensureFreshToken()
 
-      // Envoyer les workouts locaux non synchronisés
-      await syncPendingWorkouts()
+      // Envoyer les sets locaux non synchronisés
+      await syncPendingSets()
 
-      // Récupérer les workouts du serveur
-      await syncWorkoutsFromServer()
+      // Récupérer les sets du serveur
+      await syncSetsFromServer()
 
       // Recharger IndexedDB après synchronisation
-      await loadWorkouts()
+      await loadSets()
 
     } finally {
       loading.value = false
@@ -182,12 +182,12 @@ const deleteWorkout = async (id: string) => {
   })
 
   return {
-    workouts,
+    sets,
     loading,
-    loadWorkouts,
-    createWorkout,
-    updateWorkout,
-    deleteWorkout,
+    loadSets,
+    createSet,
+    updateSet,
+    deleteSet,
     sync
   }
 }

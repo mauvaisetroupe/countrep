@@ -2,11 +2,11 @@
 import { ref, computed } from 'vue'
 import ExerciseSelector from '../components/ExerciseSelector.vue'
 import AddRepsModal from '../components/AddRepsModal.vue'
-import RoutineSession from '../components/RoutineSession.vue'
-import { useWorkouts } from '../composables/useWorkouts'
-import { syncWorkout } from '../services/sync'
+import WorkoutSession from '../components/WorkoutSession.vue'
+import { useSets } from '../composables/useSets'
+import { syncSet } from '../services/sync'
 import { useExerciseStore, type HomeMode } from '../stores/exercise'
-import type { LocalWorkout } from '../db'
+import type { LocalSet } from '../db'
 import { getUserExercises, type UserExercise } from '../api/exercises'
 import TodayCalendar from '../components/TodayCalendar.vue'
 
@@ -15,7 +15,7 @@ const userExercises = ref<UserExercise[]>([])
 
 const modes: { value: HomeMode, label: string }[] = [
   { value: 'exercise', label: 'Exercice' },
-  { value: 'routine', label: 'Séance' }
+  { value: 'workout', label: 'Séance' }
 ]
 
 const selectedExerciseName = computed(() => {
@@ -67,31 +67,30 @@ const selectedDate = ref(
 // ============================================================
 
 const {
-  workouts,
-  createWorkout,
-  loadWorkouts
-} = useWorkouts()
+  sets,
+  createSet,
+  loadSets
+} = useSets()
 
 interface LogEntry {
   exerciseId: string
   reps: number
-  workoutTime: string
+  time: string
 }
 
 // Enregistre des séries : d'abord en local (immédiat), puis synchro
-const logWorkouts = async (entries: LogEntry[]) => {
-  const created: LocalWorkout[] = []
+const logSets = async (entries: LogEntry[]) => {
+  const created: LocalSet[] = []
 
   for (const entry of entries) {
     const timestamp = Date.now()
 
-    const workout: LocalWorkout = {
+    const set: LocalSet = {
       id: crypto.randomUUID(),
       exercise: entry.exerciseId,
       date: selectedDate.value,
-      workoutTime: entry.workoutTime,
+      time: entry.time,
       reps: entry.reps,
-      mode: 'add',
       createdAt: timestamp,
       updatedAt: timestamp,
       deletedAt: null,
@@ -99,18 +98,18 @@ const logWorkouts = async (entries: LogEntry[]) => {
       syncOperation: 'create'
     }
 
-    await createWorkout(workout)
-    created.push(workout)
+    await createSet(set)
+    created.push(set)
   }
 
   try {
-    for (const workout of created) {
-      await syncWorkout(workout)
+    for (const set of created) {
+      await syncSet(set)
     }
-    await loadWorkouts()
+    await loadSets()
   } catch (error) {
     console.warn(
-      'Workout enregistré localement mais non synchronisé',
+      'Set enregistré localement mais non synchronisé',
       error
     )
   }
@@ -122,13 +121,13 @@ const logWorkouts = async (entries: LogEntry[]) => {
 
 const showModal = ref(false)
 
-const saveExercise = async ({ reps, workoutTime }: { reps: number, workoutTime: string }) => {
+const saveExercise = async ({ reps, time }: { reps: number, time: string }) => {
   if (!exerciseStore.selectedExercise) return
 
   showModal.value = false
 
-  await logWorkouts([
-    { exerciseId: exerciseStore.selectedExercise, reps, workoutTime }
+  await logSets([
+    { exerciseId: exerciseStore.selectedExercise, reps, time }
   ])
 }
 
@@ -167,8 +166,8 @@ loadUserExercises()
        MODE SÉANCE
   ========================================================= -->
 
-  <RoutineSession
-    v-if="exerciseStore.mode === 'routine'"
+  <WorkoutSession
+    v-if="exerciseStore.mode === 'workout'"
     :date="selectedDate"
   />
 
@@ -194,7 +193,7 @@ loadUserExercises()
     ====================================================== -->
 
     <TodayCalendar
-      :workouts="workouts"
+      :sets="sets"
       :selected-date="selectedDate"
       :selected-exercise="exerciseStore.selectedExercise"
       @update:selected-date="selectedDate = $event"

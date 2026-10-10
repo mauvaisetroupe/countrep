@@ -43,7 +43,7 @@ const hasInvalidReps = computed(() =>
 const totals = computed(() => {
   if (!preview.value) return []
 
-  return preview.value.routine.exercises.map((exercise, position) => {
+  return preview.value.workout.exercises.map((exercise, position) => {
     const entries = preview.value!.entries.filter(entry => entry.position === position)
     return {
       nameFr: exercise.nameFr,
@@ -100,7 +100,7 @@ onMounted(load)
       </h1>
 
       <p v-if="preview" class="mt-1 text-sm text-gray-500">
-        {{ preview.routine.name }} · {{ preview.date }}
+        {{ preview.workout.name }} · {{ preview.date }}
       </p>
     </header>
 
@@ -150,7 +150,7 @@ onMounted(load)
                 class="min-w-0 flex-1 text-sm truncate"
                 :class="entry ? 'font-medium text-gray-800' : 'text-gray-400'"
               >
-                {{ preview.routine.exercises[position]?.nameFr }}
+                {{ preview.workout.exercises[position]?.nameFr }}
               </p>
 
               <template v-if="entry">

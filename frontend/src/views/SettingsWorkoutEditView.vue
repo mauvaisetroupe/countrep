@@ -7,16 +7,16 @@ import { VueDraggable } from 'vue-draggable-plus'
 import { reorderOptions } from '../reorder'
 import { getExercises, type ApiExercise } from '../api/exercises'
 import {
-  createRoutine,
-  deleteRoutine,
-  getRoutines,
-  updateRoutine
-} from '../api/routines'
+  createWorkout,
+  deleteWorkout,
+  getWorkouts,
+  updateWorkout
+} from '../api/workouts'
 
 const MAX_ROUNDS = 50
 const DEFAULT_REPS = 10
 
-// Route /settings/routines/new (création) ou /settings/routines/:id
+// Route /settings/workouts/new (création) ou /settings/workouts/:id
 const props = defineProps<{
   id?: string
 }>()
@@ -130,12 +130,12 @@ const save = async () => {
 
   try {
     if (props.id) {
-      await updateRoutine(props.id, input)
+      await updateWorkout(props.id, input)
     } else {
-      await createRoutine(input)
+      await createWorkout(input)
     }
 
-    router.replace('/settings/routines')
+    router.replace('/settings/workouts')
   } catch (err: any) {
     console.error(err)
     error.value = err.message || "Erreur lors de l'enregistrement de la séance"
@@ -152,8 +152,8 @@ const remove = async () => {
   error.value = ''
 
   try {
-    await deleteRoutine(props.id)
-    router.replace('/settings/routines')
+    await deleteWorkout(props.id)
+    router.replace('/settings/workouts')
   } catch (err: any) {
     console.error(err)
     error.value = err.message || 'Erreur lors de la suppression de la séance'
@@ -166,24 +166,24 @@ onMounted(async () => {
   loading.value = true
 
   try {
-    const [allExercises, routines] = await Promise.all([
+    const [allExercises, workouts] = await Promise.all([
       getExercises(),
-      props.id ? getRoutines() : Promise.resolve([])
+      props.id ? getWorkouts() : Promise.resolve([])
     ])
 
     catalog.value = allExercises
 
     if (props.id) {
-      const routine = routines.find(routine => routine.id === props.id)
+      const workout = workouts.find(workout => workout.id === props.id)
 
-      if (!routine) {
+      if (!workout) {
         error.value = 'Séance introuvable.'
         return
       }
 
-      name.value = routine.name
-      rounds.value = routine.rounds
-      exercises.value = routine.exercises.map(exercise => ({
+      name.value = workout.name
+      rounds.value = workout.rounds
+      exercises.value = workout.exercises.map(exercise => ({
         key: nextKey++,
         exerciseId: exercise.exerciseId,
         reps: exercise.reps
@@ -203,7 +203,7 @@ onMounted(async () => {
 
     <SettingsHeader
       :title="isNew ? 'Nouvelle séance' : 'Modifier la séance'"
-      back-to="/settings/routines"
+      back-to="/settings/workouts"
       back-label="Mes séances"
     />
 
@@ -217,11 +217,11 @@ onMounted(async () => {
 
         <!-- Nom -->
         <section class="bg-white border border-gray-200/80 rounded-3xl p-5 shadow-xs">
-          <label for="routine-name" class="text-xs font-semibold text-gray-500 block mb-2">
+          <label for="workout-name" class="text-xs font-semibold text-gray-500 block mb-2">
             Nom de la séance
           </label>
           <input
-            id="routine-name"
+            id="workout-name"
             v-model="name"
             type="text"
             maxlength="100"

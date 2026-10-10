@@ -5,11 +5,11 @@ import {
   onMounted,
   ref
 } from 'vue'
-import type { LocalWorkout } from '../db'
+import type { LocalSet } from '../db'
 import emblaCarouselVue from 'embla-carousel-vue'
 
 const props = defineProps<{
-  workouts: LocalWorkout[]
+  sets: LocalSet[]
   selectedDate: string
   selectedExercise: string | null
 }>()
@@ -228,20 +228,20 @@ const repsByDate = computed<Record<string, number>>(() => {
     return totals
   }
 
-  for (const workout of props.workouts) {
+  for (const set of props.sets) {
     if (
-      workout.exercise !==
+      set.exercise !==
       props.selectedExercise
     ) {
       continue
     }
 
     const dateKey =
-      getLocalDateKey(workout.date)
+      getLocalDateKey(set.date)
 
     totals[dateKey] =
       (totals[dateKey] ?? 0) +
-      workout.reps
+      set.reps
   }
 
   return totals

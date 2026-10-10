@@ -13,7 +13,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   close: []
-  save: [payload: { reps: number, workoutTime: string }]
+  save: [payload: { reps: number, time: string }]
 }>()
 
 // Heure actuelle au format HH:MM
@@ -26,7 +26,7 @@ const getCurrentTime = () => {
 }
 
 const repsValue = ref(props.initialReps ? String(props.initialReps) : '')
-const workoutTime = ref(getCurrentTime())
+const time = ref(getCurrentTime())
 const imageAvailable = ref(true)
 
 const addQuick = (val: number) => {
@@ -40,7 +40,7 @@ const save = () => {
     return
   }
 
-  emit('save', { reps, workoutTime: workoutTime.value })
+  emit('save', { reps, time: time.value })
 }
 </script>
 
@@ -76,7 +76,7 @@ const save = () => {
         {{ date }}
       </div>
 
-      <!-- Heure du workout -->
+      <!-- Heure du set -->
       <div
         class="relative border-2 border-amber-600/70 rounded-2xl bg-white px-4 py-3 flex items-center gap-3 shadow-xs"
       >
@@ -90,7 +90,7 @@ const save = () => {
 
         <input
           type="time"
-          v-model="workoutTime"
+          v-model="time"
           class="w-full bg-transparent text-lg font-semibold text-gray-900 focus:outline-none"
         />
       </div>

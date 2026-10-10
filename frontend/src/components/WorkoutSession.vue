@@ -2,8 +2,8 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import AddRepsModal from './AddRepsModal.vue'
-import RoutineTile from './RoutineTile.vue'
-import { getRoutines, type Routine } from '../api/routines'
+import ExerciseTile from './ExerciseTile.vue'
+import { getWorkouts, type Workout } from '../api/workouts'
 import { useExerciseStore } from '../stores/exercise'
 import { usePreview } from '../composables/usePreview'
 
@@ -16,23 +16,23 @@ const props = defineProps<{
 }>()
 
 // Dernière liste connue : la séance reste utilisable hors ligne (en salle)
-const CACHE_KEY = 'countrep.routinesCache'
+const CACHE_KEY = 'countrep.workoutsCache'
 const MAX_ROUNDS_AT_ONCE = 50
 
 const router = useRouter()
 const exerciseStore = useExerciseStore()
 const { preview, counts, load, start, addEntries, discard } = usePreview()
 
-const routines = ref<Routine[]>([])
+const workouts = ref<Workout[]>([])
 const loading = ref(false)
 const offline = ref(false)
 
-const selectedRoutine = computed(() =>
-  routines.value.find(r => r.id === exerciseStore.selectedRoutine) ?? null
+const selectedWorkout = computed(() =>
+  workouts.value.find(r => r.id === exerciseStore.selectedWorkout) ?? null
 )
 
 // Une séance en cours impose sa séance (copie figée au démarrage) et sa date
-const current = computed(() => preview.value?.routine ?? selectedRoutine.value)
+const current = computed(() => preview.value?.workout ?? selectedWorkout.value)
 const sessionDate = computed(() => preview.value?.date ?? props.date)
 
 const doneCount = (position: number) => counts.value[position] ?? 0
@@ -67,24 +67,24 @@ const modalExercise = computed(() =>
     : null
 )
 
-const saveOne = async ({ reps, workoutTime }: { reps: number, workoutTime: string }) => {
+const saveOne = async ({ reps, time }: { reps: number, time: string }) => {
   const position = modalPosition.value
   if (position === null || !current.value) return
 
   modalPosition.value = null
-  await addEntries([{ position, reps, workoutTime }])
+  await addEntries([{ position, reps, time }])
 }
 
 // Série complète : chaque exercice avec son objectif, `roundsToAdd` fois
 const addRounds = async () => {
   if (!current.value) return
 
-  const workoutTime = getCurrentTime()
+  const time = getCurrentTime()
   const items = []
 
   for (let round = 0; round < roundsToAdd.value; round++) {
     for (const [position, exercise] of current.value.exercises.entries()) {
-      items.push({ position, reps: exercise.reps, workoutTime })
+      items.push({ position, reps: exercise.reps, time })
     }
   }
 
@@ -93,8 +93,8 @@ const addRounds = async () => {
 }
 
 const startSession = async () => {
-  if (selectedRoutine.value) {
-    await start(selectedRoutine.value, props.date)
+  if (selectedWorkout.value) {
+    await start(selectedWorkout.value, props.date)
   }
 }
 
@@ -109,9 +109,9 @@ const changeRoundsToAdd = (offset: -1 | 1) => {
 }
 
 // Garde une séance sélectionnée valide
-watch(routines, list => {
-  if (!list.some(r => r.id === exerciseStore.selectedRoutine)) {
-    exerciseStore.setRoutine(list[0]?.id ?? null)
+watch(workouts, list => {
+  if (!list.some(r => r.id === exerciseStore.selectedWorkout)) {
+    exerciseStore.setWorkout(list[0]?.id ?? null)
   }
 })
 
@@ -120,15 +120,15 @@ onMounted(async () => {
 
   try {
     await load()
-    routines.value = await getRoutines()
-    localStorage.setItem(CACHE_KEY, JSON.stringify(routines.value))
+    workouts.value = await getWorkouts()
+    localStorage.setItem(CACHE_KEY, JSON.stringify(workouts.value))
     offline.value = false
   } catch (error) {
     console.warn('Séances indisponibles, utilisation du cache local', error)
     try {
-      routines.value = JSON.parse(localStorage.getItem(CACHE_KEY) || '[]')
+      workouts.value = JSON.parse(localStorage.getItem(CACHE_KEY) || '[]')
     } catch {
-      routines.value = []
+      workouts.value = []
     }
     offline.value = true
   } finally {
@@ -146,14 +146,14 @@ onMounted(async () => {
 
     <!-- Aucune séance -->
     <div
-      v-else-if="!current && routines.length === 0"
+      v-else-if="!current && workouts.length === 0"
       class="mx-2 rounded-3xl border border-dashed border-gray-200 bg-white px-5 py-6 text-center"
     >
       <p class="text-sm font-medium text-gray-700">
         Aucune séance définie.
       </p>
       <router-link
-        to="/settings/routines/new"
+        to="/settings/workouts/new"
         class="mt-3 inline-block text-sm font-semibold text-amber-600"
       >
         Créer une séance ›
@@ -169,10 +169,10 @@ onMounted(async () => {
     >
       <div class="min-w-0">
         <p class="text-xs opacity-90">Séance en cours · {{ preview.date }}</p>
-        <p class="text-base font-bold truncate">{{ preview.routine.name }}</p>
+        <p class="text-base font-bold truncate">{{ preview.workout.name }}</p>
       </div>
       <span class="shrink-0 text-sm font-semibold">
-        {{ completedRounds }}/{{ preview.routine.rounds }} · Reprendre ›
+        {{ completedRounds }}/{{ preview.workout.rounds }} · Reprendre ›
       </span>
     </button>
 
@@ -185,14 +185,14 @@ onMounted(async () => {
 
       <div class="flex gap-2 overflow-x-auto px-2 pb-1 no-scrollbar">
         <button
-          v-for="r in routines"
+          v-for="r in workouts"
           :key="r.id"
           type="button"
           class="shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition-colors"
           :class="r.id === current?.id
             ? 'bg-amber-500 border-amber-500 text-white'
             : 'bg-white border-gray-200 text-gray-700'"
-          @click="exerciseStore.setRoutine(r.id)"
+          @click="exerciseStore.setWorkout(r.id)"
         >
           {{ r.name }}
         </button>
@@ -207,7 +207,7 @@ onMounted(async () => {
         </p>
 
         <div class="mt-3 grid grid-cols-2 gap-2">
-          <RoutineTile
+          <ExerciseTile
             v-for="(exercise, index) in current.exercises"
             :key="index"
             :name="exercise.nameFr"
@@ -261,7 +261,7 @@ onMounted(async () => {
         <!-- Exercices -->
         <div class="flex-1 overflow-y-auto px-4">
           <div class="grid grid-cols-2 gap-2 pb-2">
-            <RoutineTile
+            <ExerciseTile
               v-for="(exercise, index) in current.exercises"
               :key="index"
               :name="exercise.nameFr"

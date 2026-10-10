@@ -1,10 +1,10 @@
 import { computed, ref } from 'vue'
-import type { LocalPreview, LocalWorkout, PreviewEntry } from '../db'
+import type { LocalPreview, LocalSet, PreviewEntry } from '../db'
 import { previewRepository } from '../repositories/previewRepository'
 
 // Séance en cours (preview) : les séries saisies pendant la séance restent
 // un brouillon local, modifiable, jusqu'à « Enregistrer » (elles deviennent
-// des workouts : journal, stats, synchro) ou « Abandonner ».
+// des sets : journal, stats, synchro) ou « Abandonner ».
 //
 // Une série (tour) n'est pas stockée : la n-ième saisie d'un exercice
 // appartient à la série n. Supprimer la série n retire la n-ième saisie
@@ -13,7 +13,7 @@ import { previewRepository } from '../repositories/previewRepository'
 export interface NewEntry {
   position: number
   reps: number
-  workoutTime: string
+  time: string
 }
 
 // État partagé par tous les écrans (accueil, aperçu)
@@ -31,7 +31,7 @@ const persist = async (next: LocalPreview) => {
 
 // Saisies de chaque exercice, dans l'ordre de saisie
 const entriesByPosition = (value: LocalPreview): PreviewEntry[][] =>
-  value.routine.exercises.map((_, position) =>
+  value.workout.exercises.map((_, position) =>
     value.entries
       .filter(entry => entry.position === position)
       .sort((a, b) => a.createdAt - b.createdAt)
@@ -62,7 +62,7 @@ export function usePreview() {
   })
 
   // Démarre une séance vide (copie figée de la séance choisie)
-  const start = async (routine: LocalPreview['routine'], date: string) => {
+  const start = async (workout: LocalPreview['workout'], date: string) => {
     if (preview.value) return
 
     const now = Date.now()
@@ -72,11 +72,11 @@ export function usePreview() {
       date,
       startedAt: now,
       updatedAt: now,
-      routine: {
-        id: routine.id,
-        name: routine.name,
-        rounds: routine.rounds,
-        exercises: routine.exercises.map(exercise => ({
+      workout: {
+        id: workout.id,
+        name: workout.name,
+        rounds: workout.rounds,
+        exercises: workout.exercises.map(exercise => ({
           exerciseId: exercise.exerciseId,
           nameFr: exercise.nameFr,
           reps: exercise.reps
@@ -98,7 +98,7 @@ export function usePreview() {
       id: crypto.randomUUID(),
       position: item.position,
       reps: item.reps,
-      workoutTime: item.workoutTime,
+      time: item.time,
       createdAt: now + index
     }))
 
@@ -144,23 +144,22 @@ export function usePreview() {
     preview.value = null
   }
 
-  // Transforme les saisies en workouts (en attente de synchro) et supprime
+  // Transforme les saisies en sets (en attente de synchro) et supprime
   // le brouillon. La synchro avec le serveur se fait ensuite, comme pour
   // toute saisie.
-  const commit = async (): Promise<LocalWorkout[]> => {
+  const commit = async (): Promise<LocalSet[]> => {
     if (!preview.value) return []
 
     const current = preview.value
-    const workouts: LocalWorkout[] = current.entries
+    const sets: LocalSet[] = current.entries
       .slice()
       .sort((a, b) => a.createdAt - b.createdAt)
       .map(entry => ({
         id: crypto.randomUUID(),
-        exercise: current.routine.exercises[entry.position]!.exerciseId,
+        exercise: current.workout.exercises[entry.position]!.exerciseId,
         date: current.date,
-        workoutTime: entry.workoutTime,
+        time: entry.time,
         reps: entry.reps,
-        mode: 'add',
         createdAt: entry.createdAt,
         updatedAt: entry.createdAt,
         deletedAt: null,
@@ -168,10 +167,10 @@ export function usePreview() {
         syncOperation: 'create'
       }))
 
-    await previewRepository.commit(current.id, workouts)
+    await previewRepository.commit(current.id, sets)
     preview.value = null
 
-    return workouts
+    return sets
   }
 
   return {

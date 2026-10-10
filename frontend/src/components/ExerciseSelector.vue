@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { getExercises, getUserExercises, type ApiExercise } from '../api/exercises'
-import { useWorkouts } from '../composables/useWorkouts'
+import { useSets } from '../composables/useSets'
 
 const props = withDefaults(
   defineProps<{
     modelValue?: string | null
     required?: boolean
-    source?: 'user' | 'workouts'
+    source?: 'user' | 'sets'
   }>(),
   {
     modelValue: null,
@@ -20,7 +20,7 @@ const emit = defineEmits<{
   'update:modelValue': [id: string | null]
 }>()
 
-const { workouts } = useWorkouts()
+const { sets } = useSets()
 
 const exercises = ref<ApiExercise[]>([])
 const loading = ref(false)
@@ -40,23 +40,23 @@ const loadExercises = async () => {
       exercises.value = await getUserExercises()
     } else {
       const catalog = await getExercises()
-      const workoutReps = new Map<string, number>()
+      const setReps = new Map<string, number>()
 
-      workouts.value
-        .filter(workout => !workout.deletedAt)
-        .forEach(workout => {
-          workoutReps.set(
-            workout.exercise,
-            (workoutReps.get(workout.exercise) ?? 0) + workout.reps
+      sets.value
+        .filter(set => !set.deletedAt)
+        .forEach(set => {
+          setReps.set(
+            set.exercise,
+            (setReps.get(set.exercise) ?? 0) + set.reps
           )
         })
 
       exercises.value = catalog
-        .filter(exercise => workoutReps.has(exercise.id))
+        .filter(exercise => setReps.has(exercise.id))
         .sort(
           (a, b) =>
-            (workoutReps.get(b.id) ?? 0) -
-            (workoutReps.get(a.id) ?? 0)
+            (setReps.get(b.id) ?? 0) -
+            (setReps.get(a.id) ?? 0)
         )
     }
 

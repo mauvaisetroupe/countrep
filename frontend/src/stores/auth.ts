@@ -69,7 +69,7 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  // Ne touche pas à IndexedDB : les workouts en attente
+  // Ne touche pas à IndexedDB : les sets en attente
   // seront synchronisés après reconnexion.
   const markSessionExpired = () => {
     setToken(null)

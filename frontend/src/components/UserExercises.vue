@@ -8,7 +8,7 @@ import {
   type ApiExercise,
   type UserExercise
 } from '../api/exercises'
-import { useWorkouts } from '../composables/useWorkouts'
+import { useSets } from '../composables/useSets'
 import { VueDraggable } from 'vue-draggable-plus'
 import { reorderOptions } from '../reorder'
 
@@ -29,7 +29,7 @@ const searchQuery = ref('')
 const showExercisePicker = ref(false)
 
 
-const { workouts } = useWorkouts()
+const { sets } = useSets()
 
 const selectedCount = computed(() => {
   return selectedExerciseIds.value.length
@@ -57,22 +57,22 @@ const filteredExercises = computed(() => {
   )
 })
 
-const workoutCountByExercise = computed<Record<string, number>>(() => {
+const setCountByExercise = computed<Record<string, number>>(() => {
   const counts: Record<string, number> = {}
 
-  workouts.value.forEach(workout => {
-    if (workout.deletedAt) {
+  sets.value.forEach(set => {
+    if (set.deletedAt) {
       return
     }
 
-    counts[workout.exercise] = (counts[workout.exercise] || 0) + 1
+    counts[set.exercise] = (counts[set.exercise] || 0) + 1
   })
 
   return counts
 })
 
-const getWorkoutCount = (exerciseId: string) => {
-  return workoutCountByExercise.value[exerciseId] || 0
+const getSetCount = (exerciseId: string) => {
+  return setCountByExercise.value[exerciseId] || 0
 }
 
 const hasChanges = computed(() => {
@@ -242,11 +242,11 @@ onMounted(() => {
             </p>
 
             <span
-              v-if="getWorkoutCount(exerciseId) > 0"
+              v-if="getSetCount(exerciseId) > 0"
               class="text-[10px] font-semibold text-amber-600"
             >
-              {{ getWorkoutCount(exerciseId) }}
-              {{ getWorkoutCount(exerciseId) === 1 ? 'séance' : 'séances' }}
+              {{ getSetCount(exerciseId) }}
+              {{ getSetCount(exerciseId) === 1 ? 'saisie' : 'saisies' }}
             </span>
           </div>
         </div>
@@ -392,11 +392,11 @@ onMounted(() => {
               </p>
 
               <span
-                v-if="getWorkoutCount(exercise.id) > 0"
+                v-if="getSetCount(exercise.id) > 0"
                 class="text-[10px] font-semibold text-amber-600"
               >
-                {{ getWorkoutCount(exercise.id) }}
-                {{ getWorkoutCount(exercise.id) === 1 ? 'séance' : 'séances' }}
+                {{ getSetCount(exercise.id) }}
+                {{ getSetCount(exercise.id) === 1 ? 'saisie' : 'saisies' }}
               </span>
 
               <a

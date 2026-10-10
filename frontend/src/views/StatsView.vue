@@ -1,18 +1,18 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import ExerciseSelector from '../components/ExerciseSelector.vue'
-import { useWorkouts } from '../composables/useWorkouts'
+import { useSets } from '../composables/useSets'
 
-const { workouts } = useWorkouts()
+const { sets } = useSets()
 const selectedExercise = ref<string | null>(null)
 
-// Filtrer les workouts : si aucun exercice n'est sélectionné (null), on prend tout
-const exerciseWorkouts = computed(() => {
+// Filtrer les sets : si aucun exercice n'est sélectionné (null), on prend tout
+const exerciseSets = computed(() => {
   if (!selectedExercise.value) {
-    return workouts.value
+    return sets.value
   }
 
-  return workouts.value.filter(w => w.exercise === selectedExercise.value)
+  return sets.value.filter(w => w.exercise === selectedExercise.value)
 })
 
 // --- CALCULS STATISTIQUES ---
@@ -44,11 +44,11 @@ const getLocalDateString = (dateStr: string) => {
 
 // 1. Statistiques globales / Streak
 const totalRepsAllTime = computed(() => {
-  return exerciseWorkouts.value.reduce((acc, curr) => acc + curr.reps, 0)
+  return exerciseSets.value.reduce((acc, curr) => acc + curr.reps, 0)
 })
 
 const longestStreak = computed(() => {
-  const dates = [...new Set(exerciseWorkouts.value.map(w => getLocalDateString(w.date)))]
+  const dates = [...new Set(exerciseSets.value.map(w => getLocalDateString(w.date)))]
     .filter(Boolean)
     .sort()
     
@@ -82,7 +82,7 @@ const getStatsForPeriod = (startDate: Date, endDate: Date) => {
   const startStr = formatDate(startDate)
   const endStr = formatDate(endDate)
   
-  const filtered = exerciseWorkouts.value.filter(w => {
+  const filtered = exerciseSets.value.filter(w => {
     const wDate = getLocalDateString(w.date)
     return wDate >= startStr && wDate <= endStr
   })
@@ -131,7 +131,7 @@ const monthChartData = computed(() => {
   const today = getToday()
   const mapData: Record<string, number> = {}
 
-  exerciseWorkouts.value.forEach(w => {
+  exerciseSets.value.forEach(w => {
     const date = getLocalDateString(w.date)
     if (date) {
       mapData[date] = (mapData[date] || 0) + w.reps
@@ -215,7 +215,7 @@ const monthChartData = computed(() => {
     <ExerciseSelector
       v-model="selectedExercise"
       :required="false"
-      source="workouts"
+      source="sets"
     />
     
     <main class="px-5 mt-4 space-y-4">

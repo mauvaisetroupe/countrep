@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { registerUser, loginUser } from '../services/auth'
 import { prepareLocalDataFor } from '../services/session'
-import { workoutRepository } from '../repositories/workoutRepository'
+import { setRepository } from '../repositories/setRepository'
 
 const username = ref('')
 const error = ref('')
@@ -16,7 +16,7 @@ const authStore = useAuthStore()
 const pendingCount = ref(0)
 
 onMounted(async () => {
-  pendingCount.value = (await workoutRepository.getPending()).length
+  pendingCount.value = (await setRepository.getPending()).length
 })
 
 const handleRegister = async () => {

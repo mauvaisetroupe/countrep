@@ -1,4 +1,4 @@
-import { db, type LocalPreview, type LocalWorkout } from '../db'
+import { db, type LocalPreview, type LocalSet } from '../db'
 
 export const previewRepository = {
 
@@ -19,11 +19,11 @@ export const previewRepository = {
     await db.previews.delete(id)
   },
 
-  // Enregistre la séance : ses séries deviennent des workouts et le
+  // Enregistre la séance : ses séries deviennent des sets et le
   // brouillon disparaît, dans la même transaction (tout ou rien)
-  async commit(previewId: string, workouts: LocalWorkout[]): Promise<void> {
-    await db.transaction('rw', db.workouts, db.previews, async () => {
-      await db.workouts.bulkAdd(workouts)
+  async commit(previewId: string, sets: LocalSet[]): Promise<void> {
+    await db.transaction('rw', db.sets, db.previews, async () => {
+      await db.sets.bulkAdd(sets)
       await db.previews.delete(previewId)
     })
   }

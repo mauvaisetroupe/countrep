@@ -5,8 +5,8 @@ import StatsView from '../views/StatsView.vue'
 import SettingsView from '../views/SettingsView.vue'
 import SettingsAccountView from '../views/SettingsAccountView.vue'
 import SettingsExercisesView from '../views/SettingsExercisesView.vue'
-import SettingsRoutinesView from '../views/SettingsRoutinesView.vue'
-import SettingsRoutineEditView from '../views/SettingsRoutineEditView.vue'
+import SettingsWorkoutsView from '../views/SettingsWorkoutsView.vue'
+import SettingsWorkoutEditView from '../views/SettingsWorkoutEditView.vue'
 import LoginView from '../views/LoginView.vue'
 import JournalView from '../views/JournalView.vue'
 import PreviewView from '../views/PreviewView.vue'
@@ -21,9 +21,9 @@ const routes: Array<RouteRecordRaw> = [
   { path: '/settings', name: 'settings', component: SettingsView, meta: { requiresAuth: true } },
   { path: '/settings/account', name: 'settings-account', component: SettingsAccountView, meta: { requiresAuth: true } },
   { path: '/settings/exercises', name: 'settings-exercises', component: SettingsExercisesView, meta: { requiresAuth: true } },
-  { path: '/settings/routines', name: 'settings-routines', component: SettingsRoutinesView, meta: { requiresAuth: true } },
-  { path: '/settings/routines/new', name: 'settings-routine-new', component: SettingsRoutineEditView, meta: { requiresAuth: true } },
-  { path: '/settings/routines/:id', name: 'settings-routine-edit', component: SettingsRoutineEditView, props: true, meta: { requiresAuth: true } },
+  { path: '/settings/workouts', name: 'settings-workouts', component: SettingsWorkoutsView, meta: { requiresAuth: true } },
+  { path: '/settings/workouts/new', name: 'settings-workout-new', component: SettingsWorkoutEditView, meta: { requiresAuth: true } },
+  { path: '/settings/workouts/:id', name: 'settings-workout-edit', component: SettingsWorkoutEditView, props: true, meta: { requiresAuth: true } },
   // Ancienne page Profil (favoris, PWA installées)
   { path: '/profile', redirect: '/settings' },
 ]
