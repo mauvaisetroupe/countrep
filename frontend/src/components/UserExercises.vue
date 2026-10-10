@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import {
   getExercises,
@@ -9,6 +9,7 @@ import {
   type UserExercise
 } from '../api/exercises'
 import { useWorkouts } from '../composables/useWorkouts'
+import { useDragReorder } from '../composables/useDragReorder'
 
 const MAX_EXERCISES = 10
 
@@ -26,11 +27,14 @@ const selectedExerciseIds = ref<string[]>([])
 const searchQuery = ref('')
 const showExercisePicker = ref(false)
 
-const draggedExerciseId = ref<string | null>(null)
-const draggedElement = ref<HTMLElement | null>(null)
-const dragPointerId = ref<number | null>(null)
-const dragStartY = ref(0)
-const isDragging = ref(false)
+const { draggedKey: draggedExerciseId, startDrag } = useDragReorder(
+  selectedExerciseIds,
+  id => id,
+  {
+    attribute: 'selected-exercise',
+    onReorder: () => { saveMessage.value = '' }
+  }
+)
 
 const { workouts } = useWorkouts()
 
@@ -152,120 +156,6 @@ const toggleExercise = (exerciseId: string) => {
   selectedExerciseIds.value.push(exerciseId)
 }
 
-const startDrag = (
-  id: string,
-  event: PointerEvent
-) => {
-  const target = event.currentTarget
-
-  if (!(target instanceof HTMLElement)) {
-    return
-  }
-
-  const element = target.parentElement
-
-  if (!(element instanceof HTMLElement)) {
-    return
-  }
-
-  draggedExerciseId.value = id
-  draggedElement.value = element
-  dragPointerId.value = event.pointerId
-  dragStartY.value = event.clientY
-  isDragging.value = true
-
-  element.setPointerCapture(event.pointerId)
-
-  event.preventDefault()
-}
-
-const moveDrag = (event: PointerEvent) => {
-  if (
-    !isDragging.value ||
-    !draggedExerciseId.value ||
-    dragPointerId.value !== event.pointerId
-  ) {
-    return
-  }
-
-  event.preventDefault()
-
-  const elements = Array.from(
-    document.querySelectorAll<HTMLElement>('[data-selected-exercise]')
-  )
-
-  const target = elements.find(element => {
-    if (element === draggedElement.value) {
-      return false
-    }
-
-    const rect = element.getBoundingClientRect()
-
-    return (
-      event.clientY >= rect.top &&
-      event.clientY <= rect.bottom
-    )
-  })
-
-  if (!target) {
-    return
-  }
-
-  const targetExerciseId = target.dataset.selectedExercise
-
-  if (!targetExerciseId) {
-    return
-  }
-
-  const fromIndex = selectedExerciseIds.value.indexOf(
-    draggedExerciseId.value
-  )
-
-  const toIndex = selectedExerciseIds.value.indexOf(
-    targetExerciseId
-  )
-
-  if (fromIndex === -1 || toIndex === -1 || fromIndex === toIndex) {
-    return
-  }
-
-  const reordered = [...selectedExerciseIds.value]
-  const [moved] = reordered.splice(fromIndex, 1)
-
-  reordered.splice(toIndex, 0, moved)
-
-  selectedExerciseIds.value = reordered
-  saveMessage.value = ''
-}
-
-const endDrag = (event: PointerEvent) => {
-  if (
-    dragPointerId.value !== null &&
-    event.pointerId !== dragPointerId.value
-  ) {
-    return
-  }
-
-  if (
-    draggedElement.value &&
-    dragPointerId.value !== null
-  ) {
-    try {
-      draggedElement.value.releasePointerCapture(
-        dragPointerId.value
-      )
-    } catch {
-      // Pointer capture may already have been released.
-    }
-  }
-
-  draggedExerciseId.value = null
-  draggedElement.value = null
-  dragPointerId.value = null
-  dragStartY.value = 0
-  isDragging.value = false
-}
-
 const saveExercises = async () => {
   if (selectedExerciseIds.value.length > MAX_EXERCISES) {
     return
@@ -299,19 +189,6 @@ const saveExercises = async () => {
 
 onMounted(() => {
   loadExercises()
-
-  window.addEventListener('pointermove', moveDrag, {
-    passive: false
-  })
-
-  window.addEventListener('pointerup', endDrag)
-  window.addEventListener('pointercancel', endDrag)
-})
-
-onUnmounted(() => {
-  window.removeEventListener('pointermove', moveDrag)
-  window.removeEventListener('pointerup', endDrag)
-  window.removeEventListener('pointercancel', endDrag)
 })
 </script>
 

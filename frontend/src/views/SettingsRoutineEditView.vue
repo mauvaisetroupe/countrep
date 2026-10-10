@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import SettingsHeader from '../components/SettingsHeader.vue'
+import { useDragReorder } from '../composables/useDragReorder'
 import { getExercises, type ApiExercise } from '../api/exercises'
 import {
   createRoutine,
@@ -93,16 +94,11 @@ const removeExercise = (index: number) => {
   exercises.value.splice(index, 1)
 }
 
-const moveExercise = (index: number, offset: -1 | 1) => {
-  const target = index + offset
-
-  if (target < 0 || target >= exercises.value.length) {
-    return
-  }
-
-  const [moved] = exercises.value.splice(index, 1)
-  exercises.value.splice(target, 0, moved!)
-}
+const { draggedKey, startDrag } = useDragReorder(
+  exercises,
+  exercise => String(exercise.key),
+  { attribute: 'routine-exercise' }
+)
 
 const changeRounds = (offset: -1 | 1) => {
   rounds.value = Math.min(MAX_ROUNDS, Math.max(1, rounds.value + offset))
@@ -238,7 +234,9 @@ onMounted(async () => {
             <div
               v-for="(exercise, index) in exercises"
               :key="exercise.key"
-              class="flex items-center gap-2 rounded-2xl border border-amber-400 bg-amber-50 px-3 py-2.5"
+              :data-routine-exercise="exercise.key"
+              class="flex items-center gap-2 rounded-2xl border border-amber-400 bg-amber-50 px-3 py-2.5 transition-all"
+              :class="draggedKey === String(exercise.key) ? 'opacity-50 scale-[0.98]' : ''"
             >
               <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-500 text-xs font-bold text-white">
                 {{ index + 1 }}
@@ -260,27 +258,6 @@ onMounted(async () => {
               />
               <span class="text-xs text-gray-500">reps</span>
 
-              <div class="flex flex-col">
-                <button
-                  type="button"
-                  class="px-1 text-xs leading-none text-gray-400 disabled:opacity-30"
-                  :disabled="index === 0"
-                  aria-label="Monter"
-                  @click="moveExercise(index, -1)"
-                >
-                  ▲
-                </button>
-                <button
-                  type="button"
-                  class="px-1 text-xs leading-none text-gray-400 disabled:opacity-30"
-                  :disabled="index === exercises.length - 1"
-                  aria-label="Descendre"
-                  @click="moveExercise(index, 1)"
-                >
-                  ▼
-                </button>
-              </div>
-
               <button
                 type="button"
                 class="shrink-0 text-lg text-gray-400 hover:text-red-500"
@@ -289,7 +266,23 @@ onMounted(async () => {
               >
                 ×
               </button>
+
+              <button
+                type="button"
+                class="shrink-0 text-gray-300 hover:text-gray-500 text-xl leading-none touch-none select-none cursor-grab active:cursor-grabbing"
+                aria-label="Déplacer cet exercice"
+                @pointerdown="startDrag(String(exercise.key), $event)"
+              >
+                ⋮⋮⋮
+              </button>
             </div>
+
+            <p
+              v-if="exercises.length > 1"
+              class="pt-1 text-xs text-gray-400 text-center"
+            >
+              ↕ Faites glisser les exercices pour modifier leur ordre.
+            </p>
           </div>
 
           <div
