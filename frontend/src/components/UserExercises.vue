@@ -9,7 +9,8 @@ import {
   type UserExercise
 } from '../api/exercises'
 import { useWorkouts } from '../composables/useWorkouts'
-import { useDragReorder } from '../composables/useDragReorder'
+import { VueDraggable } from 'vue-draggable-plus'
+import { reorderOptions } from '../reorder'
 
 const MAX_EXERCISES = 10
 
@@ -27,14 +28,6 @@ const selectedExerciseIds = ref<string[]>([])
 const searchQuery = ref('')
 const showExercisePicker = ref(false)
 
-const { draggedKey: draggedExerciseId, startDrag } = useDragReorder(
-  selectedExerciseIds,
-  id => id,
-  {
-    attribute: 'selected-exercise',
-    onReorder: () => { saveMessage.value = '' }
-  }
-)
 
 const { workouts } = useWorkouts()
 
@@ -42,11 +35,9 @@ const selectedCount = computed(() => {
   return selectedExerciseIds.value.length
 })
 
-const selectedExercises = computed(() => {
-  return selectedExerciseIds.value
-    .map(id => exercises.value.find(exercise => exercise.id === id))
-    .filter((exercise): exercise is ApiExercise => !!exercise)
-})
+const exerciseById = (id: string) => {
+  return exercises.value.find(exercise => exercise.id === id)
+}
 
 const filteredExercises = computed(() => {
   const query = searchQuery.value.trim().toLowerCase()
@@ -220,19 +211,19 @@ onMounted(() => {
 
     <!-- Exercices sélectionnés -->
     <div
-      v-if="selectedExercises.length > 0"
+      v-if="selectedExerciseIds.length > 0"
       class="mt-4 space-y-2"
     >
+      <VueDraggable
+        v-model="selectedExerciseIds"
+        v-bind="reorderOptions"
+        class="space-y-2"
+        @end="saveMessage = ''"
+      >
       <div
-        v-for="(exercise, index) in selectedExercises"
-        :key="exercise.id"
-        :data-selected-exercise="exercise.id"
-        class="flex w-full items-center gap-3 rounded-2xl border px-4 py-3 bg-amber-50 border-amber-400 transition-all"
-        :class="
-          draggedExerciseId === exercise.id
-            ? 'opacity-50 scale-[0.98]'
-            : ''
-        "
+        v-for="(exerciseId, index) in selectedExerciseIds"
+        :key="exerciseId"
+        class="flex w-full items-center gap-3 rounded-2xl border px-4 py-3 bg-amber-50 border-amber-400"
       >
         <div
           class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-500 text-xs font-bold text-white"
@@ -242,20 +233,20 @@ onMounted(() => {
 
         <div class="min-w-0 flex-1">
           <p class="text-sm font-medium text-gray-800">
-            {{ exercise.nameFr }}
+            {{ exerciseById(exerciseId)?.nameFr ?? exerciseId }}
           </p>
 
           <div class="mt-0.5 flex items-center gap-2">
             <p class="text-xs text-gray-400">
-              {{ exercise.nameEn }}
+              {{ exerciseById(exerciseId)?.nameEn }}
             </p>
 
             <span
-              v-if="getWorkoutCount(exercise.id) > 0"
+              v-if="getWorkoutCount(exerciseId) > 0"
               class="text-[10px] font-semibold text-amber-600"
             >
-              {{ getWorkoutCount(exercise.id) }}
-              {{ getWorkoutCount(exercise.id) === 1 ? 'séance' : 'séances' }}
+              {{ getWorkoutCount(exerciseId) }}
+              {{ getWorkoutCount(exerciseId) === 1 ? 'séance' : 'séances' }}
             </span>
           </div>
         </div>
@@ -264,20 +255,20 @@ onMounted(() => {
           type="button"
           class="shrink-0 text-gray-400 hover:text-red-500 text-lg"
           aria-label="Retirer cet exercice"
-          @click.stop="toggleExercise(exercise.id)"
+          @click.stop="toggleExercise(exerciseId)"
         >
           ×
         </button>
 
         <button
           type="button"
-          class="shrink-0 text-gray-300 hover:text-gray-500 text-xl leading-none touch-none select-none cursor-grab active:cursor-grabbing"
+          class="drag-handle shrink-0 text-gray-300 hover:text-gray-500 text-xl leading-none touch-none select-none cursor-grab active:cursor-grabbing"
           aria-label="Déplacer cet exercice"
-          @pointerdown="startDrag(exercise.id, $event)"
         >
           ⋮⋮⋮
         </button>
       </div>
+      </VueDraggable>
 
       <p class="pt-1 text-xs text-gray-400 text-center">
         ↕ Faites glisser les exercices pour modifier leur ordre.

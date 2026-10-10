@@ -2,7 +2,8 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import SettingsHeader from '../components/SettingsHeader.vue'
-import { useDragReorder } from '../composables/useDragReorder'
+import { VueDraggable } from 'vue-draggable-plus'
+import { reorderOptions } from '../reorder'
 import { getExercises, type ApiExercise } from '../api/exercises'
 import {
   createRoutine,
@@ -94,11 +95,6 @@ const removeExercise = (index: number) => {
   exercises.value.splice(index, 1)
 }
 
-const { draggedKey, startDrag } = useDragReorder(
-  exercises,
-  exercise => String(exercise.key),
-  { attribute: 'routine-exercise' }
-)
 
 const changeRounds = (offset: -1 | 1) => {
   rounds.value = Math.min(MAX_ROUNDS, Math.max(1, rounds.value + offset))
@@ -231,12 +227,15 @@ onMounted(async () => {
           </p>
 
           <div v-if="exercises.length > 0" class="mt-4 space-y-2">
+            <VueDraggable
+              v-model="exercises"
+              v-bind="reorderOptions"
+              class="space-y-2"
+            >
             <div
               v-for="(exercise, index) in exercises"
               :key="exercise.key"
-              :data-routine-exercise="exercise.key"
-              class="flex items-center gap-2 rounded-2xl border border-amber-400 bg-amber-50 px-3 py-2.5 transition-all"
-              :class="draggedKey === String(exercise.key) ? 'opacity-50 scale-[0.98]' : ''"
+              class="flex items-center gap-2 rounded-2xl border border-amber-400 bg-amber-50 px-3 py-2.5"
             >
               <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-500 text-xs font-bold text-white">
                 {{ index + 1 }}
@@ -269,13 +268,13 @@ onMounted(async () => {
 
               <button
                 type="button"
-                class="shrink-0 text-gray-300 hover:text-gray-500 text-xl leading-none touch-none select-none cursor-grab active:cursor-grabbing"
+                class="drag-handle shrink-0 text-gray-300 hover:text-gray-500 text-xl leading-none touch-none select-none cursor-grab active:cursor-grabbing"
                 aria-label="Déplacer cet exercice"
-                @pointerdown="startDrag(String(exercise.key), $event)"
               >
                 ⋮⋮⋮
               </button>
             </div>
+            </VueDraggable>
 
             <p
               v-if="exercises.length > 1"

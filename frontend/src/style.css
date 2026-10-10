@@ -23,3 +23,16 @@ body {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+/* Listes réordonnables (voir reorder.ts) */
+
+/* Emplacement où la ligne sera déposée */
+.reorder-ghost {
+  opacity: 0.3;
+}
+
+/* Copie de la ligne qui suit le doigt : « soulevée ».
+   Pas de transform ici : SortableJS l'utilise pour la positionner. */
+.reorder-dragging {
+  opacity: 1 !important;
+  box-shadow: 0 16px 32px -12px rgb(0 0 0 / 0.35);
+}
