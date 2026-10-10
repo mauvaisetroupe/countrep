@@ -1,15 +1,12 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import SettingsHeader from '../components/SettingsHeader.vue'
+import WorkoutCard from '../components/WorkoutCard.vue'
 import { getWorkouts, type Workout } from '../api/workouts'
 
 const workouts = ref<Workout[]>([])
 const loading = ref(false)
 const error = ref('')
-
-const repsPerRound = (workout: Workout) => {
-  return workout.exercises.reduce((total, exercise) => total + exercise.reps, 0)
-}
 
 onMounted(async () => {
   loading.value = true
@@ -53,29 +50,11 @@ onMounted(async () => {
           :to="`/settings/workouts/${workout.id}`"
           class="block bg-white border border-gray-200/80 rounded-3xl p-5 shadow-xs active:bg-amber-50 transition-colors"
         >
-          <div class="flex items-center justify-between gap-3">
-            <p class="text-base font-semibold text-gray-800 truncate">
-              {{ workout.name }}
-            </p>
-            <span class="text-xl text-gray-300">›</span>
-          </div>
-
-          <p class="mt-1 text-xs text-gray-500">
-            {{ workout.rounds }} {{ workout.rounds > 1 ? 'séries' : 'série' }}
-            · {{ workout.exercises.length }}
-            {{ workout.exercises.length > 1 ? 'exercices' : 'exercice' }}
-            · {{ repsPerRound(workout) }} reps par série
-          </p>
-
-          <div class="mt-3 flex flex-wrap gap-1.5">
-            <span
-              v-for="(exercise, index) in workout.exercises"
-              :key="index"
-              class="rounded-full bg-amber-50 border border-amber-200 px-2.5 py-1 text-xs text-amber-800"
-            >
-              {{ exercise.reps }} × {{ exercise.nameFr }}
-            </span>
-          </div>
+          <WorkoutCard :workout="workout">
+            <template #trailing>
+              <span class="text-xl text-gray-300">›</span>
+            </template>
+          </WorkoutCard>
         </router-link>
 
         <div

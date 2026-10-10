@@ -188,7 +188,7 @@ onMounted(() => {
     <div class="flex items-start justify-between gap-3">
       <div>
         <p class="text-sm font-semibold text-gray-800">
-          Mes exercices
+          Exercices au quotidien
         </p>
 
         <p class="mt-1 text-xs text-gray-500">

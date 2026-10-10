@@ -6,8 +6,8 @@ const items = [
   {
     to: '/settings/exercises',
     icon: '🏋️',
-    title: 'Mes exercices',
-    description: 'Choix et ordre des exercices pratiqués'
+    title: 'Exercices au quotidien',
+    description: 'Les exercices du mode Exercice, au fil de la journée'
   },
   {
     to: '/settings/workouts',

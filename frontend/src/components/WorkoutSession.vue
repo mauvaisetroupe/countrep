@@ -3,6 +3,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import AddRepsModal from './AddRepsModal.vue'
 import ExerciseTile from './ExerciseTile.vue'
+import WorkoutCard from './WorkoutCard.vue'
 import { getWorkouts, type Workout } from '../api/workouts'
 import { useExerciseStore } from '../stores/exercise'
 import { usePreview } from '../composables/usePreview'
@@ -183,49 +184,29 @@ onMounted(async () => {
         Hors ligne : dernière version connue des séances.
       </p>
 
-      <div class="flex gap-2 overflow-x-auto px-2 pb-1 no-scrollbar">
-        <button
-          v-for="r in workouts"
-          :key="r.id"
-          type="button"
-          class="shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition-colors"
-          :class="r.id === current?.id
-            ? 'bg-amber-500 border-amber-500 text-white'
-            : 'bg-white border-gray-200 text-gray-700'"
-          @click="exerciseStore.setWorkout(r.id)"
-        >
-          {{ r.name }}
-        </button>
-      </div>
-
-      <section
-        v-if="current"
-        class="bg-white border border-gray-200/80 rounded-3xl p-4 shadow-xs"
+      <!-- Une carte par séance : un appui la sélectionne -->
+      <div
+        v-for="w in workouts"
+        :key="w.id"
+        role="button"
+        tabindex="0"
+        class="block bg-white rounded-3xl p-5 shadow-xs border transition-colors"
+        :class="w.id === current?.id
+          ? 'border-amber-400 ring-2 ring-amber-200'
+          : 'border-gray-200/80 active:bg-amber-50'"
+        @click="exerciseStore.setWorkout(w.id)"
       >
-        <p class="px-1 text-sm text-gray-500">
-          {{ current.rounds }} {{ current.rounds > 1 ? 'séries' : 'série' }}
-        </p>
-
-        <div class="mt-3 grid grid-cols-2 gap-2">
-          <ExerciseTile
-            v-for="(exercise, index) in current.exercises"
-            :key="index"
-            :name="exercise.nameFr"
-            :reps="exercise.reps"
-            :done="0"
-            :rounds="current.rounds"
-            disabled
-          />
-        </div>
+        <WorkoutCard :workout="w" />
 
         <button
+          v-if="w.id === current?.id"
           type="button"
           class="mt-4 w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold py-3.5 rounded-2xl shadow-md shadow-amber-200 transition-all active:scale-[0.98]"
-          @click="startSession"
+          @click.stop="startSession"
         >
           Démarrer la séance
         </button>
-      </section>
+      </div>
 
     </template>
 
@@ -340,14 +321,3 @@ onMounted(async () => {
 
   </div>
 </template>
-
-<style scoped>
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-</style>
