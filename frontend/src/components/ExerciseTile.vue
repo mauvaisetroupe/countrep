@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { formatAmount, type ExerciseUnit } from '../units'
 
 // Tuile d'un exercice de séance : le fond se remplit comme une jauge
 // au fil des séries faites (vert quand toutes sont faites).
 const props = defineProps<{
   name: string
   reps: number
+  unit?: ExerciseUnit
   done: number
   rounds: number
   // Séance pas encore démarrée : visible mais pas cliquable
@@ -36,7 +38,7 @@ const fill = computed(() => `${Math.min(props.done / props.rounds, 1) * 100}%`)
 
     <div class="relative flex items-end justify-between gap-1">
       <span class="text-xs text-gray-600">
-        {{ reps }} reps
+        {{ formatAmount(reps, unit) }}
       </span>
       <span
         class="text-base font-bold"

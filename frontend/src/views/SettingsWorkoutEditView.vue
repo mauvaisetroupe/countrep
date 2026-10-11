@@ -12,9 +12,11 @@ import {
   getWorkouts,
   updateWorkout
 } from '../api/workouts'
+import { formatAmount, formatTotals } from '../units'
 
 const MAX_ROUNDS = 50
 const DEFAULT_REPS = 10
+const DEFAULT_SECONDS = 30
 
 // Route /settings/workouts/new (création) ou /settings/workouts/:id
 const props = defineProps<{
@@ -63,8 +65,16 @@ const filteredCatalog = computed(() => {
   )
 })
 
-const repsPerRound = computed(() => {
-  return exercises.value.reduce((total, exercise) => total + exercise.reps, 0)
+const unitOf = (exerciseId: string) =>
+  catalog.value.find(exercise => exercise.id === exerciseId)?.unit ?? 'reps'
+
+// Répétitions et secondes sont comptées à part
+const perRound = computed(() => {
+  const totals = { reps: 0, seconds: 0 }
+  for (const exercise of exercises.value) {
+    totals[unitOf(exercise.exerciseId) === 'seconds' ? 'seconds' : 'reps'] += exercise.reps
+  }
+  return totals
 })
 
 const canSave = computed(() => {
@@ -96,7 +106,11 @@ const confirmReps = (reps: number) => {
 // en partant de la valeur du dernier exercice de la séance
 const addExercise = (exerciseId: string) => {
   const key = nextKey++
-  const reps = exercises.value.at(-1)?.reps ?? DEFAULT_REPS
+  // Valeur du dernier exercice de même unité, sinon la valeur par défaut
+  const unit = unitOf(exerciseId)
+  const reps = exercises.value
+    .filter(exercise => unitOf(exercise.exerciseId) === unit)
+    .at(-1)?.reps ?? (unit === 'seconds' ? DEFAULT_SECONDS : DEFAULT_REPS)
 
   exercises.value.push({ key, exerciseId, reps })
   showPicker.value = false
@@ -236,7 +250,7 @@ onMounted(async () => {
             Exercices
           </p>
           <p class="mt-1 text-xs text-gray-500">
-            Dans l'ordre où ils s'enchaînent, avec le nombre de répétitions de chacun.
+            Dans l'ordre où ils s'enchaînent, avec le nombre de répétitions (ou la durée) de chacun.
           </p>
 
           <div v-if="exercises.length > 0" class="mt-4 space-y-2">
@@ -264,7 +278,7 @@ onMounted(async () => {
                 :aria-label="`Répétitions de ${exerciseName(exercise.exerciseId)}`"
                 @click="repsEditKey = exercise.key"
               >
-                {{ exercise.reps }} reps
+                {{ formatAmount(exercise.reps, unitOf(exercise.exerciseId)) }}
               </button>
 
               <button
@@ -384,7 +398,8 @@ onMounted(async () => {
           </div>
 
           <p v-if="exercises.length > 0" class="mt-4 text-xs text-gray-500">
-            {{ repsPerRound }} reps par série · {{ repsPerRound * rounds }} reps au total
+            {{ formatTotals(perRound) }} par série ·
+            {{ formatTotals({ reps: perRound.reps * rounds, seconds: perRound.seconds * rounds }) }} au total
           </p>
         </section>
 
@@ -420,6 +435,7 @@ onMounted(async () => {
       :key="repsEdited.key"
       :title="exerciseName(repsEdited.exerciseId)"
       :value="repsEdited.reps"
+      :unit="unitOf(repsEdited.exerciseId)"
       @close="repsEditKey = null"
       @confirm="confirmReps"
     />

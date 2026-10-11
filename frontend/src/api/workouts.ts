@@ -1,9 +1,12 @@
 import { apiFetch } from './client'
+import type { ExerciseUnit } from '../units'
 
 export interface WorkoutExercise {
   exerciseId: string
   nameEn: string
   nameFr: string
+  unit: ExerciseUnit
+  // Répétitions, ou secondes pour un exercice à la durée
   reps: number
 }
 

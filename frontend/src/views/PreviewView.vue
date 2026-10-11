@@ -2,12 +2,21 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { usePreview } from '../composables/usePreview'
+import { useExerciseUnits } from '../composables/useExerciseUnits'
+import { formatAmount, unitLabel, type ExerciseUnit } from '../units'
 
 // Aperçu de la séance en cours : relire, corriger, puis enregistrer
 // (les séries partent dans le journal) ou abandonner.
 
 const router = useRouter()
 const { preview, loaded, grid, load, updateReps, removeEntry, removeRound, discard, commit } = usePreview()
+const { unitOf } = useExerciseUnits()
+
+// Unité de l'exercice à cette position (copie de la séance, sinon catalogue)
+const unitAt = (position: number): ExerciseUnit => {
+  const exercise = preview.value?.workout.exercises[position]
+  return exercise?.unit ?? unitOf(exercise?.exerciseId)
+}
 
 const saving = ref(false)
 
@@ -47,6 +56,7 @@ const totals = computed(() => {
     const entries = preview.value!.entries.filter(entry => entry.position === position)
     return {
       nameFr: exercise.nameFr,
+      unit: unitAt(position),
       rounds: entries.length,
       reps: entries.reduce((sum, entry) => sum + entry.reps, 0)
     }
@@ -160,13 +170,13 @@ onMounted(load)
                   min="1"
                   step="1"
                   inputmode="numeric"
-                  aria-label="Répétitions"
+                  :aria-label="unitAt(position) === 'seconds' ? 'Secondes' : 'Répétitions'"
                   class="w-16 rounded-lg border bg-white px-2 py-1.5 text-right text-sm font-semibold text-gray-800 outline-none focus:border-amber-400"
                   :class="isValidReps(repsText(entry.id, entry.reps)) ? 'border-gray-200' : 'border-red-400'"
                   @input="onRepsInput(entry.id, ($event.target as HTMLInputElement).value)"
                   @change="onRepsChange(entry.id)"
                 />
-                <span class="text-xs text-gray-500">reps</span>
+                <span class="text-xs text-gray-500">{{ unitLabel(unitAt(position)) }}</span>
                 <button
                   type="button"
                   class="shrink-0 text-lg text-gray-400 hover:text-red-500"
@@ -205,7 +215,7 @@ onMounted(load)
             >
               <span class="text-gray-700 truncate">{{ total.nameFr }}</span>
               <span class="shrink-0 font-semibold text-gray-900">
-                {{ total.reps }} reps
+                {{ formatAmount(total.reps, total.unit) }}
                 <span class="font-normal text-gray-500">({{ total.rounds }} {{ total.rounds > 1 ? 'séries' : 'série' }})</span>
               </span>
             </div>

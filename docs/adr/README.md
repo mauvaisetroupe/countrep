@@ -11,3 +11,4 @@ Voir [ADR 0001](0001-enregistrer-les-decisions-d-architecture.md) pour le format
 | 0005 | [Application mobile Expo, données locales, sans serveur](0005-application-mobile-locale-sans-serveur.md) | Proposé |
 | 0006 | [Vocabulaire du domaine : set, workout, round](0006-vocabulaire-du-domaine.md) | Accepté |
 | 0007 | [Identifiant de séance sur les sets](0007-identifiant-de-seance-sur-les-sets.md) | Accepté |
+| 0008 | [Unité des exercices : répétitions ou secondes](0008-unite-des-exercices.md) | Accepté |

@@ -1,10 +1,12 @@
 import { apiFetch } from './client'
+import type { ExerciseUnit } from '../units'
 
 export interface ApiExercise {
   id: string
   nameEn: string
   nameFr: string
   liftmanualUrl: string | null
+  unit: ExerciseUnit
 }
 
 export interface UserExercise extends ApiExercise {

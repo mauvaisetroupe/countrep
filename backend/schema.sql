@@ -8,7 +8,10 @@ CREATE TABLE exercises (
     name_en text NOT NULL,
     name_fr text NOT NULL,
     liftmanual_url text,
-    CONSTRAINT exercises_pkey PRIMARY KEY (id)
+    -- Unité de la valeur d'un set : répétitions ou secondes (ADR 0008)
+    unit text DEFAULT 'reps' NOT NULL,
+    CONSTRAINT exercises_pkey PRIMARY KEY (id),
+    CONSTRAINT exercises_unit_check CHECK (unit IN ('reps', 'seconds'))
 );
 
 CREATE TABLE users (

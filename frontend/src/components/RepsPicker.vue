@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
+import { unitLabel, type ExerciseUnit } from '../units'
 
-// Panneau de choix d'un nombre de répétitions : valeurs rapides et − / +,
-// sans clavier.
+// Panneau de choix d'un nombre de répétitions (ou de secondes pour un
+// exercice à la durée) : valeurs rapides et − / +, sans clavier.
 const props = defineProps<{
   title: string
   value: number
+  unit?: ExerciseUnit
 }>()
 
 const emit = defineEmits<{
@@ -13,13 +15,19 @@ const emit = defineEmits<{
   confirm: [reps: number]
 }>()
 
-const QUICK_VALUES = [5, 8, 10, 12, 15, 20, 25, 30]
-const MAX_REPS = 1000
+const MAX_VALUE = 1000
+
+const isDuration = computed(() => props.unit === 'seconds')
+const quickValues = computed(() => isDuration.value
+  ? [10, 15, 20, 30, 45, 60, 90, 120]
+  : [5, 8, 10, 12, 15, 20, 25, 30])
+// En secondes, − / + avancent de 5
+const step = computed(() => isDuration.value ? 5 : 1)
 
 const reps = ref(props.value)
 
 const change = (offset: number) => {
-  reps.value = Math.min(MAX_REPS, Math.max(1, reps.value + offset))
+  reps.value = Math.min(MAX_VALUE, Math.max(1, reps.value + offset))
 }
 </script>
 
@@ -50,22 +58,22 @@ const change = (offset: number) => {
           type="button"
           class="h-14 w-14 rounded-full border border-gray-200 bg-white text-2xl font-semibold text-gray-700 active:scale-95 disabled:opacity-30"
           :disabled="reps <= 1"
-          aria-label="Une répétition de moins"
-          @click="change(-1)"
+          :aria-label="isDuration ? 'Moins de secondes' : 'Une répétition de moins'"
+          @click="change(-step)"
         >
           −
         </button>
 
         <div class="w-24 text-center">
           <p class="text-5xl font-bold text-gray-900">{{ reps }}</p>
-          <p class="text-xs text-gray-500">reps</p>
+          <p class="text-xs text-gray-500">{{ unitLabel(unit) }}</p>
         </div>
 
         <button
           type="button"
           class="h-14 w-14 rounded-full border border-gray-200 bg-white text-2xl font-semibold text-gray-700 active:scale-95"
-          aria-label="Une répétition de plus"
-          @click="change(1)"
+          :aria-label="isDuration ? 'Plus de secondes' : 'Une répétition de plus'"
+          @click="change(step)"
         >
           +
         </button>
@@ -74,7 +82,7 @@ const change = (offset: number) => {
       <!-- Valeurs rapides -->
       <div class="grid grid-cols-4 gap-2">
         <button
-          v-for="n in QUICK_VALUES"
+          v-for="n in quickValues"
           :key="n"
           type="button"
           class="rounded-xl border py-2.5 text-sm font-semibold shadow-2xs transition-all active:scale-95"

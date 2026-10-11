@@ -17,7 +17,8 @@ export async function exerciseRoutes(app: FastifyInstance) {
         id,
         name_en,
         name_fr,
-        liftmanual_url
+        liftmanual_url,
+        unit
       FROM exercises
       ORDER BY name_fr ASC
     `)
@@ -26,7 +27,8 @@ export async function exerciseRoutes(app: FastifyInstance) {
       id: exercise.id,
       nameEn: exercise.name_en,
       nameFr: exercise.name_fr,
-      liftmanualUrl: exercise.liftmanual_url
+      liftmanualUrl: exercise.liftmanual_url,
+      unit: exercise.unit
     }))
   })
 
@@ -54,6 +56,7 @@ export async function exerciseRoutes(app: FastifyInstance) {
           e.name_en,
           e.name_fr,
           e.liftmanual_url,
+          e.unit,
           ue.position
         FROM user_exercises ue
         INNER JOIN exercises e
@@ -69,6 +72,7 @@ export async function exerciseRoutes(app: FastifyInstance) {
         nameEn: exercise.name_en,
         nameFr: exercise.name_fr,
         liftmanualUrl: exercise.liftmanual_url,
+        unit: exercise.unit,
         position: exercise.position
       }))
     })
@@ -190,6 +194,7 @@ export async function exerciseRoutes(app: FastifyInstance) {
           e.name_en,
           e.name_fr,
           e.liftmanual_url,
+          e.unit,
           ue.position
         FROM user_exercises ue
         INNER JOIN exercises e
@@ -206,6 +211,7 @@ export async function exerciseRoutes(app: FastifyInstance) {
           nameEn: exercise.name_en,
           nameFr: exercise.name_fr,
           liftmanualUrl: exercise.liftmanual_url,
+          unit: exercise.unit,
           position: exercise.position
         }))
       )

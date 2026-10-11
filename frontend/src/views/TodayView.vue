@@ -31,6 +31,12 @@ const selectedExerciseName = computed(() => {
   )
 })
 
+const selectedExerciseUnit = computed(() =>
+  userExercises.value.find(
+    exercise => exercise.id === exerciseStore.selectedExercise
+  )?.unit ?? 'reps'
+)
+
 const loadUserExercises = async () => {
   try {
     userExercises.value = await getUserExercises()
@@ -198,6 +204,7 @@ loadUserExercises()
       :sets="sets"
       :selected-date="selectedDate"
       :selected-exercise="exerciseStore.selectedExercise"
+      :unit="selectedExerciseUnit"
       @update:selected-date="selectedDate = $event"
     />
 
@@ -224,6 +231,7 @@ loadUserExercises()
     v-if="showModal && exerciseStore.selectedExercise"
     :exercise-id="exerciseStore.selectedExercise"
     :exercise-name="selectedExerciseName"
+    :unit="selectedExerciseUnit"
     :date="selectedDate"
     @close="showModal = false"
     @save="saveExercise"

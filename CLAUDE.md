@@ -31,6 +31,7 @@ There are no tests and no linter configured. Use `npm run build` in each package
 - `frontend/.env.development` (and the local, gitignored `.env.production`): `VITE_API_URL` points to the LAN backend. Production is built on the server, where the API is same-origin under `/api` behind Nginx.
 - CORS allow-list is hard-coded in `backend/src/server.ts`; update it when the dev host changes.
 - `backend/schema.sql` is the full current schema (reference, from a dump). `backend/database.sql` holds GRANTs for the `countrep_app` role and ad-hoc dated migrations. Schema changes are applied manually: append the migration to `database.sql` with a date comment **and** update `schema.sql`.
+- Exercises have a `unit` (`reps` | `seconds`, ADR 0008): for a `seconds` exercise, `sets.reps` and `workout_exercises.reps` hold seconds. Use `frontend/src/units.ts` to format values and `composables/useExerciseUnits.ts#unitOf` when only the exercise id is known; never add reps and seconds together.
 - DB constraints the client must respect or a pending set gets stuck (server 500): `reps` integer > 0, `exercise` must exist in `exercises` (FK).
 
 ## Architecture

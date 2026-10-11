@@ -7,6 +7,8 @@ import WorkoutCard from './WorkoutCard.vue'
 import { getWorkouts, type Workout } from '../api/workouts'
 import { useExerciseStore } from '../stores/exercise'
 import { usePreview } from '../composables/usePreview'
+import { useExerciseUnits } from '../composables/useExerciseUnits'
+import type { ExerciseUnit } from '../units'
 
 // Mode séance de l'écran d'accueil : un bouton par exercice, avec son
 // avancement. Les saisies vont dans la séance en cours (preview), qu'on
@@ -23,6 +25,12 @@ const MAX_ROUNDS_AT_ONCE = 50
 const router = useRouter()
 const exerciseStore = useExerciseStore()
 const { preview, counts, load, start, addEntries, discard } = usePreview()
+const { unitOf } = useExerciseUnits()
+
+// Une séance démarrée avant les unités (ADR 0008), ou la copie locale des
+// séances, peut ne pas porter l'unité : on la reprend du catalogue
+const unitFor = (exercise: { exerciseId: string, unit?: ExerciseUnit }) =>
+  exercise.unit ?? unitOf(exercise.exerciseId)
 
 const workouts = ref<Workout[]>([])
 const loading = ref(false)
@@ -247,6 +255,7 @@ onMounted(async () => {
               :key="index"
               :name="exercise.nameFr"
               :reps="exercise.reps"
+              :unit="unitFor(exercise)"
               :done="doneCount(index)"
               :rounds="current.rounds"
               @click="modalPosition = index"
@@ -313,6 +322,7 @@ onMounted(async () => {
       v-if="modalExercise"
       :exercise-id="modalExercise.exerciseId"
       :exercise-name="modalExercise.nameFr"
+      :unit="unitFor(modalExercise)"
       :date="sessionDate"
       :initial-reps="modalExercise.reps"
       @close="modalPosition = null"

@@ -79,7 +79,8 @@ export function usePreview() {
         exercises: workout.exercises.map(exercise => ({
           exerciseId: exercise.exerciseId,
           nameFr: exercise.nameFr,
-          reps: exercise.reps
+          reps: exercise.reps,
+          unit: exercise.unit
         }))
       },
       entries: []

@@ -3,14 +3,20 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import ExerciseSelector from '../components/ExerciseSelector.vue'
 import { useSets } from '../composables/useSets'
 import type { LocalSet } from '../db'
+import { useExerciseUnits } from '../composables/useExerciseUnits'
+import { formatAmount, formatDuration, formatTotals, type AmountTotals } from '../units'
 
 const selectedExercise = ref<string | null>(null)
 
 const { sets, updateSet, deleteSet } = useSets()
+const { unitOf } = useExerciseUnits()
 
 const PAGE_SIZE = 30
 
+// Équivalence Garmin : une minute = 30 s d'effort + 30 s de repos,
+// soit 15 répétitions ou 30 s tenues pour un exercice à la durée
 const REPS_PER_SET = 15
+const SECONDS_PER_SET = 30
 const MINUTES_PER_SET = 1
 const SETS_PER_BLOCK = 10
 const BLOCK_REST_MINUTES = 2
@@ -118,16 +124,21 @@ const formatSetTime = (time: string) => {
   return time.slice(0, 5)
 }
 
+// Répétitions et secondes d'une liste de sets, comptées à part
+const totalsOf = (daySets: LocalSet[]): AmountTotals => {
+  const totals = { reps: 0, seconds: 0 }
+  for (const w of daySets) {
+    totals[unitOf(w.exercise) === 'seconds' ? 'seconds' : 'reps'] += w.reps
+  }
+  return totals
+}
+
 const dayTotal = (date: string) => {
-  return filteredSets.value
-    .filter(w => w.date === date)
-    .reduce((total, w) => total + w.reps, 0)
+  return formatTotals(totalsOf(filteredSets.value.filter(w => w.date === date)))
 }
 
 const garminDayTotal = (date: string) => {
-  return sets.value
-    .filter(w => !w.deletedAt && w.date === date)
-    .reduce((total, w) => total + w.reps, 0)
+  return totalsOf(sets.value.filter(w => !w.deletedAt && w.date === date))
 }
 
 const garminExerciseSummary = (date: string) => {
@@ -144,16 +155,20 @@ const garminExerciseSummary = (date: string) => {
 
   return [...totals.entries()]
     .sort((a, b) => b[1] - a[1])
-    .map(([exercise, reps]) => `${reps} ${exercise}`)
+    .map(([exercise, value]) =>
+      unitOf(exercise) === 'seconds'
+        ? `${formatDuration(value)} ${exercise}`
+        : `${value} ${exercise}`
+    )
     .join(' · ')
 }
 
 const garminDuration = (date: string) => {
-  const reps = garminDayTotal(date)
+  const { reps, seconds } = garminDayTotal(date)
 
-  if (reps <= 0) return 0
+  if (reps <= 0 && seconds <= 0) return 0
 
-  const sets = Math.ceil(reps / REPS_PER_SET)
+  const sets = Math.ceil(reps / REPS_PER_SET + seconds / SECONDS_PER_SET)
 
   return (
     sets * MINUTES_PER_SET +
@@ -253,7 +268,7 @@ const handleDeleteSet = async (set: LocalSet) => {
   openMenuId.value = null
 
   const confirmed = window.confirm(
-    `Supprimer ${set.exercise} — ${set.reps} reps ?`
+    `Supprimer ${set.exercise} — ${formatAmount(set.reps, unitOf(set.exercise))} ?`
   )
 
   if (!confirmed) return
@@ -333,9 +348,6 @@ onUnmounted(() => {
               class="mt-0.5 text-lg font-bold text-amber-600"
             >
               {{ dayTotal(day.date) }}
-              <span class="text-sm font-medium text-gray-400">
-                reps
-              </span>
             </div>
           </div>
 
@@ -462,6 +474,13 @@ onUnmounted(() => {
                 class="w-20 rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-right text-sm font-semibold text-gray-800 outline-none focus:border-amber-400"
               />
 
+              <span
+                v-if="unitOf(set.exercise) === 'seconds'"
+                class="text-xs font-medium text-gray-400"
+              >
+                s
+              </span>
+
             </div>
 
             <div class="mt-3 flex justify-end gap-2">
@@ -507,13 +526,18 @@ onUnmounted(() => {
             <span
               class="whitespace-nowrap font-bold text-gray-900"
             >
-              {{ set.reps }}
+              <template v-if="unitOf(set.exercise) === 'seconds'">
+                {{ formatDuration(set.reps) }}
+              </template>
+              <template v-else>
+                {{ set.reps }}
 
-              <span
-                class="text-xs font-medium text-gray-400"
-              >
-                reps
-              </span>
+                <span
+                  class="text-xs font-medium text-gray-400"
+                >
+                  reps
+                </span>
+              </template>
             </span>
 
             <!-- Menu -->

@@ -108,3 +108,30 @@ COMMIT;
 -- 2026-10-11 : séance réalisée, regroupement des sets (ADR 0007)
 ALTER TABLE sets ADD COLUMN session_id uuid;
 CREATE INDEX idx_sets_user_session ON sets USING btree (user_id, session_id);
+
+-- 2026-10-11 : unité des exercices, répétitions ou secondes (ADR 0008).
+-- La valeur d'un set (sets.reps) et l'objectif d'une séance
+-- (workout_exercises.reps) sont des secondes pour un exercice 'seconds'.
+ALTER TABLE exercises ADD COLUMN unit text NOT NULL DEFAULT 'reps';
+ALTER TABLE exercises ADD CONSTRAINT exercises_unit_check CHECK (unit IN ('reps', 'seconds'));
+UPDATE exercises SET unit = 'seconds'
+WHERE id IN ('support-hold', 'hollow-body-hold', 'side-plank');
+
+-- 2026-10-11 : exercices aux haltères (programme push / pull / upper)
+INSERT INTO exercises (id, name_en, name_fr, liftmanual_url, unit) VALUES
+('dumbbell-bench-press', 'Dumbbell Bench Press', 'Développé couché haltères', NULL, 'reps'),
+('dumbbell-shoulder-press', 'Dumbbell Shoulder Press', 'Développé militaire haltères', NULL, 'reps'),
+('dumbbell-fly', 'Dumbbell Fly', 'Écarté couché haltères', NULL, 'reps'),
+('dumbbell-lateral-raise', 'Dumbbell Lateral Raise', 'Élévation latérale haltères', NULL, 'reps'),
+('dumbbell-front-raise', 'Dumbbell Front Raise', 'Élévation frontale haltères', NULL, 'reps'),
+('dumbbell-overhead-triceps-extension', 'Dumbbell Overhead Triceps Extension', 'Extension triceps au-dessus de la tête haltère', NULL, 'reps'),
+('one-arm-dumbbell-row', 'One-Arm Dumbbell Row', 'Rowing unilatéral haltère', NULL, 'reps'),
+('dumbbell-bent-over-row', 'Dumbbell Bent-Over Row', 'Rowing haltères buste penché', NULL, 'reps'),
+('dumbbell-reverse-fly', 'Dumbbell Reverse Fly', 'Oiseau haltères', NULL, 'reps'),
+('dumbbell-curl', 'Dumbbell Curl', 'Curl biceps haltères', NULL, 'reps'),
+('hammer-curl', 'Hammer Curl', 'Curl marteau', NULL, 'reps'),
+('concentration-curl', 'Concentration Curl', 'Curl concentration', NULL, 'reps'),
+('dumbbell-shrug', 'Dumbbell Shrug', 'Shrug haltères', NULL, 'reps'),
+('push-up', 'Push-Up', 'Pompe', NULL, 'reps'),
+('close-grip-push-up', 'Close-Grip Push-Up', 'Pompe serrée', NULL, 'reps'),
+('plank', 'Plank', 'Gainage (planche)', NULL, 'seconds');

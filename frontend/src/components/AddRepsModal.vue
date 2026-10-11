@@ -1,11 +1,14 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
+import type { ExerciseUnit } from '../units'
 
-// Fenêtre de saisie d'une série : heure, nombre de répétitions,
-// ajout rapide. Utilisée en mode exercice et en mode séance.
+// Fenêtre de saisie d'une série : heure, nombre de répétitions (ou de
+// secondes pour un exercice à la durée), ajout rapide. Utilisée en mode
+// exercice et en mode séance.
 const props = defineProps<{
   exerciseId: string
   exerciseName: string
+  unit?: ExerciseUnit
   date: string
   // Valeur proposée (objectif de la séance), vide sinon
   initialReps?: number | null
@@ -28,6 +31,9 @@ const getCurrentTime = () => {
 const repsValue = ref(props.initialReps ? String(props.initialReps) : '')
 const time = ref(getCurrentTime())
 const imageAvailable = ref(true)
+
+const isDuration = computed(() => props.unit === 'seconds')
+const quickValues = computed(() => isDuration.value ? [15, 30, 45, 60] : [5, 10, 15, 20])
 
 const addQuick = (val: number) => {
   repsValue.value = String(val)
@@ -97,12 +103,17 @@ const save = () => {
 
       <!-- Question -->
       <p class="text-sm font-medium text-gray-800 text-center">
-        Combien de {{ exerciseName }} avez-vous fait ?
+        <template v-if="isDuration">
+          Combien de secondes de {{ exerciseName }} avez-vous tenu ?
+        </template>
+        <template v-else>
+          Combien de {{ exerciseName }} avez-vous fait ?
+        </template>
       </p>
 
       <!-- Champ de saisie -->
       <div class="relative border-2 border-amber-600/70 rounded-2xl bg-white px-4 py-3 flex items-center gap-3 shadow-xs">
-        <span class="absolute -top-3 left-4 bg-white px-1.5 text-xs font-semibold text-amber-700">Nombre</span>
+        <span class="absolute -top-3 left-4 bg-white px-1.5 text-xs font-semibold text-amber-700">{{ isDuration ? 'Secondes' : 'Nombre' }}</span>
         <span class="text-amber-600">⚡</span>
         <input
           type="number"
@@ -121,7 +132,7 @@ const save = () => {
           Ajout rapide :
         </span>
         <div class="grid grid-cols-4 gap-2">
-          <button v-for="n in [5, 10, 15, 20]" :key="n" @click="addQuick(n)"
+          <button v-for="n in quickValues" :key="n" @click="addQuick(n)"
             class="bg-white border border-gray-200/80 hover:border-amber-400 py-2.5 rounded-xl text-sm font-semibold text-gray-700 shadow-2xs active:scale-95 transition-all">
             {{ n }}
           </button>

@@ -1,4 +1,5 @@
 import Dexie, { type Table } from 'dexie'
+import type { ExerciseUnit } from './units'
 
 export interface LocalSet {
   id: string
@@ -38,7 +39,8 @@ export interface LocalPreview {
     id: string
     name: string
     rounds: number
-    exercises: { exerciseId: string, nameFr: string, reps: number }[]
+    // unit absente pour une séance démarrée avant l'ADR 0008
+    exercises: { exerciseId: string, nameFr: string, reps: number, unit?: ExerciseUnit }[]
   }
   entries: PreviewEntry[]
 }

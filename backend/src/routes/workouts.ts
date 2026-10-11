@@ -71,7 +71,8 @@ async function loadWorkouts(userId: string, workoutId?: string) {
       we.reps,
       e.id,
       e.name_en,
-      e.name_fr
+      e.name_fr,
+      e.unit
     FROM workout_exercises we
     INNER JOIN exercises e
       ON e.id = we.exercise_id
@@ -93,6 +94,7 @@ async function loadWorkouts(userId: string, workoutId?: string) {
         exerciseId: exercise.id,
         nameEn: exercise.name_en,
         nameFr: exercise.name_fr,
+        unit: exercise.unit,
         reps: exercise.reps
       }))
   }))

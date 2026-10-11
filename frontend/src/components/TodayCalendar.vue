@@ -6,12 +6,14 @@ import {
   ref
 } from 'vue'
 import type { LocalSet } from '../db'
+import { formatDurationShort, type ExerciseUnit } from '../units'
 import emblaCarouselVue from 'embla-carousel-vue'
 
 const props = defineProps<{
   sets: LocalSet[]
   selectedDate: string
   selectedExercise: string | null
+  unit?: ExerciseUnit
 }>()
 
 const emit = defineEmits<{
@@ -215,6 +217,12 @@ const getLocalDateKey = (
    * horaire du navigateur.
    */
   return date.slice(0, 10)
+}
+
+// Total d'un jour : répétitions, ou durée pour un exercice tenu
+const formatDayTotal = (total: number | undefined) => {
+  if (!total) return ''
+  return props.unit === 'seconds' ? formatDurationShort(total) : String(total)
 }
 
 // ============================================================
@@ -584,13 +592,15 @@ const isToday = (
                   class="h-[14px] text-xs font-bold text-amber-600 leading-[14px] mt-0.5"
                 >
                   {{
-                    repsByDate[
-                      formatDate(
-                        month.year,
-                        month.monthIndex,
-                        day
-                      )
-                    ] || ''
+                    formatDayTotal(
+                      repsByDate[
+                        formatDate(
+                          month.year,
+                          month.monthIndex,
+                          day
+                        )
+                      ]
+                    )
                   }}
                 </span>
               </div>

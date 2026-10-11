@@ -2,8 +2,11 @@
 import { computed, ref } from 'vue'
 import ExerciseSelector from '../components/ExerciseSelector.vue'
 import { useSets } from '../composables/useSets'
+import { useExerciseUnits } from '../composables/useExerciseUnits'
+import { formatAmount, formatDuration } from '../units'
 
 const { sets } = useSets()
+const { unitOf } = useExerciseUnits()
 const selectedExercise = ref<string | null>(null)
 
 // Filtrer les sets : si aucun exercice n'est sélectionné (null), on prend tout
@@ -14,6 +17,18 @@ const exerciseSets = computed(() => {
 
   return sets.value.filter(w => w.exercise === selectedExercise.value)
 })
+
+// Les totaux sont dans l'unité de l'exercice choisi. Pour tous les
+// exercices, seules les répétitions sont additionnées (les durées ne s'y
+// ajoutent pas) ; jours actifs et streak comptent toutes les saisies.
+const unit = computed(() => selectedExercise.value ? unitOf(selectedExercise.value) : 'reps')
+
+const amountSets = computed(() =>
+  exerciseSets.value.filter(w => unitOf(w.exercise) === unit.value)
+)
+
+const formatValue = (value: number) =>
+  unit.value === 'seconds' ? formatDuration(Math.round(value)) : String(value)
 
 // --- CALCULS STATISTIQUES ---
 
@@ -44,7 +59,7 @@ const getLocalDateString = (dateStr: string) => {
 
 // 1. Statistiques globales / Streak
 const totalRepsAllTime = computed(() => {
-  return exerciseSets.value.reduce((acc, curr) => acc + curr.reps, 0)
+  return formatValue(amountSets.value.reduce((acc, curr) => acc + curr.reps, 0))
 })
 
 const longestStreak = computed(() => {
@@ -82,17 +97,21 @@ const getStatsForPeriod = (startDate: Date, endDate: Date) => {
   const startStr = formatDate(startDate)
   const endStr = formatDate(endDate)
   
-  const filtered = exerciseSets.value.filter(w => {
+  const inPeriod = (w: { date: string }) => {
     const wDate = getLocalDateString(w.date)
     return wDate >= startStr && wDate <= endStr
-  })
+  }
 
-  const total = filtered.reduce((acc, curr) => acc + curr.reps, 0)
+  const filtered = exerciseSets.value.filter(inPeriod)
+
+  const total = amountSets.value.filter(inPeriod).reduce((acc, curr) => acc + curr.reps, 0)
   const activeDaysSet = new Set(filtered.map(w => getLocalDateString(w.date)))
   const activeDays = activeDaysSet.size
-  const average = activeDays > 0 ? (total / activeDays).toFixed(1) : '0.0'
+  const average = unit.value === 'seconds'
+    ? formatValue(activeDays > 0 ? total / activeDays : 0)
+    : activeDays > 0 ? (total / activeDays).toFixed(1) : '0.0'
 
-  return { total, activeDays, average }
+  return { total: formatValue(total), activeDays, average }
 }
 
 // Cette semaine (du Lundi au Dimanche)
@@ -131,7 +150,7 @@ const monthChartData = computed(() => {
   const today = getToday()
   const mapData: Record<string, number> = {}
 
-  exerciseSets.value.forEach(w => {
+  amountSets.value.forEach(w => {
     const date = getLocalDateString(w.date)
     if (date) {
       mapData[date] = (mapData[date] || 0) + w.reps
@@ -257,7 +276,7 @@ const monthChartData = computed(() => {
                 v-for="item in monthChartData.days"
                 :key="item.date"
                 class="flex-1 min-w-0 h-full flex items-end"
-                :title="`${item.date}: ${item.reps} reps`"
+                :title="`${item.date}: ${formatAmount(item.reps, unit)}`"
               >
                 <div
                   :class="[
