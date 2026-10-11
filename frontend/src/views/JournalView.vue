@@ -382,17 +382,17 @@ onUnmounted(() => {
 <template>
   <div class="px-4 pb-24">
 
-    <div class="px-1 pt-6 pb-3">
-      <h1 class="page-title">
+    <!-- Titre et filtre d'exercice sur la même ligne, comme le choix
+         Exercice / Séance de l'écran Saisie -->
+    <div class="px-1 pt-6 pb-4 flex items-center justify-between gap-3">
+      <h1 class="page-title shrink-0">
         {{ t('nav.journal') }}
       </h1>
-    </div>
-
-    <div class="mb-4">
       <ExerciseSelector
         v-model="selectedExercise"
         :required="false"
         source="sets"
+        compact
         :sets="sets"
       />
     </div>

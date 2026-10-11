@@ -1,347 +1,567 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import ExerciseSelector from '../components/ExerciseSelector.vue'
 import { useSets } from '../composables/useSets'
 import { useExerciseUnits } from '../composables/useExerciseUnits'
-import { formatAmount, formatDuration } from '../units'
-import { useI18n } from 'vue-i18n'
+import { dateLocale, exerciseName } from '../i18n'
+import { formatAmount, formatDuration, formatDurationShort, type AmountTotals } from '../units'
 
+// Statistiques, sur le modèle de Step Challenge : une période (1 jour,
+// 7 jours, 30 jours, 1 an), ses chiffres clés, son graphique, la
+// répartition par exercice, et la régularité sur les 16 dernières
+// semaines. Filtrables par exercice.
+
+type Period = '1d' | '7d' | '30d' | '1y'
+
+const PERIODS: Period[] = ['1d', '7d', '30d', '1y']
+// Vue 1 jour : on remonte au plus un an en arrière
+const MAX_DAYS_BACK = 364
+const HEATMAP_WEEKS = 16
+
+// Équivalence commune aux répétitions et aux secondes, pour comparer des
+// exercices d'unités différentes (même règle que le résumé Garmin du
+// journal : 15 répétitions ou 30 s tenues valent une minute)
+const REPS_PER_MINUTE = 15
+const SECONDS_PER_MINUTE = 30
+
+const { t, locale } = useI18n()
 const { sets } = useSets()
-const { unitOf } = useExerciseUnits()
-const { t } = useI18n()
+const { unitOf, exerciseOf } = useExerciseUnits()
+
 const selectedExercise = ref<string | null>(null)
+const period = ref<Period>('1d')
 
-// Filtrer les sets : si aucun exercice n'est sélectionné (null), on prend tout
-const exerciseSets = computed(() => {
-  if (!selectedExercise.value) {
-    return sets.value
-  }
+// ============================================================
+// DATES
+// ============================================================
 
-  return sets.value.filter(w => w.exercise === selectedExercise.value)
+const dayKey = (date: Date) =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+
+const startOfToday = () => {
+  const now = new Date()
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate())
+}
+
+const addDays = (date: Date, days: number) =>
+  new Date(date.getFullYear(), date.getMonth(), date.getDate() + days)
+
+// Jour affiché par la vue 1 jour
+const day = ref(startOfToday())
+
+const canGoBack = computed(() => day.value > addDays(startOfToday(), -MAX_DAYS_BACK))
+const canGoForward = computed(() => day.value < startOfToday())
+
+const changeDay = (offset: number) => {
+  day.value = addDays(day.value, offset)
+}
+
+const dayLabel = computed(() => {
+  void locale.value
+  const today = startOfToday()
+  if (dayKey(day.value) === dayKey(today)) return t('calendar.today')
+  if (dayKey(day.value) === dayKey(addDays(today, -1))) return t('journal.yesterday')
+  const weekday = new Intl.DateTimeFormat(dateLocale(), { weekday: 'long' }).format(day.value)
+  return weekday.charAt(0).toUpperCase() + weekday.slice(1)
 })
 
-// Les totaux sont dans l'unité de l'exercice choisi. Pour tous les
-// exercices, seules les répétitions sont additionnées (les durées ne s'y
-// ajoutent pas) ; jours actifs et streak comptent toutes les saisies.
-const unit = computed(() => selectedExercise.value ? unitOf(selectedExercise.value) : 'reps')
+const dayDate = computed(() => {
+  void locale.value
+  return new Intl.DateTimeFormat(dateLocale(), { day: 'numeric', month: 'long' }).format(day.value)
+})
 
-const amountSets = computed(() =>
-  exerciseSets.value.filter(w => unitOf(w.exercise) === unit.value)
+// ============================================================
+// SETS RETENUS
+// ============================================================
+
+const activeSets = computed(() =>
+  sets.value.filter(set =>
+    !set.deletedAt && (!selectedExercise.value || set.exercise === selectedExercise.value)
+  )
 )
 
-const formatValue = (value: number) =>
-  unit.value === 'seconds' ? formatDuration(Math.round(value)) : String(value)
+// Unité des valeurs affichées : celle de l'exercice choisi ; pour tous
+// les exercices, les répétitions et les durées sont comptées à part
+const unit = computed(() => selectedExercise.value ? unitOf(selectedExercise.value) : null)
 
-// --- CALCULS STATISTIQUES ---
-
-// Extraire la date du jour en local (sans heure)
-const getToday = () => {
-  const d = new Date()
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate())
-}
-
-// Helper pour formater une Date objet en "YYYY-MM-DD" local
-const formatDate = (d: Date) => {
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${day}`
-}
-
-// Uniformiser n'importe quelle String de date vers "YYYY-MM-DD"
-const getLocalDateString = (dateStr: string) => {
-  if (!dateStr) return ''
-  // Si format ISO avec T (ex: 2026-08-30T14:00:00Z), on extrait la date locale
-  if (dateStr.includes('T')) {
-    const d = new Date(dateStr)
-    return formatDate(d)
+const totalsOf = (list: typeof activeSets.value): AmountTotals => {
+  const totals = { reps: 0, seconds: 0 }
+  for (const set of list) {
+    totals[unitOf(set.exercise) === 'seconds' ? 'seconds' : 'reps'] += set.reps
   }
-  return dateStr.slice(0, 10)
+  return totals
 }
 
-// 1. Statistiques globales / Streak
-const totalRepsAllTime = computed(() => {
-  return formatValue(amountSets.value.reduce((acc, curr) => acc + curr.reps, 0))
+// Valeur d'un ensemble de sets sur une seule échelle (graphique, carte) :
+// la valeur brute pour un exercice, l'équivalent en minutes pour tous
+const scoreOf = (list: typeof activeSets.value) => {
+  if (unit.value) return list.reduce((sum, set) => sum + set.reps, 0)
+  const { reps, seconds } = totalsOf(list)
+  return reps / REPS_PER_MINUTE + seconds / SECONDS_PER_MINUTE
+}
+
+const formatValue = (value: number) => {
+  if (unit.value === 'seconds') return formatDuration(Math.round(value))
+  if (unit.value === 'reps') return formatAmount(Math.round(value), 'reps')
+  // Tous les exercices : minutes d'effort équivalentes
+  return `${Math.max(1, Math.round(value))} min`
+}
+
+const setsByDay = computed(() => {
+  const days = new Map<string, typeof activeSets.value>()
+  for (const set of activeSets.value) {
+    const list = days.get(set.date) ?? []
+    list.push(set)
+    days.set(set.date, list)
+  }
+  return days
+})
+
+// ============================================================
+// PÉRIODE
+// ============================================================
+
+const periodDays = computed(() => {
+  if (period.value === '1d') return [day.value]
+
+  const today = startOfToday()
+  const count = period.value === '7d' ? 7 : period.value === '30d' ? 30 : 365
+  return Array.from({ length: count }, (_, index) => addDays(today, index - count + 1))
+})
+
+const periodSets = computed(() => {
+  const keys = new Set(periodDays.value.map(dayKey))
+  return activeSets.value.filter(set => keys.has(set.date))
+})
+
+const activeDays = computed(() => new Set(periodSets.value.map(set => set.date)).size)
+
+// Vue 1 jour : nombre de saisies et d'exercices différents
+const exerciseCount = computed(() => new Set(periodSets.value.map(set => set.exercise)).size)
+
+// Une ligne par unité : répétitions, puis durée s'il y en a
+const amountLines = ({ reps, seconds }: AmountTotals): string[] => {
+  if (unit.value) return [formatAmount(unit.value === 'seconds' ? seconds : reps, unit.value)]
+  const lines = [formatAmount(reps, 'reps')]
+  if (seconds > 0) lines.push(formatDuration(seconds))
+  return lines
+}
+
+const periodTotal = computed(() => amountLines(totalsOf(periodSets.value)))
+
+// Moyenne par jour actif, dans l'unité de l'exercice ; pour tous les
+// exercices, répétitions et durées séparément
+const periodAverage = computed(() => {
+  if (activeDays.value === 0) return ['—']
+  const { reps, seconds } = totalsOf(periodSets.value)
+  return amountLines({
+    reps: Math.round(reps / activeDays.value),
+    seconds: Math.round(seconds / activeDays.value)
+  })
+})
+
+// ============================================================
+// SÉRIE DE JOURS (toutes dates confondues)
+// ============================================================
+
+const activeDayKeys = computed(() => new Set(activeSets.value.map(set => set.date)))
+
+// Jours consécutifs jusqu'à aujourd'hui, ou jusqu'à hier si rien encore
+// aujourd'hui : la série n'est pas perdue avant la fin de la journée
+const currentStreak = computed(() => {
+  let day = startOfToday()
+  if (!activeDayKeys.value.has(dayKey(day))) day = addDays(day, -1)
+
+  let streak = 0
+  while (activeDayKeys.value.has(dayKey(day))) {
+    streak++
+    day = addDays(day, -1)
+  }
+  return streak
 })
 
 const longestStreak = computed(() => {
-  const dates = [...new Set(exerciseSets.value.map(w => getLocalDateString(w.date)))]
-    .filter(Boolean)
-    .sort()
-    
-  if (dates.length === 0) return 0
-  
-  let maxStreak = 1
-  let currentStreak = 1
-  
-  for (let i = 1; i < dates.length; i++) {
-    // Utiliser UTC pour éviter les décalages d'heure d'été/hiver sur la différence de jours
-    const [pY, pM, pD] = dates[i - 1].split('-').map(Number)
-    const [cY, cM, cD] = dates[i].split('-').map(Number)
-    
-    const prev = Date.UTC(pY, pM - 1, pD)
-    const curr = Date.UTC(cY, cM - 1, cD)
-    
-    const diffDays = Math.round((curr - prev) / (1000 * 3600 * 24))
-    
-    if (diffDays === 1) {
-      currentStreak++
-      maxStreak = Math.max(maxStreak, currentStreak)
-    } else if (diffDays > 1) {
-      currentStreak = 1
-    }
+  const days = [...activeDayKeys.value].sort()
+  let longest = 0
+  let current = 0
+  let previous: Date | null = null
+
+  for (const key of days) {
+    const [year, month, day] = key.split('-').map(Number)
+    const date = new Date(year!, month! - 1, day!)
+    current = previous && dayKey(addDays(previous, 1)) === key ? current + 1 : 1
+    longest = Math.max(longest, current)
+    previous = date
   }
-  return maxStreak
+  return longest
 })
 
-// 2. Statistiques par Période
-const getStatsForPeriod = (startDate: Date, endDate: Date) => {
-  const startStr = formatDate(startDate)
-  const endStr = formatDate(endDate)
-  
-  const inPeriod = (w: { date: string }) => {
-    const wDate = getLocalDateString(w.date)
-    return wDate >= startStr && wDate <= endStr
-  }
+// ============================================================
+// GRAPHIQUE
+// ============================================================
 
-  const filtered = exerciseSets.value.filter(inPeriod)
-
-  const total = amountSets.value.filter(inPeriod).reduce((acc, curr) => acc + curr.reps, 0)
-  const activeDaysSet = new Set(filtered.map(w => getLocalDateString(w.date)))
-  const activeDays = activeDaysSet.size
-  const average = unit.value === 'seconds'
-    ? formatValue(activeDays > 0 ? total / activeDays : 0)
-    : activeDays > 0 ? (total / activeDays).toFixed(1) : '0.0'
-
-  return { total: formatValue(total), activeDays, average }
+interface Bar {
+  key: string
+  label: string
+  value: number
+  title: string
 }
 
-// Cette semaine (du Lundi au Dimanche)
-const weekStats = computed(() => {
-  const today = getToday()
-  const dayOfWeek = today.getDay() // 0 = Dimanche, 1 = Lundi, ...
-  
-  // Calcul du lundi
-  const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek
-  const monday = new Date(today.getFullYear(), today.getMonth(), today.getDate() + diffToMonday)
-  
-  // Calcul du dimanche
-  const sunday = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 6)
+const chartBars = computed<Bar[]>(() => {
+  void locale.value
 
-  return getStatsForPeriod(monday, sunday)
-})
+  if (period.value === '1y') {
+    // Un an : une barre par mois, du mois d'il y a 11 mois au mois courant
+    const today = startOfToday()
+    const monthFormat = new Intl.DateTimeFormat(dateLocale(), { month: 'narrow' })
+    const titleFormat = new Intl.DateTimeFormat(dateLocale(), { month: 'long', year: 'numeric' })
 
-// Ce mois
-const monthStats = computed(() => {
-  const today = getToday()
-  const firstDay = new Date(today.getFullYear(), today.getMonth(), 1)
-  const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0)
-  return getStatsForPeriod(firstDay, lastDay)
-})
-
-// Cette année
-const yearStats = computed(() => {
-  const today = getToday()
-  const firstDay = new Date(today.getFullYear(), 0, 1)
-  const lastDay = new Date(today.getFullYear(), 11, 31)
-  return getStatsForPeriod(firstDay, lastDay)
-})
-
-// 3. Données pour le graphique des 30 derniers jours
-const monthChartData = computed(() => {
-  const today = getToday()
-  const mapData: Record<string, number> = {}
-
-  amountSets.value.forEach(w => {
-    const date = getLocalDateString(w.date)
-    if (date) {
-      mapData[date] = (mapData[date] || 0) + w.reps
-    }
-  })
-
-  // Les 30 derniers jours, aujourd'hui inclus
-  const days = Array.from({ length: 30 }, (_, i) => {
-    const d = new Date(today)
-    d.setDate(today.getDate() - (29 - i))
-    return d
-  })
-
-  const maxReps = Math.max(
-    ...days.map(d => mapData[formatDate(d)] || 0),
-    0
-  )
-
-  // Détermine une échelle "propre" pour l'axe Y
-  const getChartScale = (max: number) => {
-    if (max <= 0) {
-      return { max: 20, step: 5 }
-    }
-
-    const rawStep = max / 4
-    const magnitude = Math.pow(10, Math.floor(Math.log10(rawStep)))
-    const normalized = rawStep / magnitude
-
-    let niceStep: number
-
-    if (normalized <= 1) {
-      niceStep = 1 * magnitude
-    } else if (normalized <= 2) {
-      niceStep = 2 * magnitude
-    } else if (normalized <= 5) {
-      niceStep = 5 * magnitude
-    } else {
-      niceStep = 10 * magnitude
-    }
-
-    const chartMax = Math.ceil(max / niceStep) * niceStep
-
-    return {
-      max: chartMax,
-      step: niceStep
-    }
+    return Array.from({ length: 12 }, (_, index) => {
+      const month = new Date(today.getFullYear(), today.getMonth() - 11 + index, 1)
+      const prefix = dayKey(month).slice(0, 7)
+      const value = scoreOf(periodSets.value.filter(set => set.date.startsWith(prefix)))
+      return {
+        key: prefix,
+        label: monthFormat.format(month).toUpperCase(),
+        value,
+        title: `${titleFormat.format(month)} : ${formatValue(value)}`
+      }
+    })
   }
 
-  const scale = getChartScale(maxReps)
+  if (period.value === '1d') {
+    // Un jour : une barre par heure, l'heure affichée toutes les 6 heures
+    return Array.from({ length: 24 }, (_, hour) => {
+      const prefix = String(hour).padStart(2, '0')
+      const value = scoreOf(periodSets.value.filter(set => set.time.startsWith(prefix)))
+      return {
+        key: prefix,
+        label: hour % 6 === 0 ? `${hour}h` : '',
+        value,
+        title: `${hour}h : ${formatValue(value)}`
+      }
+    })
+  }
+
+  const weekdayFormat = new Intl.DateTimeFormat(dateLocale(), { weekday: 'narrow' })
+  const titleFormat = new Intl.DateTimeFormat(dateLocale(), { day: 'numeric', month: 'short' })
+
+  return periodDays.value.map((day, index) => {
+    const key = dayKey(day)
+    const value = scoreOf(setsByDay.value.get(key) ?? [])
+    // 7 jours : initiale du jour ; 30 jours : le numéro, un jour sur cinq
+    const label = period.value === '7d'
+      ? weekdayFormat.format(day).toUpperCase()
+      : (periodDays.value.length - 1 - index) % 5 === 0 ? String(day.getDate()) : ''
+    return { key, label, value, title: `${titleFormat.format(day)} : ${formatValue(value)}` }
+  })
+})
+
+// Échelle « ronde » de l'axe vertical : 4 graduations environ
+const chartScale = computed(() => {
+  const max = Math.max(0, ...chartBars.value.map(bar => bar.value))
+  if (max <= 0) return { max: 20, ticks: [0, 5, 10, 15, 20] }
+
+  const rawStep = max / 4
+  const magnitude = Math.pow(10, Math.floor(Math.log10(rawStep)))
+  const normalized = rawStep / magnitude
+  const step = (normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10) * magnitude
+  const chartMax = Math.ceil(max / step) * step
 
   return {
-    days: days.map(d => {
-      const date = formatDate(d)
-      const reps = mapData[date] || 0
-
-      return {
-        date,
-        day: d.getDate(),
-        reps
-      }
-    }),
-    max: scale.max,
-    step: scale.step,
-    ticks: Array.from(
-      { length: Math.floor(scale.max / scale.step) + 1 },
-      (_, i) => i * scale.step
-    )
+    max: chartMax,
+    ticks: Array.from({ length: Math.round(chartMax / step) + 1 }, (_, index) => index * step)
   }
 })
 
+// Graduations : durée courte pour un exercice tenu, minutes « équivalentes »
+// pour tous les exercices
+const formatTick = (value: number) =>
+  unit.value === 'seconds' ? formatDurationShort(value) : String(Math.round(value))
+
+const chartLegend = computed(() =>
+  unit.value ? '' : t('stats.chartEquivalent')
+)
+
+// ============================================================
+// RÉPARTITION PAR EXERCICE (sans filtre)
+// ============================================================
+
+const breakdown = computed(() => {
+  const byExercise = new Map<string, typeof activeSets.value>()
+  for (const set of periodSets.value) {
+    const list = byExercise.get(set.exercise) ?? []
+    list.push(set)
+    byExercise.set(set.exercise, list)
+  }
+
+  const rows = [...byExercise.entries()].map(([exerciseId, list]) => {
+    const exerciseUnit = unitOf(exerciseId)
+    const total = list.reduce((sum, set) => sum + set.reps, 0)
+    return {
+      exerciseId,
+      name: exerciseName(exerciseOf(exerciseId)) || exerciseId,
+      amount: formatAmount(total, exerciseUnit),
+      score: exerciseUnit === 'seconds' ? total / SECONDS_PER_MINUTE : total / REPS_PER_MINUTE
+    }
+  })
+
+  const max = Math.max(0, ...rows.map(row => row.score))
+  return rows
+    .sort((a, b) => b.score - a.score)
+    .map(row => ({ ...row, share: max > 0 ? row.score / max : 0 }))
+})
+
+// ============================================================
+// RÉGULARITÉ : 16 SEMAINES, UNE COLONNE PAR SEMAINE (LUNDI EN HAUT)
+// ============================================================
+
+const heatmap = computed(() => {
+  void locale.value
+  const today = startOfToday()
+  // Lundi de la semaine courante
+  const monday = addDays(today, -((today.getDay() + 6) % 7))
+  const first = addDays(monday, -7 * (HEATMAP_WEEKS - 1))
+
+  const values = new Map<string, number>()
+  for (const [key, list] of setsByDay.value) values.set(key, scoreOf(list))
+
+  // Niveaux 1 à 4 selon la valeur par rapport au maximum de la période
+  const keys = Array.from({ length: HEATMAP_WEEKS * 7 }, (_, index) => dayKey(addDays(first, index)))
+  const max = Math.max(0, ...keys.map(key => values.get(key) ?? 0))
+  const level = (value: number) => value <= 0 || max <= 0 ? 0 : Math.min(4, Math.ceil((value / max) * 4))
+
+  const titleFormat = new Intl.DateTimeFormat(dateLocale(), { weekday: 'short', day: 'numeric', month: 'short' })
+  const monthFormat = new Intl.DateTimeFormat(dateLocale(), { month: 'short' })
+
+  const weeks = Array.from({ length: HEATMAP_WEEKS }, (_, week) => {
+    const days = Array.from({ length: 7 }, (_, weekday) => {
+      const date = addDays(first, week * 7 + weekday)
+      const key = dayKey(date)
+      const value = values.get(key) ?? 0
+      return {
+        key,
+        future: date > today,
+        level: level(value),
+        title: `${titleFormat.format(date)} : ${value > 0 ? formatValue(value) : '—'}`
+      }
+    })
+    // Nom du mois au-dessus de la première semaine qui le commence
+    const start = addDays(first, week * 7)
+    const startsMonth = week === 0 || start.getDate() <= 7
+    return { key: dayKey(start), days, month: startsMonth ? monthFormat.format(start).replace('.', '') : '' }
+  })
+
+  return weeks
+})
+
+const LEVEL_CLASSES = ['bg-track', 'bg-primary/25', 'bg-primary/50', 'bg-primary/75', 'bg-primary']
 </script>
 
 <template>
   <div class="pb-24">
-    <!-- En-tête -->
-    <header class="px-5 pt-6 pb-4">
-      <h1 class="page-title">{{ t('nav.stats') }}</h1>
+
+    <!-- Titre et filtre d'exercice sur la même ligne, comme le choix
+         Exercice / Séance de l'écran Saisie -->
+    <header class="px-5 pt-6 pb-4 flex items-center justify-between gap-3">
+      <h1 class="page-title shrink-0">{{ t('nav.stats') }}</h1>
+      <ExerciseSelector
+        v-model="selectedExercise"
+        :required="false"
+        source="sets"
+        compact
+        :sets="sets"
+      />
     </header>
 
-    <!-- Sélecteur d'exercices -->
-    <ExerciseSelector
-      v-model="selectedExercise"
-      :required="false"
-      source="sets"
-      :sets="sets"
-    />
-    
+    <!-- Période, comme Step Challenge -->
+    <div class="px-5">
+      <div class="grid grid-cols-4 gap-1 rounded-xl bg-surface-alt p-1">
+        <button
+          v-for="p in PERIODS"
+          :key="p"
+          type="button"
+          class="rounded-lg py-2 text-sm font-semibold transition-all"
+          :class="period === p ? 'bg-card text-fg shadow-sm' : 'text-fg-secondary'"
+          @click="period = p"
+        >
+          {{ t(`stats.period.${p}`) }}
+        </button>
+      </div>
+    </div>
+
     <main class="px-5 mt-4 space-y-4">
-      
-      <!-- Carte Graphique "30 derniers jours" -->
-      <section class="bg-surface rounded-xl p-5 space-y-4">
-        <div class="flex items-center gap-2">
-          <h2 class="text-lg font-bold text-fg">{{ t('stats.last30') }}</h2>
+
+      <!-- Vue 1 jour : jour affiché -->
+      <div v-if="period === '1d'" class="flex items-center justify-between">
+        <button
+          type="button"
+          class="flex h-10 w-10 items-center justify-center rounded-full text-2xl text-fg-secondary disabled:opacity-30"
+          :disabled="!canGoBack"
+          :aria-label="t('stats.previousDay')"
+          @click="changeDay(-1)"
+        >
+          ‹
+        </button>
+        <div class="text-center">
+          <p class="text-base font-semibold text-fg">{{ dayLabel }}</p>
+          <p class="text-xs text-fg-secondary">{{ dayDate }}</p>
         </div>
+        <button
+          type="button"
+          class="flex h-10 w-10 items-center justify-center rounded-full text-2xl text-fg-secondary disabled:opacity-30"
+          :disabled="!canGoForward"
+          :aria-label="t('stats.nextDay')"
+          @click="changeDay(1)"
+        >
+          ›
+        </button>
+      </div>
 
+      <!-- Graphique -->
+      <section class="rounded-xl bg-surface p-4">
         <div class="flex gap-2">
-
-          <!-- Axe Y -->
-          <div class="h-28 flex flex-col justify-between text-[10px] text-fg-muted text-right">
+          <!-- Graduations -->
+          <div class="relative h-40 w-9 shrink-0 text-[10px] text-fg-muted">
             <span
-              v-for="tick in [...monthChartData.ticks].reverse()"
+              v-for="tick in chartScale.ticks"
               :key="tick"
+              class="absolute right-0 translate-y-1/2"
+              :style="{ bottom: `${(tick / chartScale.max) * 100}%` }"
             >
-              {{ tick }}
+              {{ formatTick(tick) }}
             </span>
           </div>
 
-          <!-- Graphique -->
-          <div class="relative flex-1 h-28">
-
-            <!-- Lignes horizontales -->
-            <div
-              v-for="tick in monthChartData.ticks"
-              :key="`line-${tick}`"
-              class="absolute left-0 right-0 border-t border-line"
-              :style="{
-                bottom: `${(tick / monthChartData.max) * 100}%`
-              }"
-            ></div>
-
-            <!-- Barres -->
-            <div class="absolute inset-0 flex items-end gap-0.5">
+          <div class="min-w-0 flex-1">
+            <div class="relative h-40">
               <div
-                v-for="item in monthChartData.days"
-                :key="item.date"
-                class="flex-1 min-w-0 h-full flex items-end"
-                :title="`${item.date}: ${formatAmount(item.reps, unit)}`"
+                v-for="tick in chartScale.ticks"
+                :key="tick"
+                class="absolute inset-x-0 border-t border-line"
+                :style="{ bottom: `${(tick / chartScale.max) * 100}%` }"
+              />
+              <div
+                class="absolute inset-0 flex items-end"
+                :class="period === '30d' || period === '1d' ? 'gap-px' : 'gap-1.5'"
               >
                 <div
-                  :class="[
-                    'w-full rounded-t-[2px] transition-all duration-300',
-                    item.reps > 0
-                      ? 'bg-primary'
-                      : 'bg-track'
-                  ]"
-                  :style="{
-                    height: item.reps > 0
-                      ? `${(item.reps / monthChartData.max) * 100}%`
-                      : '2px'
-                  }"
-                ></div>
+                  v-for="bar in chartBars"
+                  :key="bar.key"
+                  class="flex h-full flex-1 items-end"
+                  :title="bar.title"
+                >
+                  <div
+                    class="w-full rounded-t-sm bg-primary transition-all duration-300"
+                    :style="{ height: `${(bar.value / chartScale.max) * 100}%` }"
+                  />
+                </div>
               </div>
             </div>
 
+            <!-- Libellés -->
+            <div class="mt-1.5 flex" :class="period === '30d' || period === '1d' ? 'gap-px' : 'gap-1.5'">
+              <span
+                v-for="bar in chartBars"
+                :key="bar.key"
+                class="flex-1 text-center text-[10px] text-fg-muted"
+              >
+                {{ bar.label }}
+              </span>
+            </div>
           </div>
         </div>
+
+        <p v-if="chartLegend" class="mt-3 text-xs text-fg-muted">{{ chartLegend }}</p>
       </section>
 
-      <!-- Cartes Périodes -->
-      <section class="bg-surface rounded-xl p-5 space-y-4">
-        <h2 class="text-lg font-bold text-fg">{{ t('stats.week') }}</h2>
-        <div class="space-y-2 text-sm">
-          <div class="flex justify-between text-fg-secondary"><span>{{ t('preview.total') }}</span><span class="font-bold text-fg">{{ weekStats.total }}</span></div>
-          <div class="flex justify-between text-fg-secondary"><span>{{ t('stats.activeDays') }}</span><span class="font-bold text-fg">{{ weekStats.activeDays }}</span></div>
-          <div class="flex justify-between text-fg-secondary"><span>{{ t('stats.average') }}</span><span class="font-bold text-fg">{{ weekStats.average }}</span></div>
+      <!-- Chiffres clés -->
+      <div class="grid grid-cols-2 gap-3">
+        <div class="rounded-xl bg-surface p-4">
+          <p class="text-xs font-medium text-fg-secondary">{{ t('preview.total') }}</p>
+          <p v-for="line in periodTotal" :key="line" class="mt-1 text-lg font-bold leading-tight text-fg">{{ line }}</p>
         </div>
+        <template v-if="period === '1d'">
+          <div class="rounded-xl bg-surface p-4">
+            <p class="text-xs font-medium text-fg-secondary">{{ t('stats.entries') }}</p>
+            <p class="mt-1 text-lg font-bold leading-tight text-fg">{{ periodSets.length }}</p>
+          </div>
+          <div class="rounded-xl bg-surface p-4">
+            <p class="text-xs font-medium text-fg-secondary">{{ t('selector.title') }}</p>
+            <p class="mt-1 text-lg font-bold leading-tight text-fg">{{ exerciseCount }}</p>
+          </div>
+        </template>
+        <template v-else>
+          <div class="rounded-xl bg-surface p-4">
+            <p class="text-xs font-medium text-fg-secondary">{{ t('stats.activeDays') }}</p>
+            <p class="mt-1 text-lg font-bold leading-tight text-fg">
+              {{ activeDays }}
+              <span class="text-sm font-medium text-fg-muted">/ {{ periodDays.length }}</span>
+            </p>
+          </div>
+          <div class="rounded-xl bg-surface p-4">
+            <p class="text-xs font-medium text-fg-secondary">{{ t('stats.average') }}</p>
+            <p v-for="line in periodAverage" :key="line" class="mt-1 text-lg font-bold leading-tight text-fg">{{ line }}</p>
+          </div>
+        </template>
+        <div class="rounded-xl bg-surface p-4">
+          <p class="text-xs font-medium text-fg-secondary">{{ t('stats.currentStreak') }}</p>
+          <p class="mt-1 text-lg font-bold leading-tight text-fg">{{ t('stats.days', currentStreak) }}</p>
+          <p class="text-xs text-fg-muted">{{ t('stats.record', { days: t('stats.days', longestStreak) }) }}</p>
+        </div>
+      </div>
+
+      <!-- Répartition par exercice -->
+      <section v-if="!selectedExercise" class="rounded-xl bg-surface p-4">
+        <h2 class="text-sm font-semibold text-fg">{{ t('stats.byExercise') }}</h2>
+
+        <p v-if="breakdown.length === 0" class="mt-3 text-sm text-fg-secondary">
+          {{ t('stats.empty') }}
+        </p>
+
+        <button
+          v-for="row in breakdown"
+          :key="row.exerciseId"
+          type="button"
+          class="mt-3 block w-full text-left"
+          @click="selectedExercise = row.exerciseId"
+        >
+          <div class="flex items-baseline justify-between gap-3">
+            <span class="min-w-0 truncate text-sm text-fg">{{ row.name }}</span>
+            <span class="shrink-0 text-sm font-semibold text-fg">{{ row.amount }}</span>
+          </div>
+          <div class="mt-1 h-1.5 overflow-hidden rounded-full bg-track">
+            <div class="h-full rounded-full bg-primary" :style="{ width: `${row.share * 100}%` }" />
+          </div>
+        </button>
       </section>
 
-      <section class="bg-surface rounded-xl p-5 space-y-4">
-        <h2 class="text-lg font-bold text-fg">{{ t('stats.month') }}</h2>
-        <div class="space-y-2 text-sm">
-          <div class="flex justify-between text-fg-secondary"><span>{{ t('preview.total') }}</span><span class="font-bold text-fg">{{ monthStats.total }}</span></div>
-          <div class="flex justify-between text-fg-secondary"><span>{{ t('stats.activeDays') }}</span><span class="font-bold text-fg">{{ monthStats.activeDays }}</span></div>
-          <div class="flex justify-between text-fg-secondary"><span>{{ t('stats.average') }}</span><span class="font-bold text-fg">{{ monthStats.average }}</span></div>
+      <!-- Régularité -->
+      <section class="rounded-xl bg-surface p-4">
+        <h2 class="text-sm font-semibold text-fg">{{ t('stats.regularity') }}</h2>
+
+        <div class="mt-3 flex gap-[3px]">
+          <div v-for="week in heatmap" :key="week.key" class="flex min-w-0 flex-1 flex-col gap-[3px]">
+            <span class="h-3 w-0 overflow-visible whitespace-nowrap text-[10px] leading-3 text-fg-muted">
+              {{ week.month }}
+            </span>
+            <div
+              v-for="day in week.days"
+              :key="day.key"
+              class="aspect-square rounded-[3px]"
+              :class="day.future ? 'bg-transparent' : LEVEL_CLASSES[day.level]"
+              :title="day.title"
+            />
+          </div>
+        </div>
+
+        <div class="mt-3 flex items-center justify-end gap-1 text-[10px] text-fg-muted">
+          <span class="mr-1">{{ t('stats.less') }}</span>
+          <span v-for="(level, index) in LEVEL_CLASSES" :key="index" class="h-2.5 w-2.5 rounded-[2px]" :class="level" />
+          <span class="ml-1">{{ t('stats.more') }}</span>
         </div>
       </section>
-
-      <section class="bg-surface rounded-xl p-5 space-y-4">
-        <h2 class="text-lg font-bold text-fg">{{ t('stats.year') }}</h2>
-        <div class="space-y-2 text-sm">
-          <div class="flex justify-between text-fg-secondary"><span>{{ t('preview.total') }}</span><span class="font-bold text-fg">{{ yearStats.total }}</span></div>
-          <div class="flex justify-between text-fg-secondary"><span>{{ t('stats.activeDays') }}</span><span class="font-bold text-fg">{{ yearStats.activeDays }}</span></div>
-          <div class="flex justify-between text-fg-secondary"><span>{{ t('stats.average') }}</span><span class="font-bold text-fg">{{ yearStats.average }}</span></div>
-        </div>
-      </section>
-
-      <!-- Carte Résumé Global -->
-      <section class="bg-surface rounded-xl p-5 space-y-3">
-        <div class="flex justify-between items-center">
-          <span class="text-fg-secondary font-medium">
-            {{ selectedExercise ? t('stats.totalOf', { exercise: selectedExercise }) : t('stats.totalAll') }}
-          </span>
-          <span class="text-xl font-bold text-fg">{{ totalRepsAllTime }}</span>
-        </div>
-        <div class="flex justify-between items-center border-t border-line pt-3">
-          <span class="text-fg-secondary font-medium">{{ t('stats.longestStreak') }}</span>
-          <span class="text-lg font-bold text-fg">{{ t('stats.days', longestStreak) }}</span>
-        </div>
-      </section>     
 
     </main>
   </div>

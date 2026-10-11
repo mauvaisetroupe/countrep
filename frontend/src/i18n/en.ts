@@ -219,16 +219,26 @@ const messages: typeof fr = {
     "delete": "Delete"
   },
   "stats": {
-    "last30": "Last 30 days",
-    "week": "This week",
-    "month": "This month",
-    "year": "This year",
     "activeDays": "Active days",
     "average": "Average per active day",
-    "longestStreak": "Longest streak",
     "days": "{n} day | {n} days",
-    "totalAll": "Total for all exercises",
-    "totalOf": "Total {exercise}"
+    "period": {
+      "1d": "1D",
+      "7d": "7D",
+      "30d": "30D",
+      "1y": "1Y"
+    },
+    "currentStreak": "Current streak",
+    "record": "best: {days}",
+    "chartEquivalent": "All exercises, in minutes of effort: 15 reps or 30 s held count as one minute.",
+    "byExercise": "By exercise",
+    "empty": "No entries in this period.",
+    "regularity": "Consistency (16 weeks)",
+    "less": "Less",
+    "more": "More",
+    "entries": "Entries",
+    "previousDay": "Previous day",
+    "nextDay": "Next day"
   }
 }
 

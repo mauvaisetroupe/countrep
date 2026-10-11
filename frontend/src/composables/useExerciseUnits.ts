@@ -1,18 +1,22 @@
 import { ref } from 'vue'
-import { getExercises } from '../api/exercises'
+import { getExercises, type ApiExercise } from '../api/exercises'
 import type { ExerciseUnit } from '../units'
 
-// Unité de chaque exercice du catalogue, chargée une fois et partagée.
-// Tant qu'elle n'est pas connue (chargement, hors ligne), un exercice
-// est compté en répétitions.
+// Catalogue des exercices (unité, noms), chargé une fois et partagé.
+// Tant qu'il n'est pas connu (chargement, hors ligne), un exercice est
+// compté en répétitions et désigné par son identifiant.
 const units = ref<Record<string, ExerciseUnit>>({})
+const catalog = ref<Record<string, ApiExercise>>({})
 let loading: Promise<void> | null = null
 
 const load = () => {
   loading ??= getExercises()
-    .then(catalog => {
+    .then(exercises => {
       units.value = Object.fromEntries(
-        catalog.map(exercise => [exercise.id, exercise.unit ?? 'reps'])
+        exercises.map(exercise => [exercise.id, exercise.unit ?? 'reps'])
+      )
+      catalog.value = Object.fromEntries(
+        exercises.map(exercise => [exercise.id, exercise])
       )
     })
     .catch(error => {
@@ -30,5 +34,8 @@ export function useExerciseUnits() {
   const unitOf = (exerciseId: string | null | undefined): ExerciseUnit =>
     (exerciseId && units.value[exerciseId]) || 'reps'
 
-  return { unitOf }
+  const exerciseOf = (exerciseId: string): ApiExercise | undefined =>
+    catalog.value[exerciseId]
+
+  return { unitOf, exerciseOf }
 }

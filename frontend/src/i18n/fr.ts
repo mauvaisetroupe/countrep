@@ -217,16 +217,26 @@ const messages = {
     "delete": "Supprimer"
   },
   "stats": {
-    "last30": "30 derniers jours",
-    "week": "Cette semaine",
-    "month": "Ce mois-ci",
-    "year": "Cette année",
     "activeDays": "Jours actifs",
     "average": "Moyenne par jour actif",
-    "longestStreak": "Streak le plus long",
     "days": "{n} jour | {n} jours",
-    "totalAll": "Total de tous les exercices",
-    "totalOf": "Total {exercise}"
+    "period": {
+      "1d": "1j",
+      "7d": "7j",
+      "30d": "30j",
+      "1y": "1a"
+    },
+    "currentStreak": "Série en cours",
+    "record": "record : {days}",
+    "chartEquivalent": "Tous les exercices, en minutes d'effort : 15 répétitions ou 30 s tenues valent une minute.",
+    "byExercise": "Par exercice",
+    "empty": "Aucune saisie sur cette période.",
+    "regularity": "Régularité (16 semaines)",
+    "less": "Moins",
+    "more": "Plus",
+    "entries": "Saisies",
+    "previousDay": "Jour précédent",
+    "nextDay": "Jour suivant"
   }
 }
 

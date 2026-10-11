@@ -13,12 +13,16 @@ const props = withDefaults(
     // (passés en prop, pour suivre leur chargement et leur synchro)
     source?: 'user' | 'sets'
     sets?: LocalSet[]
+    // Filtre discret (Journal, Stats) : une puce qui ouvre la liste,
+    // au lieu des boutons de l'écran Saisie
+    compact?: boolean
   }>(),
   {
     modelValue: null,
     required: true,
     source: 'user',
-    sets: () => []
+    sets: () => [],
+    compact: false
   }
 )
 
@@ -149,48 +153,73 @@ watch(() => props.sets, () => {
 </script>
 
 <template>
-  <div
-    v-if="!loading"
-    class="px-5 flex flex-wrap gap-2 pb-2"
-  >
+  <!-- Filtre compact : une puce, la liste s'ouvre en dessous -->
+  <div v-if="compact" class="flex min-w-0 items-center justify-end gap-1">
     <button
-      v-for="ex in visibleExercises"
-      :key="ex.id"
+      v-if="!loading"
       type="button"
-      @click="handleSelect(ex.id)"
-      :class="[
-        'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-base font-medium transition-all',
-        selectedExercise === ex.id
-          ? 'bg-primary text-on-primary'
-          : 'bg-surface-alt text-fg-secondary'
-      ]"
-    >
-      <span>{{ ex.id }}</span>
-    </button>
-
-    <button
-      v-if="hiddenCount > 0"
-      type="button"
-      class="px-3 py-1.5 rounded-xl text-base font-medium text-primary border border-dashed border-primary bg-surface transition-all"
+      class="inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors"
+      :class="currentExercise ? 'bg-primary-soft text-primary' : 'bg-surface-alt text-fg-secondary'"
       @click="showAll = true"
     >
-      +{{ hiddenCount }}
+      <span class="truncate">{{ currentExercise ? exerciseName(currentExercise) : t('selector.all') }}</span>
+      <span class="text-xs">▾</span>
+    </button>
+    <button
+      v-if="currentExercise && !required"
+      type="button"
+      class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-fg-muted"
+      :aria-label="t('selector.all')"
+      @click="selectedExercise = null"
+    >
+      ✕
     </button>
   </div>
 
-  <p
-    v-if="currentExercise"
-    class="px-5 text-base font-medium text-primary mt-0.5"
-  >
-    {{ exerciseName(currentExercise) }}
-  </p>
+  <template v-else>
+    <div
+      v-if="!loading"
+      class="px-5 flex flex-wrap gap-2 pb-2"
+    >
+      <button
+        v-for="ex in visibleExercises"
+        :key="ex.id"
+        type="button"
+        @click="handleSelect(ex.id)"
+        :class="[
+          'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-base font-medium transition-all',
+          selectedExercise === ex.id
+            ? 'bg-primary text-on-primary'
+            : 'bg-surface-alt text-fg-secondary'
+        ]"
+      >
+        <span>{{ ex.id }}</span>
+      </button>
 
-  <p
-    v-else-if="!loading && !props.required"
-    class="px-5 text-sm font-medium text-fg-muted mt-0.5"
-  >
-    {{ t('selector.all') }}
-  </p>
+      <button
+        v-if="hiddenCount > 0"
+        type="button"
+        class="px-3 py-1.5 rounded-xl text-base font-medium text-primary border border-dashed border-primary bg-surface transition-all"
+        @click="showAll = true"
+      >
+        +{{ hiddenCount }}
+      </button>
+    </div>
+
+    <p
+      v-if="currentExercise"
+      class="px-5 text-base font-medium text-primary mt-0.5"
+    >
+      {{ exerciseName(currentExercise) }}
+    </p>
+
+    <p
+      v-else-if="!loading && !props.required"
+      class="px-5 text-sm font-medium text-fg-muted mt-0.5"
+    >
+      {{ t('selector.all') }}
+    </p>
+  </template>
 
   <!-- Tous les exercices -->
   <Teleport to="body">
@@ -214,7 +243,32 @@ watch(() => props.sets, () => {
           </button>
         </div>
 
-        <div class="mt-4 flex flex-wrap gap-2 overflow-y-auto">
+        <!-- Mode compact : liste des noms, « tous les exercices » en tête -->
+        <div v-if="compact" class="mt-4 -mx-2 overflow-y-auto">
+          <button
+            v-if="!required"
+            type="button"
+            class="flex w-full items-center justify-between rounded-lg px-3 py-3 text-left text-[15px]"
+            :class="selectedExercise === null ? 'bg-primary-soft font-semibold text-primary' : 'text-fg'"
+            @click="selectedExercise = null; showAll = false"
+          >
+            {{ t('selector.all') }}
+            <span v-if="selectedExercise === null">✓</span>
+          </button>
+          <button
+            v-for="ex in exercises"
+            :key="ex.id"
+            type="button"
+            class="flex w-full items-center justify-between gap-3 rounded-lg px-3 py-3 text-left text-[15px]"
+            :class="selectedExercise === ex.id ? 'bg-primary-soft font-semibold text-primary' : 'text-fg'"
+            @click="selectedExercise = ex.id; showAll = false"
+          >
+            <span class="min-w-0 truncate">{{ exerciseName(ex) }}</span>
+            <span v-if="selectedExercise === ex.id">✓</span>
+          </button>
+        </div>
+
+        <div v-else class="mt-4 flex flex-wrap gap-2 overflow-y-auto">
           <button
             v-for="ex in exercises"
             :key="ex.id"
