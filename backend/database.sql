@@ -120,21 +120,21 @@ WHERE id IN ('support-hold', 'hollow-body-hold', 'side-plank');
 -- 2026-10-11 : exercices aux haltères (programme push / pull / upper)
 INSERT INTO exercises (id, name_en, name_fr, liftmanual_url, unit) VALUES
 ('dumbbell-bench-press', 'Dumbbell Bench Press', 'Développé couché haltères', 'https://liftmanual.com/dumbbell-bench-press/', 'reps'),
-('dumbbell-shoulder-press', 'Dumbbell Shoulder Press', 'Développé militaire haltères', NULL, 'reps'),
-('dumbbell-fly', 'Dumbbell Fly', 'Écarté couché haltères', NULL, 'reps'),
-('dumbbell-lateral-raise', 'Dumbbell Lateral Raise', 'Élévation latérale haltères', NULL, 'reps'),
-('dumbbell-front-raise', 'Dumbbell Front Raise', 'Élévation frontale haltères', NULL, 'reps'),
-('dumbbell-overhead-triceps-extension', 'Dumbbell Overhead Triceps Extension', 'Extension triceps au-dessus de la tête haltère', NULL, 'reps'),
-('one-arm-dumbbell-row', 'One-Arm Dumbbell Row', 'Rowing unilatéral haltère', NULL, 'reps'),
-('dumbbell-bent-over-row', 'Dumbbell Bent-Over Row', 'Rowing haltères buste penché', NULL, 'reps'),
-('dumbbell-reverse-fly', 'Dumbbell Reverse Fly', 'Oiseau haltères', NULL, 'reps'),
-('dumbbell-curl', 'Dumbbell Curl', 'Curl biceps haltères', NULL, 'reps'),
-('hammer-curl', 'Hammer Curl', 'Curl marteau', NULL, 'reps'),
-('concentration-curl', 'Concentration Curl', 'Curl concentration', NULL, 'reps'),
-('dumbbell-shrug', 'Dumbbell Shrug', 'Shrug haltères', NULL, 'reps'),
-('push-up', 'Push-Up', 'Pompe', NULL, 'reps'),
-('close-grip-push-up', 'Close-Grip Push-Up', 'Pompe serrée', NULL, 'reps'),
-('plank', 'Plank', 'Gainage (planche)', NULL, 'seconds');
+('dumbbell-shoulder-press', 'Dumbbell Shoulder Press', 'Développé militaire haltères', 'https://liftmanual.com/dumbbell-standing-biceps-curl-to-shoulder-press/', 'reps'),
+('dumbbell-fly', 'Dumbbell Fly', 'Écarté couché haltères', 'liftmanual.com/dumbbell-fly/', 'reps'),
+('dumbbell-lateral-raise', 'Dumbbell Lateral Raise', 'Élévation latérale haltères', 'https://liftmanual.com/dumbbell-lateral-raise/', 'reps'),
+('dumbbell-front-raise', 'Dumbbell Front Raise', 'Élévation frontale haltères', 'https://liftmanual.com/dumbbell-front-raise/', 'reps'),
+('dumbbell-overhead-triceps-extension', 'Dumbbell Overhead Triceps Extension', 'Extension triceps au-dessus de la tête haltère', 'https://liftmanual.com/dumbbell-seated-triceps-extension/', 'reps'),
+('one-arm-dumbbell-row', 'One-Arm Dumbbell Row', 'Rowing unilatéral haltère', 'https://liftmanual.com/kettlebell-one-arm-row/', 'reps'),
+('dumbbell-bent-over-row', 'Dumbbell Bent-Over Row', 'Rowing haltères buste penché', 'https://liftmanual.com/barbell-bent-over-row/', 'reps'),
+('dumbbell-reverse-fly', 'Dumbbell Reverse Fly', 'Oiseau haltères', 'https://liftmanual.com/dumbbell-reverse-fly/', 'reps'),
+('dumbbell-curl', 'Dumbbell Curl', 'Curl biceps haltères', 'https://liftmanual.com/dumbbell-standing-biceps-curl/', 'reps'),
+('hammer-curl', 'Hammer Curl', 'Curl marteau', 'https://liftmanual.com/dumbbell-hammer-curl/', 'reps'),
+('concentration-curl', 'Concentration Curl', 'Curl concentration', 'https://liftmanual.com/dumbbell-concentration-curl/', 'reps'),
+('dumbbell-shrug', 'Dumbbell Shrug', 'Shrug haltères', 'https://liftmanual.com/dumbbell-shrug/', 'reps'),
+('push-up', 'Push-Up', 'Pompe', 'https://liftmanual.com/push-up/', 'reps'),
+('close-grip-push-up', 'Close-Grip Push-Up', 'Pompe serrée', 'https://liftmanual.com/close-grip-push-up/', 'reps'),
+('plank', 'Plank', 'Gainage (planche)', 'https://liftmanual.com/plank-on-hands/', 'seconds');
 
 -- 2026-10-11 : nom de la séance réalisée, copié sur ses sets (ADR 0011)
 ALTER TABLE sets ADD COLUMN session_name character varying(100);
