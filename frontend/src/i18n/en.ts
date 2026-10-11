@@ -240,6 +240,13 @@ const messages: typeof fr = {
     "entries": "Entries",
     "previousDay": "Previous day",
     "nextDay": "Next day"
+  },
+  "log": {
+    "savedToday": "{amount} {name} · {total} today",
+    "savedDay": "{amount} {name} · {total} that day"
+  },
+  "dayNavigator": {
+    "pick": "Pick a date"
   }
 }
 

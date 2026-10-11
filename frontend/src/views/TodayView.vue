@@ -9,8 +9,10 @@ import { useExerciseStore, type HomeMode } from '../stores/exercise'
 import type { LocalSet } from '../db'
 import { getUserExercises, type UserExercise } from '../api/exercises'
 import TodayCalendar from '../components/TodayCalendar.vue'
+import DayNavigator from '../components/DayNavigator.vue'
 import { useI18n } from 'vue-i18n'
 import { exerciseName } from '../i18n'
+import { formatAmount } from '../units'
 
 const exerciseStore = useExerciseStore()
 const userExercises = ref<UserExercise[]>([])
@@ -55,7 +57,7 @@ const loadUserExercises = async () => {
 }
 
 // ============================================================
-// DATE / CALENDRIER
+// DATE : aujourd'hui par défaut, ‹ › ou calendrier en fenêtre
 // ============================================================
 
 const now = new Date()
@@ -69,10 +71,18 @@ const formatDate = (
   return `${year}-${String(monthIndex + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
 }
 
+const todayKey = formatDate(now.getFullYear(), now.getMonth(), now.getDate())
+
 // Date actuellement sélectionnée
-const selectedDate = ref(
-  formatDate(now.getFullYear(), now.getMonth(), now.getDate())
-)
+const selectedDate = ref(todayKey)
+
+const showCalendar = ref(false)
+
+// Jour choisi dans le calendrier : pas de saisie dans le futur
+const pickDate = (date: string) => {
+  selectedDate.value = date > todayKey ? todayKey : date
+  showCalendar.value = false
+}
 
 // ============================================================
 // WORKOUTS
@@ -133,14 +143,38 @@ const logSets = async (entries: LogEntry[]) => {
 
 const showModal = ref(false)
 
+// Bandeau de confirmation après une saisie : ce qui vient d'être
+// enregistré, et le total du jour pour cet exercice
+const snackbar = ref<string | null>(null)
+let snackbarTimer: ReturnType<typeof setTimeout> | undefined
+
+const showSnackbar = (message: string) => {
+  snackbar.value = message
+  clearTimeout(snackbarTimer)
+  snackbarTimer = setTimeout(() => {
+    snackbar.value = null
+  }, 3000)
+}
+
 const saveExercise = async ({ reps, time }: { reps: number, time: string }) => {
-  if (!exerciseStore.selectedExercise) return
+  const exerciseId = exerciseStore.selectedExercise
+  if (!exerciseId) return
 
   showModal.value = false
 
   await logSets([
-    { exerciseId: exerciseStore.selectedExercise, reps, time }
+    { exerciseId, reps, time }
   ])
+
+  const dayTotal = sets.value
+    .filter(set => !set.deletedAt && set.exercise === exerciseId && set.date === selectedDate.value)
+    .reduce((sum, set) => sum + set.reps, 0)
+
+  showSnackbar(t(selectedDate.value === todayKey ? 'log.savedToday' : 'log.savedDay', {
+    amount: formatAmount(reps, selectedExerciseUnit.value),
+    name: selectedExerciseName.value,
+    total: formatAmount(dayTotal, selectedExerciseUnit.value)
+  }))
 }
 
 loadUserExercises()
@@ -177,6 +211,17 @@ loadUserExercises()
   </header>
 
   <!-- ========================================================
+       DATE (les deux modes) : un appui ouvre le calendrier
+  ========================================================= -->
+
+  <div class="px-3 pb-3">
+    <DayNavigator
+      v-model="selectedDate"
+      @open="showCalendar = true"
+    />
+  </div>
+
+  <!-- ========================================================
        MODE SÉANCE
   ========================================================= -->
 
@@ -197,35 +242,18 @@ loadUserExercises()
   />
 
   <!-- ========================================================
-       CORPS
+       AJOUT
   ========================================================= -->
 
-  <main class="px-3 mt-4 space-y-4">
-
-    <!-- ======================================================
-        CALENDRIER
-    ====================================================== -->
-
-    <TodayCalendar
-      :sets="sets"
-      :selected-date="selectedDate"
-      :selected-exercise="exerciseStore.selectedExercise"
-      :unit="selectedExerciseUnit"
-      @update:selected-date="selectedDate = $event"
-    />
-
-  </main>
-
-  <!-- ========================================================
-          BOUTON D'ACTION FLOTTANT (FAB)
-      ========================================================= -->
-
-  <div class="fixed bottom-24 right-5 z-10">
+  <div class="px-5 mt-6">
     <button
+      type="button"
+      :disabled="!exerciseStore.selectedExercise"
+      class="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-4 text-base font-semibold text-on-primary transition-transform active:scale-[0.98] disabled:bg-surface-alt disabled:text-fg-muted"
       @click="showModal = true"
-      class="bg-primary text-on-primary text-sm font-semibold pl-4 pr-5 py-4 rounded-2xl shadow-lg flex items-center gap-2 active:scale-95 transition-transform"
     >
-      <span class="text-xl leading-none">+</span> {{ t('addReps.title', { name: selectedExerciseName }) }}
+      <span class="text-xl leading-none">+</span>
+      {{ t('addReps.title', { name: selectedExerciseName }) }}
     </button>
   </div>
 
@@ -245,4 +273,54 @@ loadUserExercises()
 
   </template>
 
+  <!-- ========================================================
+          CALENDRIER (fenêtre du bas) : sauter à un autre jour
+      ========================================================= -->
+
+  <Teleport to="body">
+    <div
+      v-if="showCalendar"
+      class="fixed inset-0 z-50 flex items-end justify-center bg-overlay backdrop-blur-xs sm:items-center sm:p-4"
+      @click.self="showCalendar = false"
+    >
+      <div class="w-full max-w-md rounded-t-[32px] bg-card px-3 pt-4 pb-6 shadow-2xl sm:rounded-xl">
+        <TodayCalendar
+          :sets="sets"
+          :selected-date="selectedDate"
+          :selected-exercise="exerciseStore.mode === 'exercise' ? exerciseStore.selectedExercise : null"
+          :unit="selectedExerciseUnit"
+          :months-after="0"
+          @pick="pickDate"
+        />
+      </div>
+    </div>
+  </Teleport>
+
+  <!-- ========================================================
+          BANDEAU DE CONFIRMATION
+      ========================================================= -->
+
+  <Transition name="snackbar">
+    <div
+      v-if="snackbar"
+      class="fixed inset-x-4 bottom-24 z-30 mx-auto max-w-md rounded-xl bg-fg px-4 py-3 text-sm font-medium text-background shadow-lg"
+      role="status"
+    >
+      ✓ {{ snackbar }}
+    </div>
+  </Transition>
+
 </template>
+
+<style scoped>
+.snackbar-enter-active,
+.snackbar-leave-active {
+  transition: all 0.2s ease;
+}
+
+.snackbar-enter-from,
+.snackbar-leave-to {
+  opacity: 0;
+  transform: translateY(12px);
+}
+</style>

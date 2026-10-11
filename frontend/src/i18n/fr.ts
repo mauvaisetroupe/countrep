@@ -238,6 +238,13 @@ const messages = {
     "entries": "Saisies",
     "previousDay": "Jour précédent",
     "nextDay": "Jour suivant"
+  },
+  "log": {
+    "savedToday": "{amount} {name} · {total} aujourd'hui",
+    "savedDay": "{amount} {name} · {total} ce jour-là"
+  },
+  "dayNavigator": {
+    "pick": "Choisir une date"
   }
 }
 

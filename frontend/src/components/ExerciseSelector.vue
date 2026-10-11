@@ -102,33 +102,9 @@ const handleSelect = (id: string) => {
   }
 }
 
-// Au-delà de VISIBLE_COUNT exercices, les autres sont dans un panneau.
-// L'exercice sélectionné reste toujours visible.
-const VISIBLE_COUNT = 4
-
+// Mode normal (écran Saisie) : tous les exercices de l'utilisateur sont
+// affichés (10 au plus) ; la fenêtre de liste ne sert qu'au mode compact
 const showAll = ref(false)
-
-const visibleExercises = computed(() => {
-  const first = exercises.value.slice(0, VISIBLE_COUNT)
-
-  if (
-    !selectedExercise.value ||
-    first.some(exercise => exercise.id === selectedExercise.value)
-  ) {
-    return first
-  }
-
-  const selected = exercises.value.find(exercise => exercise.id === selectedExercise.value)
-
-  return selected ? [...first.slice(0, VISIBLE_COUNT - 1), selected] : first
-})
-
-const hiddenCount = computed(() => exercises.value.length - visibleExercises.value.length)
-
-const selectFromAll = (id: string) => {
-  handleSelect(id)
-  showAll.value = false
-}
 
 const currentExercise = computed(() => {
   if (!selectedExercise.value) {
@@ -182,7 +158,7 @@ watch(() => props.sets, () => {
       class="px-5 flex flex-wrap gap-2 pb-2"
     >
       <button
-        v-for="ex in visibleExercises"
+        v-for="ex in exercises"
         :key="ex.id"
         type="button"
         @click="handleSelect(ex.id)"
@@ -194,15 +170,6 @@ watch(() => props.sets, () => {
         ]"
       >
         <span>{{ ex.id }}</span>
-      </button>
-
-      <button
-        v-if="hiddenCount > 0"
-        type="button"
-        class="px-3 py-1.5 rounded-xl text-base font-medium text-primary border border-dashed border-primary bg-surface transition-all"
-        @click="showAll = true"
-      >
-        +{{ hiddenCount }}
       </button>
     </div>
 
@@ -243,8 +210,8 @@ watch(() => props.sets, () => {
           </button>
         </div>
 
-        <!-- Mode compact : liste des noms, « tous les exercices » en tête -->
-        <div v-if="compact" class="mt-4 -mx-2 overflow-y-auto">
+        <!-- Liste des noms, « tous les exercices » en tête -->
+        <div class="mt-4 -mx-2 overflow-y-auto">
           <button
             v-if="!required"
             type="button"
@@ -268,23 +235,6 @@ watch(() => props.sets, () => {
           </button>
         </div>
 
-        <div v-else class="mt-4 flex flex-wrap gap-2 overflow-y-auto">
-          <button
-            v-for="ex in exercises"
-            :key="ex.id"
-            type="button"
-            :title="exerciseName(ex)"
-            @click="selectFromAll(ex.id)"
-            :class="[
-              'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-base font-medium transition-all',
-              selectedExercise === ex.id
-                ? 'bg-primary text-on-primary'
-                : 'bg-surface-alt text-fg-secondary'
-            ]"
-          >
-            <span>{{ ex.id }}</span>
-          </button>
-        </div>
       </div>
     </div>
   </Teleport>

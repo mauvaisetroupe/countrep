@@ -31,6 +31,8 @@ const { unitOf } = useExerciseUnits()
 
 const emit = defineEmits<{
   'update:selectedDate': [value: string]
+  // Jour choisi par un appui (ou « Aujourd'hui »), pas un changement de mois
+  pick: [value: string]
 }>()
 
 // ============================================================
@@ -212,6 +214,7 @@ const goToToday = () => {
       realDay
     )
   )
+  emit('pick', formatDate(realYear, realMonthIndex, realDay))
 }
 
 // ============================================================
@@ -357,6 +360,7 @@ const selectDay = (
       day
     )
   )
+  emit('pick', formatDate(year, monthIndex, day))
 }
 
 // ============================================================
