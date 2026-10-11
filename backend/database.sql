@@ -104,3 +104,7 @@ ALTER TABLE workout_exercises RENAME CONSTRAINT routine_exercises_exercise_id_no
 ALTER TABLE workout_exercises RENAME CONSTRAINT routine_exercises_reps_not_null TO workout_exercises_reps_not_null;
 
 COMMIT;
+
+-- 2026-10-11 : séance réalisée, regroupement des sets (ADR 0007)
+ALTER TABLE sets ADD COLUMN session_id uuid;
+CREATE INDEX idx_sets_user_session ON sets USING btree (user_id, session_id);

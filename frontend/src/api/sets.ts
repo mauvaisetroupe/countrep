@@ -7,6 +7,8 @@ export interface ApiSet {
   date: string
   time: string
   reps: number
+  // Séance réalisée dont le set fait partie (null : saisie isolée)
+  sessionId: string | null
   createdAt: number
   updatedAt: number
   deletedAt: number | null

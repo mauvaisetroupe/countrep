@@ -6,6 +6,9 @@ export interface LocalSet {
   date: string
   time: string
   reps: number
+  // id de la séance (preview) enregistrée dont le set fait partie ;
+  // absent ou null pour une saisie isolée (ADR 0007)
+  sessionId?: string | null
   createdAt: number
   updatedAt: number
   deletedAt?: number | null
@@ -96,6 +99,11 @@ export class CountRepDatabase extends Dexie {
     })
     this.version(5).stores({
       workouts: null
+    })
+
+    // ADR 0007 : regroupement des sets d'une même séance réalisée
+    this.version(6).stores({
+      sets: 'id, exercise, date, sessionId, createdAt, updatedAt, syncStatus, syncOperation'
     })
   }
 }

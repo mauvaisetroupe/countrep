@@ -16,6 +16,7 @@ function toApiSet(set: LocalSet): ApiSet {
     date: set.date,
     time: set.time,
     reps: set.reps,
+    sessionId: set.sessionId ?? null,
     createdAt: set.createdAt,
     updatedAt: set.updatedAt,
     deletedAt: set.deletedAt ?? null
@@ -99,6 +100,7 @@ export async function syncSetsFromServer(): Promise<void> {
         date: set.date,
         time: set.time,
         reps: set.reps,
+        sessionId: set.sessionId,
         createdAt: set.createdAt,
         updatedAt: set.updatedAt,
         deletedAt: set.deletedAt,

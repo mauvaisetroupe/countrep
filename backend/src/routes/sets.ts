@@ -12,6 +12,7 @@ const SET_COLUMNS = `
   date::text AS date,
   time::text AS time,
   reps,
+  session_id,
   created_at,
   updated_at,
   deleted_at
@@ -25,6 +26,7 @@ function toApiSet(row: any) {
     date: row.date,
     time: row.time,
     reps: row.reps,
+    sessionId: row.session_id,
     createdAt: new Date(row.created_at).getTime(),
     updatedAt: new Date(row.updated_at).getTime(),
     deletedAt: row.deleted_at
@@ -51,6 +53,7 @@ export async function setRoutes(app: FastifyInstance) {
       date: string
       time: string
       reps: number
+      sessionId?: string | null
       createdAt: number
       updatedAt: number
       deletedAt?: number | null
@@ -68,6 +71,7 @@ export async function setRoutes(app: FastifyInstance) {
         date,
         time,
         reps,
+        session_id,
         created_at,
         updated_at,
         deleted_at
@@ -79,11 +83,12 @@ export async function setRoutes(app: FastifyInstance) {
         $4,
         $5,
         $6,
-        to_timestamp($7 / 1000.0),
+        $7,
         to_timestamp($8 / 1000.0),
+        to_timestamp($9 / 1000.0),
         CASE
-          WHEN $9::bigint IS NULL THEN NULL
-          ELSE to_timestamp($9::bigint / 1000.0)
+          WHEN $10::bigint IS NULL THEN NULL
+          ELSE to_timestamp($10::bigint / 1000.0)
         END
       )
       ON CONFLICT (id) DO UPDATE
@@ -92,6 +97,7 @@ export async function setRoutes(app: FastifyInstance) {
         date = EXCLUDED.date,
         time = EXCLUDED.time,
         reps = EXCLUDED.reps,
+        session_id = EXCLUDED.session_id,
         updated_at = EXCLUDED.updated_at,
         deleted_at = EXCLUDED.deleted_at
       WHERE sets.user_id = EXCLUDED.user_id
@@ -104,6 +110,7 @@ export async function setRoutes(app: FastifyInstance) {
         body.date,
         body.time,
         body.reps,
+        body.sessionId ?? null,
         body.createdAt,
         body.updatedAt,
         body.deletedAt ?? null
@@ -152,6 +159,7 @@ export async function setRoutes(app: FastifyInstance) {
       exercise?: string
       date?: string
       time?: string
+      sessionId?: string
       updatedAt: number
     }
 
@@ -163,9 +171,10 @@ export async function setRoutes(app: FastifyInstance) {
         exercise = COALESCE($2, exercise),
         date = COALESCE($3, date),
         time = COALESCE($4, time),
-        updated_at = to_timestamp($5 / 1000.0)
-      WHERE id = $6
-        AND user_id = $7
+        session_id = COALESCE($5, session_id),
+        updated_at = to_timestamp($6 / 1000.0)
+      WHERE id = $7
+        AND user_id = $8
       RETURNING ${SET_COLUMNS}
       `,
       [
@@ -173,6 +182,7 @@ export async function setRoutes(app: FastifyInstance) {
         body.exercise ?? null,
         body.date ?? null,
         body.time ?? null,
+        body.sessionId ?? null,
         body.updatedAt,
         id,
         userId

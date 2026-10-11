@@ -55,12 +55,17 @@ CREATE TABLE sets (
     updated_at timestamptz NOT NULL,
     deleted_at timestamptz,
     time time without time zone,
+    -- Séance réalisée dont le set fait partie (id de la preview) ; NULL pour
+    -- une saisie isolée. Pas de clé étrangère : rien n'est stocké d'autre
+    -- sur la séance (ADR 0007)
+    session_id uuid,
     CONSTRAINT sets_pkey PRIMARY KEY (id),
     CONSTRAINT sets_reps_check CHECK (reps > 0)
 );
 
 CREATE INDEX idx_sets_user_id ON sets USING btree (user_id);
 CREATE INDEX idx_sets_user_date ON sets USING btree (user_id, date);
+CREATE INDEX idx_sets_user_session ON sets USING btree (user_id, session_id);
 
 -- Workout : modèle de séance (exercices + reps, nombre de séries global)
 CREATE TABLE workouts (

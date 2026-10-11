@@ -145,7 +145,8 @@ export function usePreview() {
   }
 
   // Transforme les saisies en sets (en attente de synchro) et supprime
-  // le brouillon. La synchro avec le serveur se fait ensuite, comme pour
+  // le brouillon. Les sets gardent l'id de la séance (sessionId, ADR 0007)
+  // pour pouvoir la retrouver et la modifier ensuite. La synchro avec le serveur se fait ensuite, comme pour
   // toute saisie.
   const commit = async (): Promise<LocalSet[]> => {
     if (!preview.value) return []
@@ -160,6 +161,7 @@ export function usePreview() {
         date: current.date,
         time: entry.time,
         reps: entry.reps,
+        sessionId: current.id,
         createdAt: entry.createdAt,
         updatedAt: entry.createdAt,
         deletedAt: null,

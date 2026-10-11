@@ -10,3 +10,4 @@ Voir [ADR 0001](0001-enregistrer-les-decisions-d-architecture.md) pour le format
 | 0004 | [Protection des données locales à la déconnexion et au changement de compte](0004-protection-des-donnees-locales.md) | Accepté |
 | 0005 | [Application mobile Expo, données locales, sans serveur](0005-application-mobile-locale-sans-serveur.md) | Proposé |
 | 0006 | [Vocabulaire du domaine : set, workout, round](0006-vocabulaire-du-domaine.md) | Accepté |
+| 0007 | [Identifiant de séance sur les sets](0007-identifiant-de-seance-sur-les-sets.md) | Accepté |
