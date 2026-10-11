@@ -9,14 +9,25 @@ import type { LocalSet } from '../db'
 import { formatDurationShort, type ExerciseUnit } from '../units'
 import { useI18n } from 'vue-i18n'
 import { dateLocale } from '../i18n'
+import { useExerciseUnits } from '../composables/useExerciseUnits'
 import emblaCarouselVue from 'embla-carousel-vue'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   sets: LocalSet[]
   selectedDate: string
+  // null : total de tous les exercices (répétitions, ou durée pour un
+  // jour sans répétitions)
   selectedExercise: string | null
   unit?: ExerciseUnit
-}>()
+  // Mois proposés avant et après le mois courant
+  monthsBefore?: number
+  monthsAfter?: number
+}>(), {
+  monthsBefore: 12,
+  monthsAfter: 12
+})
+
+const { unitOf } = useExerciseUnits()
 
 const emit = defineEmits<{
   'update:selectedDate': [value: string]
@@ -49,10 +60,10 @@ type CalendarMonth = {
   monthIndex: number
 }
 
-// 12 mois avant + mois actuel + 12 mois après.
+// monthsBefore mois avant + mois actuel + monthsAfter mois après
 const months = computed<CalendarMonth[]>(() => {
-  return Array.from({ length: 25 }, (_, index) => {
-    const offset = index - 12
+  return Array.from({ length: props.monthsBefore + 1 + props.monthsAfter }, (_, index) => {
+    const offset = index - props.monthsBefore
 
     const date = new Date(
       realYear,
@@ -67,8 +78,8 @@ const months = computed<CalendarMonth[]>(() => {
   })
 })
 
-// Le mois actuel est au milieu du carousel.
-const todayCarouselIndex = 12
+// Position du mois actuel dans le carousel
+const todayCarouselIndex = props.monthsBefore
 
 const currentCarouselIndex = ref(
   todayCarouselIndex
@@ -226,40 +237,34 @@ const getLocalDateKey = (
   return date.slice(0, 10)
 }
 
-// Total d'un jour : répétitions, ou durée pour un exercice tenu
-const formatDayTotal = (total: number | undefined) => {
-  if (!total) return ''
-  return props.unit === 'seconds' ? formatDurationShort(total) : String(total)
-}
-
 // ============================================================
-// RÉPÉTITIONS PAR DATE
+// TOTAL PAR DATE
 // ============================================================
 
-const repsByDate = computed<Record<string, number>>(() => {
-  const totals: Record<string, number> = {}
-
-  if (!props.selectedExercise) {
-    return totals
-  }
+// Texte affiché sous chaque jour : total de l'exercice choisi (durée pour
+// un exercice tenu) ; sans exercice choisi, total des répétitions, ou
+// durée pour un jour qui n'a que des exercices tenus
+const totalsByDate = computed<Record<string, string>>(() => {
+  const reps: Record<string, number> = {}
+  const seconds: Record<string, number> = {}
 
   for (const set of props.sets) {
-    if (
-      set.exercise !==
-      props.selectedExercise
-    ) {
-      continue
-    }
+    if (set.deletedAt) continue
+    if (props.selectedExercise && set.exercise !== props.selectedExercise) continue
 
-    const dateKey =
-      getLocalDateKey(set.date)
-
-    totals[dateKey] =
-      (totals[dateKey] ?? 0) +
-      set.reps
+    const dateKey = getLocalDateKey(set.date)
+    const isDuration = props.selectedExercise
+      ? props.unit === 'seconds'
+      : unitOf(set.exercise) === 'seconds'
+    const totals = isDuration ? seconds : reps
+    totals[dateKey] = (totals[dateKey] ?? 0) + set.reps
   }
 
-  return totals
+  const labels: Record<string, string> = {}
+  for (const key of new Set([...Object.keys(reps), ...Object.keys(seconds)])) {
+    labels[key] = reps[key] ? String(reps[key]) : formatDurationShort(seconds[key] ?? 0)
+  }
+  return labels
 })
 
 // ============================================================
@@ -587,15 +592,13 @@ const isToday = (
                   class="h-[14px] text-xs font-bold text-primary leading-[14px] mt-0.5"
                 >
                   {{
-                    formatDayTotal(
-                      repsByDate[
-                        formatDate(
-                          month.year,
-                          month.monthIndex,
-                          day
-                        )
-                      ]
-                    )
+                    totalsByDate[
+                      formatDate(
+                        month.year,
+                        month.monthIndex,
+                        day
+                      )
+                    ] ?? ''
                   }}
                 </span>
               </div>

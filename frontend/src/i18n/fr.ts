@@ -214,7 +214,8 @@ const messages = {
     "copyGarmin": "Copier pour Garmin",
     "options": "Options",
     "edit": "Modifier",
-    "delete": "Supprimer"
+    "delete": "Supprimer",
+    "emptyMonth": "Aucune saisie ce mois-ci."
   },
   "stats": {
     "activeDays": "Jours actifs",

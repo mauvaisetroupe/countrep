@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import ExerciseSelector from '../components/ExerciseSelector.vue'
+import TodayCalendar from '../components/TodayCalendar.vue'
 import { useSets } from '../composables/useSets'
 import { usePreview } from '../composables/usePreview'
 import { useExerciseStore } from '../stores/exercise'
@@ -21,8 +22,6 @@ const router = useRouter()
 const exerciseStore = useExerciseStore()
 const { load: loadPreview, openForEdit } = usePreview()
 
-const PAGE_SIZE = 30
-
 // Équivalence Garmin : une minute = 30 s d'effort + 30 s de repos,
 // soit 15 répétitions ou 30 s tenues pour un exercice à la durée
 const REPS_PER_SET = 15
@@ -31,7 +30,6 @@ const MINUTES_PER_SET = 1
 const SETS_PER_BLOCK = 10
 const BLOCK_REST_MINUTES = 2
 
-const visibleCount = ref(PAGE_SIZE)
 const editingSetId = ref<string | null>(null)
 const openMenuId = ref<string | null>(null)
 const copiedGarminDate = ref<string | null>(null)
@@ -56,24 +54,63 @@ const filteredSets = computed(() => {
   })
 })
 
-const visibleSets = computed(() => {
-  return filteredSets.value.slice(0, visibleCount.value)
+// ============================================================
+// CALENDRIER : un mois à la fois (la liste ne grandit pas avec les années)
+// ============================================================
+
+const todayKey = () => {
+  const today = new Date()
+  return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+}
+
+// Jour choisi dans le calendrier ; son mois est le mois affiché
+const selectedDate = ref(todayKey())
+const visibleMonth = computed(() => selectedDate.value.slice(0, 7))
+
+// Le calendrier remonte jusqu'au mois de la première saisie (au moins
+// 12 mois), et ne propose pas de mois futur
+const monthsBefore = computed(() => {
+  const first = sets.value.reduce<string | null>(
+    (oldest, set) => !set.deletedAt && (!oldest || set.date < oldest) ? set.date : oldest,
+    null
+  )
+  if (!first) return 12
+
+  const today = new Date()
+  const [year, month] = first.split('-').map(Number)
+  return Math.max(12, (today.getFullYear() - year!) * 12 + today.getMonth() + 1 - month!)
 })
 
-const hasMore = computed(() => {
-  return visibleCount.value < filteredSets.value.length
+// Le calendrier annonce son jour en s'ouvrant : ce n'est pas un appui
+let calendarReady = false
+watch(monthsBefore, () => {
+  calendarReady = false
 })
 
-const loadMore = () => {
-  if (!hasMore.value) return
+// Un appui sur un jour : il est déplié dans la liste, et amené à l'écran
+const selectDate = async (date: string) => {
+  const sameMonth = date.slice(0, 7) === visibleMonth.value
+  selectedDate.value = date
 
-  visibleCount.value += PAGE_SIZE
+  if (!calendarReady) {
+    calendarReady = true
+    return
+  }
+
+  // Changement de mois par le calendrier : rien à déplier
+  if (!sameMonth) return
+
+  expandedDates.value = new Set([...expandedDates.value, date])
+  await nextTick()
+  document.getElementById(`day-${date}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
 
 const visibleDays = computed(() => {
   const days = new Map<string, LocalSet[]>()
 
-  for (const set of visibleSets.value) {
+  for (const set of filteredSets.value) {
+    if (!set.date.startsWith(visibleMonth.value)) continue
+
     const daySets = days.get(set.date) ?? []
     daySets.push(set)
     days.set(set.date, daySets)
@@ -356,25 +393,11 @@ const handleDeleteSet = async (set: LocalSet) => {
   await deleteSet(set.id)
 }
 
-const handleScroll = () => {
-  const scrollPosition =
-    window.innerHeight + window.scrollY
-
-  const threshold =
-    document.documentElement.scrollHeight - 500
-
-  if (scrollPosition >= threshold) {
-    loadMore()
-  }
-}
-
 onMounted(() => {
-  window.addEventListener('scroll', handleScroll)
   document.addEventListener('click', handleDocumentClick)
 })
 
 onUnmounted(() => {
-  window.removeEventListener('scroll', handleScroll)
   document.removeEventListener('click', handleDocumentClick)
 })
 </script>
@@ -397,17 +420,34 @@ onUnmounted(() => {
       />
     </div>
 
+    <!-- Calendrier du mois : total de chaque jour -->
+    <div class="mb-4">
+      <!-- Recréé quand l'historique s'allonge (nombre de mois) -->
+      <TodayCalendar
+        :key="monthsBefore"
+        :sets="sets"
+        :selected-date="selectedDate"
+        :selected-exercise="selectedExercise"
+        :unit="selectedExercise ? unitOf(selectedExercise) : undefined"
+        :months-before="monthsBefore"
+        :months-after="0"
+        @update:selected-date="selectDate"
+      />
+    </div>
+
+    <!-- Jours du mois affiché -->
     <div
       v-if="visibleDays.length === 0"
       class="py-12 text-center text-fg-muted"
     >
-      {{ t('journal.empty') }}
+      {{ t('journal.emptyMonth') }}
     </div>
 
     <div
       v-for="day in visibleDays"
+      :id="`day-${day.date}`"
       :key="day.date"
-      class="mb-3 overflow-hidden rounded-xl bg-surface"
+      class="mb-3 scroll-mt-4 overflow-hidden rounded-xl bg-surface"
     >
 
       <!-- Day header -->
@@ -712,13 +752,6 @@ onUnmounted(() => {
 
       </div>
 
-    </div>
-
-    <div
-      v-if="hasMore"
-      class="py-6 text-center text-sm text-fg-muted"
-    >
-      {{ t('common.loading') }}
     </div>
 
   </div>

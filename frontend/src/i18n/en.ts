@@ -216,7 +216,8 @@ const messages: typeof fr = {
     "copyGarmin": "Copy for Garmin",
     "options": "Options",
     "edit": "Edit",
-    "delete": "Delete"
+    "delete": "Delete",
+    "emptyMonth": "No entries this month."
   },
   "stats": {
     "activeDays": "Active days",
