@@ -319,6 +319,7 @@ onUnmounted(() => {
         v-model="selectedExercise"
         :required="false"
         source="sets"
+        :sets="sets"
       />
     </div>
 

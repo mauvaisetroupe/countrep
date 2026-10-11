@@ -237,6 +237,7 @@ const monthChartData = computed(() => {
       v-model="selectedExercise"
       :required="false"
       source="sets"
+      :sets="sets"
     />
     
     <main class="px-5 mt-4 space-y-4">

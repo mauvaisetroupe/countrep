@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { getExercises, getUserExercises, type ApiExercise } from '../api/exercises'
-import { useSets } from '../composables/useSets'
+import type { LocalSet } from '../db'
 import { useI18n } from 'vue-i18n'
 import { exerciseName } from '../i18n'
 
@@ -9,12 +9,16 @@ const props = withDefaults(
   defineProps<{
     modelValue?: string | null
     required?: boolean
+    // 'sets' : les exercices déjà saisis, d'après les sets de l'écran
+    // (passés en prop, pour suivre leur chargement et leur synchro)
     source?: 'user' | 'sets'
+    sets?: LocalSet[]
   }>(),
   {
     modelValue: null,
     required: true,
-    source: 'user'
+    source: 'user',
+    sets: () => []
   }
 )
 
@@ -23,10 +27,32 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
-const { sets } = useSets()
 
 const exercises = ref<ApiExercise[]>([])
+const catalog = ref<ApiExercise[]>([])
 const loading = ref(false)
+
+// Exercices déjà saisis, du plus pratiqué au moins pratiqué
+const exercisesFromSets = () => {
+  const setReps = new Map<string, number>()
+
+  props.sets
+    .filter(set => !set.deletedAt)
+    .forEach(set => {
+      setReps.set(
+        set.exercise,
+        (setReps.get(set.exercise) ?? 0) + set.reps
+      )
+    })
+
+  return catalog.value
+    .filter(exercise => setReps.has(exercise.id))
+    .sort(
+      (a, b) =>
+        (setReps.get(b.id) ?? 0) -
+        (setReps.get(a.id) ?? 0)
+    )
+}
 
 const selectedExercise = computed({
   get: () => props.modelValue,
@@ -42,25 +68,8 @@ const loadExercises = async () => {
     if (props.source === 'user') {
       exercises.value = await getUserExercises()
     } else {
-      const catalog = await getExercises()
-      const setReps = new Map<string, number>()
-
-      sets.value
-        .filter(set => !set.deletedAt)
-        .forEach(set => {
-          setReps.set(
-            set.exercise,
-            (setReps.get(set.exercise) ?? 0) + set.reps
-          )
-        })
-
-      exercises.value = catalog
-        .filter(exercise => setReps.has(exercise.id))
-        .sort(
-          (a, b) =>
-            (setReps.get(b.id) ?? 0) -
-            (setReps.get(a.id) ?? 0)
-        )
+      catalog.value = await getExercises()
+      exercises.value = exercisesFromSets()
     }
 
     // Pour une sélection obligatoire, on sélectionne
@@ -129,6 +138,13 @@ const currentExercise = computed(() => {
 
 onMounted(() => {
   loadExercises()
+})
+
+// Les sets arrivent après l'affichage (IndexedDB, puis synchro)
+watch(() => props.sets, () => {
+  if (props.source === 'sets') {
+    exercises.value = exercisesFromSets()
+  }
 })
 </script>
 
