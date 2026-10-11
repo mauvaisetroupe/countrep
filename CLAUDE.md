@@ -19,7 +19,7 @@ cd frontend && npm run dev
 cd frontend && npm run build     # vue-tsc -b && vite build — this is the type check
 
 # backend (Fastify on 0.0.0.0:3000)
-cd backend && npm run dev        # tsx src/server.ts
+cd backend && npm run dev        # tsx watch src/server.ts (restarts on change)
 cd backend && npm run build      # tsc → dist/
 ```
 
