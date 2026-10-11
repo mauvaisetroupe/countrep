@@ -119,7 +119,7 @@ WHERE id IN ('support-hold', 'hollow-body-hold', 'side-plank');
 
 -- 2026-10-11 : exercices aux haltères (programme push / pull / upper)
 INSERT INTO exercises (id, name_en, name_fr, liftmanual_url, unit) VALUES
-('dumbbell-bench-press', 'Dumbbell Bench Press', 'Développé couché haltères', NULL, 'reps'),
+('dumbbell-bench-press', 'Dumbbell Bench Press', 'Développé couché haltères', 'https://liftmanual.com/dumbbell-bench-press/', 'reps'),
 ('dumbbell-shoulder-press', 'Dumbbell Shoulder Press', 'Développé militaire haltères', NULL, 'reps'),
 ('dumbbell-fly', 'Dumbbell Fly', 'Écarté couché haltères', NULL, 'reps'),
 ('dumbbell-lateral-raise', 'Dumbbell Lateral Raise', 'Élévation latérale haltères', NULL, 'reps'),
