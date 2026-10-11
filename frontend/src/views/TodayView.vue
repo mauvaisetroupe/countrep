@@ -140,20 +140,22 @@ loadUserExercises()
        EN-TÊTE
   ========================================================= -->
 
-  <header class="px-5 pt-6 pb-4">
+  <header class="px-5 pt-6 pb-4 flex items-center justify-between gap-3">
     <h1 class="page-title">
-      Entraînement
+      Saisie
     </h1>
 
-    <!-- Mode : un exercice au fil de la journée, ou une séance complète -->
-    <div class="mt-4 grid grid-cols-2 gap-1 rounded-2xl bg-gray-100 p-1">
+    <!-- Mode : un exercice au fil de la journée, ou une séance complète.
+         Compact et à côté du titre : c'est un réglage de la page, à ne pas
+         confondre avec le sélecteur d'exercices juste en dessous. -->
+    <div class="inline-flex gap-0.5 rounded-full border border-amber-200 bg-white p-0.5">
       <button
         v-for="m in modes"
         :key="m.value"
         type="button"
-        class="rounded-xl py-2 text-sm font-semibold transition-all"
+        class="rounded-full px-3 py-1 text-xs font-semibold transition-all"
         :class="exerciseStore.mode === m.value
-          ? 'bg-white text-gray-900 shadow-sm'
+          ? 'bg-amber-500 text-white shadow-sm'
           : 'text-gray-500'"
         @click="exerciseStore.setMode(m.value)"
       >

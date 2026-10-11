@@ -208,7 +208,7 @@ const monthChartData = computed(() => {
   <div class="pb-24">
     <!-- En-tête -->
     <header class="px-5 pt-6 pb-4">
-      <h1 class="page-title">Statistiques</h1>
+      <h1 class="page-title">Stats</h1>
     </header>
 
     <!-- Sélecteur d'exercices -->

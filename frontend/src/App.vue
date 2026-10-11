@@ -53,7 +53,7 @@ function dismissUpdate() {
     <nav
       class="fixed bottom-0 left-0 right-0 bg-[#fdf8f5]/90 backdrop-blur-md border-t border-amber-100/60 px-4 py-3 flex justify-around items-center z-20"
     >
-      <!-- Entraînement -->
+      <!-- Saisie -->
       <router-link
         to="/today"
         :class="[
@@ -64,7 +64,7 @@ function dismissUpdate() {
         ]"
       >
         <span class="text-xl">📅</span>
-        <span class="text-xs">Entraînement</span>
+        <span class="text-xs">Saisie</span>
       </router-link>
 
       <!-- Journal -->
@@ -81,7 +81,7 @@ function dismissUpdate() {
         <span class="text-xs">Journal</span>
       </router-link>
 
-      <!-- Statistiques -->
+      <!-- Stats -->
       <router-link
         to="/stats"
         :class="[
@@ -92,7 +92,7 @@ function dismissUpdate() {
         ]"
       >
         <span class="text-xl">📊</span>
-        <span class="text-xs">Statistiques</span>
+        <span class="text-xs">Stats</span>
       </router-link>
 
       <!-- Réglages -->
