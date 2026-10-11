@@ -160,15 +160,15 @@ loadUserExercises()
     <!-- Mode : un exercice au fil de la journée, ou une séance complète.
          Compact et à côté du titre : c'est un réglage de la page, à ne pas
          confondre avec le sélecteur d'exercices juste en dessous. -->
-    <div class="inline-flex gap-0.5 rounded-full border border-amber-200 bg-white p-0.5">
+    <div class="inline-flex gap-0.5 rounded-xl bg-surface-alt p-1">
       <button
         v-for="m in modes"
         :key="m.value"
         type="button"
-        class="rounded-full px-3 py-1 text-xs font-semibold transition-all"
+        class="rounded-lg px-3 py-1.5 text-xs font-semibold transition-all"
         :class="exerciseStore.mode === m.value
-          ? 'bg-amber-500 text-white shadow-sm'
-          : 'text-gray-500'"
+          ? 'bg-card text-fg shadow-sm'
+          : 'text-fg-secondary'"
         @click="exerciseStore.setMode(m.value)"
       >
         {{ m.label }}
@@ -220,12 +220,12 @@ loadUserExercises()
           BOUTON D'ACTION FLOTTANT (FAB)
       ========================================================= -->
 
-  <div class="fixed bottom-20 right-5 z-10">
+  <div class="fixed bottom-24 right-5 z-10">
     <button
       @click="showModal = true"
-      class="bg-amber-200 text-amber-950 text-sm font-semibold px-5 py-3.5 rounded-full shadow-lg flex items-center gap-2 border border-amber-300/60 active:scale-95 transition-transform"
+      class="bg-primary text-on-primary text-sm font-semibold pl-4 pr-5 py-4 rounded-2xl shadow-lg flex items-center gap-2 active:scale-95 transition-transform"
     >
-      <span>⚡</span> {{ t('addReps.title', { name: selectedExerciseName }) }}
+      <span class="text-xl leading-none">+</span> {{ t('addReps.title', { name: selectedExerciseName }) }}
     </button>
   </div>
 

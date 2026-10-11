@@ -54,19 +54,16 @@ const save = () => {
 </script>
 
 <template>
-  <div class="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
-    <div class="bg-[#fdf8f5] w-full max-w-md rounded-t-[32px] sm:rounded-3xl p-6 shadow-2xl space-y-6 border border-amber-100 animate-in fade-in slide-in-from-bottom duration-200">
+  <div class="fixed inset-0 bg-overlay backdrop-blur-xs flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+    <div class="bg-card w-full max-w-md rounded-t-[32px] sm:rounded-xl p-6 shadow-2xl space-y-6 animate-in fade-in slide-in-from-bottom duration-200">
 
       <!-- En-tête de la modale -->
       <div class="flex justify-between items-center">
-        <div class="flex items-center gap-2.5">
-          <span class="bg-amber-500 text-white p-2 rounded-xl text-sm shadow-sm">⚡</span>
-          <h3 class="text-xl font-bold text-gray-900">
-            {{ t('addReps.title', { name: exerciseName }) }}
-          </h3>
-        </div>
+        <h3 class="text-xl font-bold text-fg">
+          {{ t('addReps.title', { name: exerciseName }) }}
+        </h3>
         <button @click="emit('close')"
-          class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-200/60 text-gray-600 hover:bg-gray-200">
+          class="w-8 h-8 flex items-center justify-center rounded-full bg-surface-alt text-fg-secondary hover:bg-surface-alt">
           ✕
         </button>
       </div>
@@ -76,36 +73,29 @@ const save = () => {
         v-if="imageAvailable"
         :src="`/exercises/${exerciseId}.jpg`"
         :alt="t('addReps.illustration', { name: exerciseName })"
-        class="w-full h-48 object-contain rounded-2xl bg-white border border-amber-100"
+        class="w-full h-48 object-contain rounded-xl bg-surface"
         @error="imageAvailable = false"
       />
 
       <!-- Date sélectionnée -->
-      <div class="text-center text-sm text-gray-500">
+      <div class="text-center text-sm text-fg-secondary">
         {{ date }}
       </div>
 
       <!-- Heure du set -->
-      <div
-        class="relative border-2 border-amber-600/70 rounded-2xl bg-white px-4 py-3 flex items-center gap-3 shadow-xs"
-      >
-        <span class="absolute -top-3 left-4 bg-white px-1.5 text-xs font-semibold text-amber-700">
+      <label class="block">
+        <span class="mb-1.5 block text-xs font-semibold text-fg-secondary">
           {{ t('addReps.time') }}
         </span>
-
-        <span class="text-amber-600">
-          🕐
-        </span>
-
         <input
           type="time"
           v-model="time"
-          class="w-full bg-transparent text-lg font-semibold text-gray-900 focus:outline-none"
+          class="w-full rounded-xl bg-surface-alt px-4 py-3 text-lg font-semibold text-fg outline-none focus:ring-2 focus:ring-primary"
         />
-      </div>
+      </label>
 
       <!-- Question -->
-      <p class="text-sm font-medium text-gray-800 text-center">
+      <p class="text-sm font-medium text-fg text-center">
         <template v-if="isDuration">
           {{ t('addReps.questionSeconds', { name: exerciseName }) }}
         </template>
@@ -115,9 +105,8 @@ const save = () => {
       </p>
 
       <!-- Champ de saisie -->
-      <div class="relative border-2 border-amber-600/70 rounded-2xl bg-white px-4 py-3 flex items-center gap-3 shadow-xs">
-        <span class="absolute -top-3 left-4 bg-white px-1.5 text-xs font-semibold text-amber-700">{{ isDuration ? t('addReps.seconds') : t('addReps.count') }}</span>
-        <span class="text-amber-600">⚡</span>
+      <label class="block">
+        <span class="mb-1.5 block text-xs font-semibold text-fg-secondary">{{ isDuration ? t('addReps.seconds') : t('addReps.count') }}</span>
         <input
           type="number"
           v-model="repsValue"
@@ -125,18 +114,18 @@ const save = () => {
           min="1"
           step="1"
           inputmode="numeric"
-          class="w-full bg-transparent text-lg font-semibold text-gray-900 focus:outline-none placeholder:text-gray-300"
+          class="w-full rounded-xl bg-surface-alt px-4 py-3 text-lg font-semibold text-fg outline-none focus:ring-2 focus:ring-primary placeholder:text-fg-muted"
         />
-      </div>
+      </label>
 
       <!-- Ajout rapide -->
       <div>
-        <span class="text-xs font-semibold text-gray-500 block mb-2">
+        <span class="text-xs font-semibold text-fg-secondary block mb-2">
           {{ t('addReps.quick') }}
         </span>
         <div class="grid grid-cols-4 gap-2">
           <button v-for="n in quickValues" :key="n" @click="addQuick(n)"
-            class="bg-white border border-gray-200/80 hover:border-amber-400 py-2.5 rounded-xl text-sm font-semibold text-gray-700 shadow-2xs active:scale-95 transition-all">
+            class="bg-surface-alt py-2.5 rounded-xl text-sm font-semibold text-fg-secondary active:scale-95 transition-all">
             {{ n }}
           </button>
         </div>
@@ -145,11 +134,11 @@ const save = () => {
       <!-- Boutons de validation -->
       <div class="flex gap-3 pt-2">
         <button @click="emit('close')"
-          class="flex-1 bg-transparent hover:bg-gray-100 text-gray-700 font-semibold py-3.5 rounded-2xl transition-colors">
+          class="flex-1 bg-transparent hover:bg-surface-alt text-fg-secondary font-semibold py-3.5 rounded-xl transition-colors">
           {{ t('common.cancel') }}
         </button>
         <button @click="save"
-          class="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-semibold py-3.5 rounded-2xl shadow-md shadow-amber-200 transition-all active:scale-[0.98]">
+          class="flex-1 bg-primary hover:bg-primary/90 text-on-primary font-semibold py-3.5 rounded-xl shadow-md transition-all active:scale-[0.98]">
           {{ t('common.save') }}
         </button>
       </div>

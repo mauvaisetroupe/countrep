@@ -1,5 +1,111 @@
 @import "tailwindcss";
 
+/* ============================================================
+   THÈME (ADR 0010) : mêmes couleurs que l'application Step Challenge.
+   Les écrans n'écrivent jamais une couleur en dur : ils utilisent ces
+   jetons (bg-surface, text-fg-secondary, bg-primary...), qui changent
+   avec l'apparence claire ou sombre (classe .dark sur <html>, posée par
+   src/appearance.ts).
+   ============================================================ */
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  color-scheme: light;
+
+  /* Fond de l'écran */
+  --background: #FFFFFF;
+  /* Cartes, lignes, éléments de liste */
+  --surface: #F6F7F9;
+  /* Éléments surélevés : fenêtres, segment sélectionné */
+  --card: #FFFFFF;
+  /* Boutons secondaires, champs, fond d'un sélecteur à segments */
+  --surface-alt: #ECEEF1;
+  --line: #E5E7EB;
+  /* Bordures de champs et de boutons en contour */
+  --line-strong: #D1D5DB;
+
+  --fg: #111827;
+  --fg-secondary: #6B7280;
+  --fg-muted: #9CA3AF;
+
+  /* Actions principales, liens, graphiques. Bleu de l'icône : garder en
+     phase avec BACKGROUND dans icons/export-app-icons.py */
+  --primary: #1389FC;
+  /* Texte et icônes sur fond primaire */
+  --on-primary: #FFFFFF;
+  /* Fond clair d'un élément primaire (ligne mise en avant, onglet actif) */
+  --primary-soft: #E8F3FF;
+
+  --danger: #DC2626;
+  --danger-soft: #FEE2E2;
+  --success: #15803D;
+  --success-soft: #DCFCE7;
+  --warning: #B45309;
+  --warning-soft: #FEF3C7;
+
+  /* Fond d'une jauge ou d'une barre de progression */
+  --track: #E5E7EB;
+  /* Fond assombri derrière une fenêtre */
+  --overlay: rgba(0, 0, 0, 0.4);
+}
+
+:root.dark {
+  color-scheme: dark;
+
+  --background: #0B0E13;
+  --surface: #161A21;
+  --card: #232933;
+  --surface-alt: #20252E;
+  --line: #272D37;
+  --line-strong: #3A4250;
+
+  --fg: #F3F4F6;
+  --fg-secondary: #A3ABB8;
+  --fg-muted: #6E7685;
+
+  /* Un peu plus clair que le bleu de l'icône : lisible sur fond sombre */
+  --primary: #3D9DFF;
+  --on-primary: #FFFFFF;
+  --primary-soft: #0F2A4A;
+
+  --danger: #F87171;
+  --danger-soft: #3A1717;
+  --success: #4ADE80;
+  --success-soft: #112E1C;
+  --warning: #FBBF24;
+  --warning-soft: #3A2C0C;
+
+  --track: #272D37;
+  --overlay: rgba(0, 0, 0, 0.6);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-card: var(--card);
+  --color-surface-alt: var(--surface-alt);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-fg: var(--fg);
+  --color-fg-secondary: var(--fg-secondary);
+  --color-fg-muted: var(--fg-muted);
+  --color-primary: var(--primary);
+  --color-on-primary: var(--on-primary);
+  --color-primary-soft: var(--primary-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-track: var(--track);
+  --color-overlay: var(--overlay);
+
+  /* Police système, comme l'application Android (Roboto) */
+  --font-sans: Roboto, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
 /* Respecter les préférences de taille de texte du navigateur / Android */
 html {
   font-size: 100%;
@@ -7,11 +113,10 @@ html {
   text-size-adjust: auto;
 }
 
-/* Fond chaleureux par défaut et anti-flash */
 body {
-  background-color: #fdf8f5;
-  color: #111827;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--background);
+  color: var(--fg);
+  font-family: var(--font-sans);
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -39,5 +144,5 @@ body {
 
 /* Titre de page, identique sur tous les écrans */
 .page-title {
-  @apply text-2xl font-bold tracking-tight text-gray-900;
+  @apply text-[28px] leading-tight font-bold text-fg;
 }

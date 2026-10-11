@@ -324,7 +324,7 @@ onUnmounted(() => {
 
     <div
       v-if="visibleDays.length === 0"
-      class="py-12 text-center text-gray-400"
+      class="py-12 text-center text-fg-muted"
     >
       {{ t('journal.empty') }}
     </div>
@@ -332,7 +332,7 @@ onUnmounted(() => {
     <div
       v-for="day in visibleDays"
       :key="day.date"
-      class="mb-3 overflow-hidden rounded-2xl border border-gray-200/70 bg-white shadow-xs"
+      class="mb-3 overflow-hidden rounded-xl bg-surface"
     >
 
       <!-- Day header -->
@@ -345,13 +345,13 @@ onUnmounted(() => {
 
           <div class="min-w-0 flex-1">
             <div
-              class="text-base font-bold capitalize text-gray-900"
+              class="text-base font-bold capitalize text-fg"
             >
               {{ formatDay(day.date) }}
             </div>
 
             <div
-              class="mt-0.5 text-lg font-bold text-amber-600"
+              class="mt-0.5 text-lg font-bold text-primary"
             >
               {{ dayTotal(day.date) }}
             </div>
@@ -363,7 +363,7 @@ onUnmounted(() => {
             fill="none"
             stroke="currentColor"
             stroke-width="2"
-            class="h-5 w-5 shrink-0 text-gray-400 transition-transform"
+            class="h-5 w-5 shrink-0 text-fg-muted transition-transform"
             :class="{
               'rotate-180': isExpanded(day.date)
             }"
@@ -377,11 +377,11 @@ onUnmounted(() => {
 
         <!-- Garmin summary -->
         <div
-          class="mt-2 flex items-center gap-2 text-sm leading-relaxed text-gray-500"
+          class="mt-2 flex items-center gap-2 text-sm leading-relaxed text-fg-secondary"
           @click.stop
         >
           <span class="min-w-0 flex-1">
-            <span class="font-medium text-gray-600">
+            <span class="font-medium text-fg-secondary">
               Garmin · {{ t('journal.strength') }} ·
               {{ formatGarminDuration(day.date) }}
             </span>
@@ -395,7 +395,7 @@ onUnmounted(() => {
 
           <button
             type="button"
-            class="shrink-0 text-gray-400 transition-colors hover:text-gray-600"
+            class="shrink-0 text-fg-muted transition-colors hover:text-fg-secondary"
             :aria-label="
               copiedGarminDate === day.date
                 ? t('journal.copied')
@@ -405,7 +405,7 @@ onUnmounted(() => {
           >
             <span
               v-if="copiedGarminDate === day.date"
-              class="text-sm font-semibold text-green-600"
+              class="text-sm font-semibold text-success"
             >
               ✓
             </span>
@@ -438,13 +438,13 @@ onUnmounted(() => {
       <!-- Set details -->
       <div
         v-if="isExpanded(day.date)"
-        class="border-t border-gray-100"
+        class="border-t border-line"
       >
 
         <article
           v-for="set in day.sets"
           :key="set.id"
-          class="relative border-b border-gray-100 last:border-b-0"
+          class="relative border-b border-line last:border-b-0"
           :class="{
             'z-40': editingSetId === set.id
           }"
@@ -460,12 +460,12 @@ onUnmounted(() => {
               <input
                 v-model="set.time"
                 type="time"
-                class="w-24 rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-sm text-gray-700 outline-none focus:border-amber-400"
+                class="w-24 rounded-lg border border-transparent bg-surface-alt px-2 py-1.5 text-sm text-fg-secondary outline-none focus:border-primary"
               />
 
               <div class="min-w-0 flex-1">
                 <div
-                  class="truncate font-semibold text-gray-800"
+                  class="truncate font-semibold text-fg"
                 >
                   {{ set.exercise }}
                 </div>
@@ -477,12 +477,12 @@ onUnmounted(() => {
                 min="1"
                 step="1"
                 inputmode="numeric"
-                class="w-20 rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-right text-sm font-semibold text-gray-800 outline-none focus:border-amber-400"
+                class="w-20 rounded-lg bg-surface-alt px-2 py-1.5 text-right text-sm font-semibold text-fg outline-none focus:border-primary"
               />
 
               <span
                 v-if="unitOf(set.exercise) === 'seconds'"
-                class="text-xs font-medium text-gray-400"
+                class="text-xs font-medium text-fg-muted"
               >
                 s
               </span>
@@ -493,7 +493,7 @@ onUnmounted(() => {
 
               <button
                 type="button"
-                class="rounded-lg px-3 py-1.5 text-sm font-medium text-gray-500 hover:bg-gray-100"
+                class="rounded-lg px-3 py-1.5 text-sm font-medium text-fg-secondary hover:bg-surface-alt"
                 @click="cancelEdit"
               >
                 {{ t('common.cancel') }}
@@ -501,7 +501,7 @@ onUnmounted(() => {
 
               <button
                 type="button"
-                class="rounded-lg bg-amber-500 px-3 py-1.5 text-sm font-semibold text-white hover:bg-amber-600"
+                class="rounded-lg bg-primary px-3 py-1.5 text-sm font-semibold text-on-primary hover:bg-primary/90"
                 @click="saveEdit(set)"
               >
                 {{ t('common.save') }}
@@ -516,21 +516,21 @@ onUnmounted(() => {
             class="flex items-center gap-3 px-4 py-2.5"
           >
             <span
-              class="w-12 shrink-0 text-sm font-medium text-gray-400"
+              class="w-12 shrink-0 text-sm font-medium text-fg-muted"
             >
               {{ formatSetTime(set.time) }}
             </span>
 
             <div class="min-w-0 flex-1">
               <div
-                class="truncate font-semibold text-gray-800"
+                class="truncate font-semibold text-fg"
               >
                 {{ set.exercise }}
               </div>
             </div>
 
             <span
-              class="whitespace-nowrap font-bold text-gray-900"
+              class="whitespace-nowrap font-bold text-fg"
             >
               <template v-if="unitOf(set.exercise) === 'seconds'">
                 {{ formatDuration(set.reps) }}
@@ -539,7 +539,7 @@ onUnmounted(() => {
                 {{ set.reps }}
 
                 <span
-                  class="text-xs font-medium text-gray-400"
+                  class="text-xs font-medium text-fg-muted"
                 >
                   reps
                 </span>
@@ -551,7 +551,7 @@ onUnmounted(() => {
 
               <button
                 type="button"
-                class="flex h-8 w-8 items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                class="flex h-8 w-8 items-center justify-center rounded-full text-fg-muted hover:bg-surface-alt hover:text-fg-secondary"
                 :aria-label="t('journal.options')"
                 @click.stop="toggleMenu(set.id)"
               >
@@ -581,12 +581,12 @@ onUnmounted(() => {
 
               <div
                 v-if="openMenuId === set.id"
-                class="absolute right-0 top-9 z-50 w-32 overflow-hidden rounded-xl border border-gray-200 bg-white py-1 shadow-lg"
+                class="absolute right-0 top-9 z-50 w-32 overflow-hidden rounded-xl bg-surface py-1 shadow-lg"
                 @click.stop
               >
                 <button
                   type="button"
-                  class="block w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
+                  class="block w-full px-3 py-2 text-left text-sm text-fg-secondary hover:bg-surface-alt"
                   @click="startEdit(set.id)"
                 >
                   {{ t('journal.edit') }}
@@ -594,7 +594,7 @@ onUnmounted(() => {
 
                 <button
                   type="button"
-                  class="block w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50"
+                  class="block w-full px-3 py-2 text-left text-sm text-danger hover:bg-danger-soft"
                   @click="handleDeleteSet(set)"
                 >
                   {{ t('journal.delete') }}
@@ -612,7 +612,7 @@ onUnmounted(() => {
 
     <div
       v-if="hasMore"
-      class="py-6 text-center text-sm text-gray-400"
+      class="py-6 text-center text-sm text-fg-muted"
     >
       {{ t('common.loading') }}
     </div>

@@ -143,10 +143,10 @@ onMounted(() => {
       type="button"
       @click="handleSelect(ex.id)"
       :class="[
-        'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-base font-medium shadow-xs transition-all',
+        'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-base font-medium transition-all',
         selectedExercise === ex.id
-          ? 'bg-amber-500 text-white shadow-amber-200'
-          : 'bg-white text-gray-700 border border-gray-200/60'
+          ? 'bg-primary text-on-primary'
+          : 'bg-surface-alt text-fg-secondary'
       ]"
     >
       <span>{{ ex.id }}</span>
@@ -155,7 +155,7 @@ onMounted(() => {
     <button
       v-if="hiddenCount > 0"
       type="button"
-      class="px-3 py-1.5 rounded-xl text-base font-medium text-amber-700 border border-dashed border-amber-300 bg-white transition-all"
+      class="px-3 py-1.5 rounded-xl text-base font-medium text-primary border border-dashed border-primary bg-surface transition-all"
       @click="showAll = true"
     >
       +{{ hiddenCount }}
@@ -164,14 +164,14 @@ onMounted(() => {
 
   <p
     v-if="currentExercise"
-    class="px-5 text-base font-medium text-amber-600 mt-0.5"
+    class="px-5 text-base font-medium text-primary mt-0.5"
   >
     {{ exerciseName(currentExercise) }}
   </p>
 
   <p
     v-else-if="!loading && !props.required"
-    class="px-5 text-sm font-medium text-gray-400 mt-0.5"
+    class="px-5 text-sm font-medium text-fg-muted mt-0.5"
   >
     {{ t('selector.all') }}
   </p>
@@ -180,17 +180,17 @@ onMounted(() => {
   <Teleport to="body">
     <div
       v-if="showAll"
-      class="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-xs sm:items-center sm:p-4"
+      class="fixed inset-0 z-50 flex items-end justify-center bg-overlay backdrop-blur-xs sm:items-center sm:p-4"
       @click.self="showAll = false"
     >
-      <div class="w-full max-w-md max-h-[80dvh] flex flex-col rounded-t-[32px] border border-amber-100 bg-[#fdf8f5] p-6 shadow-2xl sm:rounded-3xl">
+      <div class="w-full max-w-md max-h-[80dvh] flex flex-col rounded-t-[32px] bg-card p-6 shadow-2xl sm:rounded-xl">
         <div class="flex items-center justify-between gap-3">
-          <h3 class="text-lg font-bold text-gray-900">
+          <h3 class="text-lg font-bold text-fg">
             {{ t('selector.title') }}
           </h3>
           <button
             type="button"
-            class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-200/60 text-gray-600"
+            class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface-alt text-fg-secondary"
             :aria-label="t('common.close')"
             @click="showAll = false"
           >
@@ -206,10 +206,10 @@ onMounted(() => {
             :title="exerciseName(ex)"
             @click="selectFromAll(ex.id)"
             :class="[
-              'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-base font-medium shadow-xs transition-all',
+              'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-base font-medium transition-all',
               selectedExercise === ex.id
-                ? 'bg-amber-500 text-white shadow-amber-200'
-                : 'bg-white text-gray-700 border border-gray-200/60'
+                ? 'bg-primary text-on-primary'
+                : 'bg-surface-alt text-fg-secondary'
             ]"
           >
             <span>{{ ex.id }}</span>

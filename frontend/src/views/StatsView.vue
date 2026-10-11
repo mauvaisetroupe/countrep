@@ -242,15 +242,15 @@ const monthChartData = computed(() => {
     <main class="px-5 mt-4 space-y-4">
       
       <!-- Carte Graphique "30 derniers jours" -->
-      <section class="bg-amber-50/40 border border-amber-100/80 rounded-3xl p-5 shadow-xs space-y-4">
+      <section class="bg-surface rounded-xl p-5 space-y-4">
         <div class="flex items-center gap-2">
-          <h2 class="text-lg font-bold text-gray-800">{{ t('stats.last30') }}</h2>
+          <h2 class="text-lg font-bold text-fg">{{ t('stats.last30') }}</h2>
         </div>
 
         <div class="flex gap-2">
 
           <!-- Axe Y -->
-          <div class="h-28 flex flex-col justify-between text-[10px] text-gray-400 text-right">
+          <div class="h-28 flex flex-col justify-between text-[10px] text-fg-muted text-right">
             <span
               v-for="tick in [...monthChartData.ticks].reverse()"
               :key="tick"
@@ -266,7 +266,7 @@ const monthChartData = computed(() => {
             <div
               v-for="tick in monthChartData.ticks"
               :key="`line-${tick}`"
-              class="absolute left-0 right-0 border-t border-amber-100/70"
+              class="absolute left-0 right-0 border-t border-line"
               :style="{
                 bottom: `${(tick / monthChartData.max) * 100}%`
               }"
@@ -284,8 +284,8 @@ const monthChartData = computed(() => {
                   :class="[
                     'w-full rounded-t-[2px] transition-all duration-300',
                     item.reps > 0
-                      ? 'bg-amber-500'
-                      : 'bg-amber-200/40'
+                      ? 'bg-primary'
+                      : 'bg-track'
                   ]"
                   :style="{
                     height: item.reps > 0
@@ -301,44 +301,44 @@ const monthChartData = computed(() => {
       </section>
 
       <!-- Cartes Périodes -->
-      <section class="bg-amber-50/40 border border-amber-100/80 rounded-3xl p-5 shadow-xs space-y-4">
-        <h2 class="text-lg font-bold text-gray-800">{{ t('stats.week') }}</h2>
+      <section class="bg-surface rounded-xl p-5 space-y-4">
+        <h2 class="text-lg font-bold text-fg">{{ t('stats.week') }}</h2>
         <div class="space-y-2 text-sm">
-          <div class="flex justify-between text-gray-600"><span>{{ t('preview.total') }}</span><span class="font-bold text-gray-900">{{ weekStats.total }}</span></div>
-          <div class="flex justify-between text-gray-600"><span>{{ t('stats.activeDays') }}</span><span class="font-bold text-gray-900">{{ weekStats.activeDays }}</span></div>
-          <div class="flex justify-between text-gray-600"><span>{{ t('stats.average') }}</span><span class="font-bold text-gray-900">{{ weekStats.average }}</span></div>
+          <div class="flex justify-between text-fg-secondary"><span>{{ t('preview.total') }}</span><span class="font-bold text-fg">{{ weekStats.total }}</span></div>
+          <div class="flex justify-between text-fg-secondary"><span>{{ t('stats.activeDays') }}</span><span class="font-bold text-fg">{{ weekStats.activeDays }}</span></div>
+          <div class="flex justify-between text-fg-secondary"><span>{{ t('stats.average') }}</span><span class="font-bold text-fg">{{ weekStats.average }}</span></div>
         </div>
       </section>
 
-      <section class="bg-amber-50/40 border border-amber-100/80 rounded-3xl p-5 shadow-xs space-y-4">
-        <h2 class="text-lg font-bold text-gray-800">{{ t('stats.month') }}</h2>
+      <section class="bg-surface rounded-xl p-5 space-y-4">
+        <h2 class="text-lg font-bold text-fg">{{ t('stats.month') }}</h2>
         <div class="space-y-2 text-sm">
-          <div class="flex justify-between text-gray-600"><span>{{ t('preview.total') }}</span><span class="font-bold text-gray-900">{{ monthStats.total }}</span></div>
-          <div class="flex justify-between text-gray-600"><span>{{ t('stats.activeDays') }}</span><span class="font-bold text-gray-900">{{ monthStats.activeDays }}</span></div>
-          <div class="flex justify-between text-gray-600"><span>{{ t('stats.average') }}</span><span class="font-bold text-gray-900">{{ monthStats.average }}</span></div>
+          <div class="flex justify-between text-fg-secondary"><span>{{ t('preview.total') }}</span><span class="font-bold text-fg">{{ monthStats.total }}</span></div>
+          <div class="flex justify-between text-fg-secondary"><span>{{ t('stats.activeDays') }}</span><span class="font-bold text-fg">{{ monthStats.activeDays }}</span></div>
+          <div class="flex justify-between text-fg-secondary"><span>{{ t('stats.average') }}</span><span class="font-bold text-fg">{{ monthStats.average }}</span></div>
         </div>
       </section>
 
-      <section class="bg-amber-50/40 border border-amber-100/80 rounded-3xl p-5 shadow-xs space-y-4">
-        <h2 class="text-lg font-bold text-gray-800">{{ t('stats.year') }}</h2>
+      <section class="bg-surface rounded-xl p-5 space-y-4">
+        <h2 class="text-lg font-bold text-fg">{{ t('stats.year') }}</h2>
         <div class="space-y-2 text-sm">
-          <div class="flex justify-between text-gray-600"><span>{{ t('preview.total') }}</span><span class="font-bold text-gray-900">{{ yearStats.total }}</span></div>
-          <div class="flex justify-between text-gray-600"><span>{{ t('stats.activeDays') }}</span><span class="font-bold text-gray-900">{{ yearStats.activeDays }}</span></div>
-          <div class="flex justify-between text-gray-600"><span>{{ t('stats.average') }}</span><span class="font-bold text-gray-900">{{ yearStats.average }}</span></div>
+          <div class="flex justify-between text-fg-secondary"><span>{{ t('preview.total') }}</span><span class="font-bold text-fg">{{ yearStats.total }}</span></div>
+          <div class="flex justify-between text-fg-secondary"><span>{{ t('stats.activeDays') }}</span><span class="font-bold text-fg">{{ yearStats.activeDays }}</span></div>
+          <div class="flex justify-between text-fg-secondary"><span>{{ t('stats.average') }}</span><span class="font-bold text-fg">{{ yearStats.average }}</span></div>
         </div>
       </section>
 
       <!-- Carte Résumé Global -->
-      <section class="bg-amber-50/40 border border-amber-100/80 rounded-3xl p-5 shadow-xs space-y-3">
+      <section class="bg-surface rounded-xl p-5 space-y-3">
         <div class="flex justify-between items-center">
-          <span class="text-gray-600 font-medium">
+          <span class="text-fg-secondary font-medium">
             {{ selectedExercise ? t('stats.totalOf', { exercise: selectedExercise }) : t('stats.totalAll') }}
           </span>
-          <span class="text-xl font-bold text-gray-900">{{ totalRepsAllTime }}</span>
+          <span class="text-xl font-bold text-fg">{{ totalRepsAllTime }}</span>
         </div>
-        <div class="flex justify-between items-center border-t border-amber-100/60 pt-3">
-          <span class="text-gray-600 font-medium">{{ t('stats.longestStreak') }}</span>
-          <span class="text-lg font-bold text-gray-900">{{ t('stats.days', longestStreak) }}</span>
+        <div class="flex justify-between items-center border-t border-line pt-3">
+          <span class="text-fg-secondary font-medium">{{ t('stats.longestStreak') }}</span>
+          <span class="text-lg font-bold text-fg">{{ t('stats.days', longestStreak) }}</span>
         </div>
       </section>     
 

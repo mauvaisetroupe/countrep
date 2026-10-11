@@ -26,7 +26,7 @@ const options = computed<{ value: LocalePreference, label: string, hint?: string
 </script>
 
 <template>
-  <div class="min-h-screen bg-[#fdf8f5] pb-28 px-5 pt-6">
+  <div class="min-h-screen bg-background pb-28 px-5 pt-6">
 
     <SettingsHeader :title="t('settings.language.title')" />
 
@@ -34,7 +34,7 @@ const options = computed<{ value: LocalePreference, label: string, hint?: string
       <div
         role="radiogroup"
         :aria-label="t('settings.language.title')"
-        class="bg-white border border-gray-200/80 rounded-3xl shadow-xs divide-y divide-gray-100 overflow-hidden"
+        class="bg-surface rounded-xl divide-y divide-line overflow-hidden"
       >
         <button
           v-for="option in options"
@@ -42,25 +42,25 @@ const options = computed<{ value: LocalePreference, label: string, hint?: string
           type="button"
           role="radio"
           :aria-checked="localePreference === option.value"
-          class="flex w-full items-center gap-3 px-5 py-4 text-left active:bg-amber-50 transition-colors"
+          class="flex w-full items-center gap-3 px-5 py-4 text-left active:bg-primary-soft transition-colors"
           @click="setLocalePreference(option.value)"
         >
           <div class="min-w-0 flex-1">
-            <p class="text-sm font-semibold text-gray-800">
+            <p class="text-sm font-semibold text-fg">
               {{ option.label }}
             </p>
-            <p v-if="option.hint" class="text-xs text-gray-500 truncate">
+            <p v-if="option.hint" class="text-xs text-fg-secondary truncate">
               {{ option.hint }}
             </p>
           </div>
 
           <span
             class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2"
-            :class="localePreference === option.value ? 'border-amber-500' : 'border-gray-300'"
+            :class="localePreference === option.value ? 'border-primary' : 'border-line-strong'"
           >
             <span
               v-if="localePreference === option.value"
-              class="h-2.5 w-2.5 rounded-full bg-amber-500"
+              class="h-2.5 w-2.5 rounded-full bg-primary"
             />
           </span>
         </button>

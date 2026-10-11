@@ -152,21 +152,21 @@ onMounted(async () => {
 <template>
   <div class="px-3 space-y-4">
 
-    <p v-if="loading" class="px-2 text-sm text-gray-500">
+    <p v-if="loading" class="px-2 text-sm text-fg-secondary">
       {{ t('workouts.loading') }}
     </p>
 
     <!-- Aucune séance -->
     <div
       v-else-if="!current && workouts.length === 0"
-      class="mx-2 rounded-3xl border border-dashed border-gray-200 bg-white px-5 py-6 text-center"
+      class="mx-2 rounded-xl border border-dashed border-line bg-surface px-5 py-6 text-center"
     >
-      <p class="text-sm font-medium text-gray-700">
+      <p class="text-sm font-medium text-fg-secondary">
         {{ t('session.none') }}
       </p>
       <router-link
         to="/settings/workouts/new"
-        class="mt-3 inline-block text-sm font-semibold text-amber-600"
+        class="mt-3 inline-block text-sm font-semibold text-primary"
       >
         {{ t('session.create') }}
       </router-link>
@@ -176,7 +176,7 @@ onMounted(async () => {
     <button
       v-else-if="preview"
       type="button"
-      class="mx-2 flex w-[calc(100%-1rem)] items-center justify-between gap-3 rounded-3xl bg-amber-500 px-5 py-4 text-left text-white shadow-md shadow-amber-200 active:scale-[0.98] transition-transform"
+      class="mx-2 flex w-[calc(100%-1rem)] items-center justify-between gap-3 rounded-xl bg-primary px-5 py-4 text-left text-on-primary shadow-md active:scale-[0.98] transition-transform"
       @click="minimized = false"
     >
       <div class="min-w-0">
@@ -191,7 +191,7 @@ onMounted(async () => {
     <!-- Choix de la séance, avant de commencer -->
     <template v-else>
 
-      <p v-if="offline" class="px-2 text-xs text-gray-400">
+      <p v-if="offline" class="px-2 text-xs text-fg-muted">
         {{ t('session.offline') }}
       </p>
 
@@ -201,10 +201,10 @@ onMounted(async () => {
         :key="w.id"
         role="button"
         tabindex="0"
-        class="block bg-white rounded-3xl p-5 shadow-xs border transition-colors"
+        class="block bg-surface rounded-xl p-5 transition-colors"
         :class="w.id === current?.id
-          ? 'border-amber-400 ring-2 ring-amber-200'
-          : 'border-gray-200/80 active:bg-amber-50'"
+          ? 'ring-2 ring-primary'
+          : 'active:bg-surface-alt'"
         @click="exerciseStore.setWorkout(w.id)"
       >
         <WorkoutCard :workout="w" />
@@ -212,7 +212,7 @@ onMounted(async () => {
         <button
           v-if="w.id === current?.id"
           type="button"
-          class="mt-4 w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold py-3.5 rounded-2xl shadow-md shadow-amber-200 transition-all active:scale-[0.98]"
+          class="mt-4 w-full bg-primary hover:bg-primary/90 text-on-primary font-semibold py-3.5 rounded-xl shadow-md transition-all active:scale-[0.98]"
           @click.stop="startSession"
         >
           {{ t('session.start') }}
@@ -228,24 +228,24 @@ onMounted(async () => {
     <Teleport to="body">
       <div
         v-if="fullscreen && current"
-        class="fixed inset-0 z-40 flex flex-col bg-[#fdf8f5] pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]"
+        class="fixed inset-0 z-40 flex flex-col bg-background pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]"
       >
         <!-- En-tête -->
         <header class="flex items-center gap-3 px-4 pt-4 pb-3">
           <button
             type="button"
-            class="shrink-0 text-sm font-medium text-amber-600"
+            class="shrink-0 text-sm font-medium text-primary"
             @click="minimized = true"
           >
             {{ t('session.minimize') }}
           </button>
 
           <div class="min-w-0 flex-1 text-center">
-            <p class="text-base font-bold text-gray-900 truncate">{{ current.name }}</p>
-            <p class="text-xs text-gray-500">{{ sessionDate }}</p>
+            <p class="text-base font-bold text-fg truncate">{{ current.name }}</p>
+            <p class="text-xs text-fg-secondary">{{ sessionDate }}</p>
           </div>
 
-          <span class="shrink-0 rounded-full bg-white border border-gray-200 px-3 py-1 text-sm font-bold text-gray-800">
+          <span class="shrink-0 rounded-full bg-surface-alt px-3 py-1 text-sm font-bold text-fg">
             {{ completedRounds }}/{{ current.rounds }}
           </span>
         </header>
@@ -267,22 +267,22 @@ onMounted(async () => {
         </div>
 
         <!-- Actions -->
-        <footer class="space-y-2 border-t border-gray-200/70 bg-white/80 px-4 pt-3 pb-4">
+        <footer class="space-y-2 border-t border-line bg-surface/80 px-4 pt-3 pb-4">
           <div class="flex items-center gap-3">
             <div class="flex items-center gap-1.5">
               <button
                 type="button"
-                class="h-10 w-10 rounded-full border border-gray-200 bg-white text-lg font-semibold text-gray-700 disabled:opacity-30"
+                class="h-10 w-10 rounded-full bg-surface-alt text-lg font-semibold text-fg-secondary disabled:opacity-30"
                 :disabled="roundsToAdd <= 1"
                 :aria-label="t('session.lessRounds')"
                 @click="changeRoundsToAdd(-1)"
               >
                 −
               </button>
-              <span class="w-7 text-center text-lg font-bold text-gray-900">{{ roundsToAdd }}</span>
+              <span class="w-7 text-center text-lg font-bold text-fg">{{ roundsToAdd }}</span>
               <button
                 type="button"
-                class="h-10 w-10 rounded-full border border-gray-200 bg-white text-lg font-semibold text-gray-700"
+                class="h-10 w-10 rounded-full bg-surface-alt text-lg font-semibold text-fg-secondary"
                 :aria-label="t('session.moreRounds')"
                 @click="changeRoundsToAdd(1)"
               >
@@ -292,7 +292,7 @@ onMounted(async () => {
 
             <button
               type="button"
-              class="flex-1 bg-white border border-amber-400 text-amber-800 text-sm font-semibold py-3 rounded-2xl transition-all active:scale-[0.98]"
+              class="flex-1 bg-primary-soft text-primary text-sm font-semibold py-3 rounded-xl transition-all active:scale-[0.98]"
               @click="addRounds"
             >
               {{ t('session.addRounds', roundsToAdd) }}
@@ -302,7 +302,7 @@ onMounted(async () => {
           <div class="flex gap-2">
             <button
               type="button"
-              class="shrink-0 bg-gray-100 hover:bg-gray-200 text-red-600 font-semibold px-4 py-3.5 rounded-2xl transition-colors"
+              class="shrink-0 bg-surface-alt hover:bg-surface-alt text-danger font-semibold px-4 py-3.5 rounded-xl transition-colors"
               @click="abandon"
             >
               {{ t('session.abandon') }}
@@ -311,7 +311,7 @@ onMounted(async () => {
             <button
               type="button"
               :disabled="!preview || preview.entries.length === 0"
-              class="flex-1 bg-amber-500 hover:bg-amber-600 disabled:bg-gray-300 disabled:shadow-none text-white font-semibold py-3.5 rounded-2xl shadow-md shadow-amber-200 transition-all active:scale-[0.98]"
+              class="flex-1 bg-primary hover:bg-primary/90 disabled:bg-surface-alt disabled:text-fg-muted disabled:shadow-none text-on-primary font-semibold py-3.5 rounded-xl shadow-md transition-all active:scale-[0.98]"
               @click="router.push('/preview')"
             >
               {{ t('session.finish') }}

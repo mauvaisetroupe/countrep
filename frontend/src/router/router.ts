@@ -7,6 +7,7 @@ import SettingsAccountView from '../views/SettingsAccountView.vue'
 import SettingsExercisesView from '../views/SettingsExercisesView.vue'
 import SettingsWorkoutsView from '../views/SettingsWorkoutsView.vue'
 import SettingsLanguageView from '../views/SettingsLanguageView.vue'
+import SettingsAppearanceView from '../views/SettingsAppearanceView.vue'
 import SettingsWorkoutEditView from '../views/SettingsWorkoutEditView.vue'
 import LoginView from '../views/LoginView.vue'
 import JournalView from '../views/JournalView.vue'
@@ -22,6 +23,7 @@ const routes: Array<RouteRecordRaw> = [
   { path: '/settings', name: 'settings', component: SettingsView, meta: { requiresAuth: true } },
   { path: '/settings/account', name: 'settings-account', component: SettingsAccountView, meta: { requiresAuth: true } },
   { path: '/settings/exercises', name: 'settings-exercises', component: SettingsExercisesView, meta: { requiresAuth: true } },
+  { path: '/settings/appearance', name: 'settings-appearance', component: SettingsAppearanceView, meta: { requiresAuth: true } },
   { path: '/settings/language', name: 'settings-language', component: SettingsLanguageView, meta: { requiresAuth: true } },
   { path: '/settings/workouts', name: 'settings-workouts', component: SettingsWorkoutsView, meta: { requiresAuth: true } },
   { path: '/settings/workouts/new', name: 'settings-workout-new', component: SettingsWorkoutEditView, meta: { requiresAuth: true } },

@@ -32,13 +32,13 @@ const perRound = computed(() => ({
 <template>
   <div>
     <div class="flex items-center justify-between gap-3">
-      <p class="text-base font-semibold text-gray-800 truncate">
+      <p class="text-base font-semibold text-fg truncate">
         {{ workout.name }}
       </p>
       <slot name="trailing" />
     </div>
 
-    <p class="mt-1 text-xs text-gray-500">
+    <p class="mt-1 text-xs text-fg-secondary">
       {{ t('workoutCard.rounds', workout.rounds) }}
       · {{ t('workoutCard.exercises', workout.exercises.length) }}
       · {{ t('workoutCard.perRound', { total: formatTotals(perRound) }) }}
@@ -48,7 +48,7 @@ const perRound = computed(() => ({
       <span
         v-for="(exercise, index) in workout.exercises"
         :key="index"
-        class="rounded-full bg-amber-50 border border-amber-200 px-2.5 py-1 text-xs text-amber-800"
+        class="rounded-full bg-primary-soft px-2.5 py-1 text-xs text-primary"
       >
         <template v-if="exercise.unit === 'seconds'">
           {{ exerciseName(exercise) }} {{ formatDuration(exercise.reps) }}

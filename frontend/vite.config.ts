@@ -29,26 +29,22 @@ export default defineConfig({
         short_name: 'CountRep',
         description: 'Track your daily repetitions',
 
-        theme_color: '#fdf8f5',
-        background_color: '#fdf8f5',
+        // Écran de démarrage Android : fond bleu et icône (ADR 0010).
+        // La barre d'état suit ensuite le thème (meta theme-color).
+        theme_color: '#1389FC',
+        background_color: '#1389FC',
 
         display: 'standalone',
         start_url: '/',
         scope: '/',
 
+        // Générées par icons/export-app-icons.py depuis le SVG maître
         icons: [
-          {
-            src: '/launchericon-192x192.png',
-            sizes: '192x192',
-            type: 'image/png',
-            purpose: 'any'
-          },
-          {
-            src: '/launchericon-512x512.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'any'
-          }
+          { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+          { src: '/icons/maskable-192.png', sizes: '192x192', type: 'image/png', purpose: 'maskable' },
+          { src: '/icons/maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+          { src: '/icons/monochrome-512.png', sizes: '512x512', type: 'image/png', purpose: 'monochrome' }
         ]
       }
     })

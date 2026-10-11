@@ -1,73 +1,69 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { appearancePreference } from '../appearance'
+import { localePreference } from '../i18n'
 
 const { t } = useI18n()
 const gitHash = __GIT_HASH__
 
-// Entrées du menu des réglages : une sous-page chacune
-const items = computed(() => [
+// Menu des réglages, comme Step Challenge : des groupes d'entrées, chacune
+// avec sa sous-page et un détail (la valeur actuelle quand il y en a une)
+const groups = computed(() => [
   {
-    to: '/settings/exercises',
-    icon: '🏋️',
-    title: t('settings.exercises.title'),
-    description: t('settings.exercises.description')
+    title: t('settings.groups.training'),
+    entries: [
+      { to: '/settings/exercises', title: t('settings.exercises.title'), detail: t('settings.exercises.description') },
+      { to: '/settings/workouts', title: t('settings.workouts.title'), detail: t('settings.workouts.description') }
+    ]
   },
   {
-    to: '/settings/workouts',
-    icon: '📋',
-    title: t('settings.workouts.title'),
-    description: t('settings.workouts.description')
-  },
-  {
-    to: '/settings/language',
-    icon: '🌐',
-    title: t('settings.language.title'),
-    description: t('settings.language.description')
-  },
-  {
-    to: '/settings/account',
-    icon: '🔒',
-    title: t('settings.account.title'),
-    description: t('settings.account.description')
+    title: t('settings.groups.general'),
+    entries: [
+      { to: '/settings/account', title: t('settings.account.title'), detail: t('settings.account.description') },
+      { to: '/settings/appearance', title: t('settings.appearance.title'), detail: t(`settings.appearance.${appearancePreference.value}`) },
+      { to: '/settings/language', title: t('settings.language.title'), detail: t(`settings.language.${localePreference.value}`) }
+    ]
   }
 ])
 </script>
 
 <template>
-  <div class="min-h-screen bg-[#fdf8f5] pb-28 px-5 pt-6">
+  <div class="min-h-screen bg-background pb-28 px-5 pt-6">
 
     <h1 class="page-title">
       {{ t('nav.settings') }}
     </h1>
 
-    <main class="mt-6">
+    <main class="mt-6 space-y-6">
 
-      <nav class="bg-white border border-gray-200/80 rounded-3xl shadow-xs divide-y divide-gray-100 overflow-hidden">
-        <router-link
-          v-for="item in items"
-          :key="item.to"
-          :to="item.to"
-          class="flex items-center gap-3 px-5 py-4 active:bg-amber-50 transition-colors"
-        >
-          <div class="w-10 h-10 shrink-0 rounded-full bg-amber-100 flex items-center justify-center">
-            {{ item.icon }}
-          </div>
+      <section v-for="group in groups" :key="group.title">
+        <h2 class="px-1 pb-2 text-xs font-semibold uppercase tracking-wide text-fg-secondary">
+          {{ group.title }}
+        </h2>
 
-          <div class="min-w-0 flex-1">
-            <p class="text-sm font-semibold text-gray-800">
-              {{ item.title }}
-            </p>
-            <p class="text-xs text-gray-500 truncate">
-              {{ item.description }}
-            </p>
-          </div>
+        <nav class="bg-surface rounded-xl divide-y divide-line overflow-hidden">
+          <router-link
+            v-for="entry in group.entries"
+            :key="entry.to"
+            :to="entry.to"
+            class="flex items-center gap-3 px-4 py-3.5 active:bg-surface-alt transition-colors"
+          >
+            <div class="min-w-0 flex-1">
+              <p class="text-[15px] font-semibold text-fg">
+                {{ entry.title }}
+              </p>
+              <p class="text-[13px] text-fg-secondary truncate">
+                {{ entry.detail }}
+              </p>
+            </div>
 
-          <span class="text-xl text-gray-300">›</span>
-        </router-link>
-      </nav>
+            <span class="text-xl text-fg-muted">›</span>
+          </router-link>
+        </nav>
+      </section>
 
-      <div class="mt-8 text-center text-xs text-gray-400">
+      <div class="text-center text-xs text-fg-muted">
         {{ t('settings.build', { hash: gitHash }) }}
       </div>
 

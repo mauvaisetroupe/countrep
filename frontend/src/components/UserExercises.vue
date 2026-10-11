@@ -190,11 +190,11 @@ onMounted(() => {
   <section>
     <div class="flex items-start justify-between gap-3">
       <div>
-        <p class="text-sm font-semibold text-gray-800">
+        <p class="text-sm font-semibold text-fg">
           {{ t('settings.exercises.title') }}
         </p>
 
-        <p class="mt-1 text-xs text-gray-500">
+        <p class="mt-1 text-xs text-fg-secondary">
           {{ t('exercises.intro', { max: MAX_EXERCISES }) }}
         </p>
       </div>
@@ -203,8 +203,8 @@ onMounted(() => {
         class="shrink-0 rounded-full px-3 py-1 text-xs font-semibold"
         :class="
           selectedCount === MAX_EXERCISES
-            ? 'bg-gray-800 text-white'
-            : 'bg-gray-100 text-gray-600'
+            ? 'bg-fg text-background'
+            : 'bg-surface-alt text-fg-secondary'
         "
       >
         {{ selectedCount }} / {{ MAX_EXERCISES }}
@@ -225,27 +225,27 @@ onMounted(() => {
       <div
         v-for="(exerciseId, index) in selectedExerciseIds"
         :key="exerciseId"
-        class="flex w-full items-center gap-3 rounded-2xl border px-4 py-3 bg-amber-50 border-amber-400"
+        class="flex w-full items-center gap-3 rounded-xl px-4 py-3 bg-background"
       >
         <div
-          class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-500 text-xs font-bold text-white"
+          class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-on-primary"
         >
           {{ index + 1 }}
         </div>
 
         <div class="min-w-0 flex-1">
-          <p class="text-sm font-medium text-gray-800">
+          <p class="text-sm font-medium text-fg">
             {{ exerciseName(exerciseById(exerciseId)) || exerciseId }}
           </p>
 
           <div class="mt-0.5 flex items-center gap-2">
-            <p class="text-xs text-gray-400">
+            <p class="text-xs text-fg-muted">
               {{ exerciseAltName(exerciseById(exerciseId)) }}
             </p>
 
             <span
               v-if="getSetCount(exerciseId) > 0"
-              class="text-[10px] font-semibold text-amber-600"
+              class="text-[10px] font-semibold text-primary"
             >
               {{ t('exercises.setCount', getSetCount(exerciseId)) }}
             </span>
@@ -254,7 +254,7 @@ onMounted(() => {
 
         <button
           type="button"
-          class="shrink-0 text-gray-400 hover:text-red-500 text-lg"
+          class="shrink-0 text-fg-muted hover:text-danger text-lg"
           :aria-label="t('exercises.remove')"
           @click.stop="toggleExercise(exerciseId)"
         >
@@ -263,7 +263,7 @@ onMounted(() => {
 
         <button
           type="button"
-          class="drag-handle shrink-0 text-gray-300 hover:text-gray-500 text-xl leading-none touch-none select-none cursor-grab active:cursor-grabbing"
+          class="drag-handle shrink-0 text-fg-muted hover:text-fg-secondary text-xl leading-none touch-none select-none cursor-grab active:cursor-grabbing"
           :aria-label="t('exercises.move')"
         >
           ⋮⋮⋮
@@ -271,14 +271,14 @@ onMounted(() => {
       </div>
       </VueDraggable>
 
-      <p class="pt-1 text-xs text-gray-400 text-center">
+      <p class="pt-1 text-xs text-fg-muted text-center">
         {{ t('exercises.dragHint') }}
       </p>
 
       <button
         type="button"
         :disabled="!hasChanges || saving"
-        class="mt-4 w-full bg-amber-500 hover:bg-amber-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-2xl transition-all"
+        class="mt-4 w-full bg-primary hover:bg-primary/90 disabled:bg-surface-alt disabled:text-fg-muted disabled:cursor-not-allowed text-on-primary font-semibold py-3 rounded-xl transition-all"
         @click="saveExercises"
       >
         {{ saving ? t('common.saving') : t('common.save') }}
@@ -286,7 +286,7 @@ onMounted(() => {
 
       <p
         v-if="saveMessage"
-        class="mt-2 text-center text-sm text-green-600"
+        class="mt-2 text-center text-sm text-success"
       >
         {{ saveMessage }}
       </p>
@@ -295,13 +295,13 @@ onMounted(() => {
     <!-- Aucun exercice -->
     <div
       v-else
-      class="mt-4 rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-4 py-5 text-center"
+      class="mt-4 rounded-xl border border-dashed border-line bg-surface px-4 py-5 text-center"
     >
-      <p class="text-sm font-medium text-gray-600">
+      <p class="text-sm font-medium text-fg-secondary">
         {{ t('exercises.noneSelected') }}
       </p>
 
-      <p class="mt-1 text-xs text-gray-400">
+      <p class="mt-1 text-xs text-fg-muted">
         {{ t('exercises.addBelow') }}
       </p>
     </div>
@@ -310,7 +310,7 @@ onMounted(() => {
     <div class="mt-5">
       <button
         type="button"
-        class="w-full flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-all"
+        class="w-full flex items-center justify-center gap-2 rounded-xl bg-surface-alt px-4 py-3 text-sm font-semibold text-fg-secondary hover:bg-line transition-all"
         @click="toggleExercisePicker"
       >
         <span class="text-lg leading-none">
@@ -328,7 +328,7 @@ onMounted(() => {
     >
       <div class="relative">
         <span
-          class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+          class="absolute left-3 top-1/2 -translate-y-1/2 text-fg-muted"
         >
           🔎
         </span>
@@ -337,27 +337,27 @@ onMounted(() => {
           v-model="searchQuery"
           type="search"
           :placeholder="t('exercises.search')"
-          class="w-full bg-white border border-gray-200 rounded-2xl pl-10 pr-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+          class="w-full bg-surface-alt border border-transparent rounded-xl pl-10 pr-4 py-3 text-sm text-fg focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-soft"
         />
       </div>
 
       <p
         v-if="loading"
-        class="mt-4 text-sm text-gray-500"
+        class="mt-4 text-sm text-fg-secondary"
       >
         {{ t('exercises.loading') }}
       </p>
 
       <p
         v-else-if="error"
-        class="mt-4 text-sm text-red-600"
+        class="mt-4 text-sm text-danger"
       >
         {{ error }}
       </p>
 
       <p
         v-else-if="filteredExercises.length === 0"
-        class="mt-4 text-sm text-gray-500 text-center"
+        class="mt-4 text-sm text-fg-secondary text-center"
       >
         {{ t('exercises.notFound') }}
       </p>
@@ -374,27 +374,27 @@ onMounted(() => {
             !isSelected(exercise.id) &&
             selectedCount >= MAX_EXERCISES
           "
-          class="flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left transition-all"
+          class="flex w-full items-center justify-between rounded-xl px-4 py-3 text-left transition-all"
           :class="
             isSelected(exercise.id)
-              ? 'border-amber-400 bg-amber-50'
-              : 'border-gray-200 bg-white'
+              ? 'bg-primary-soft'
+              : 'bg-background'
           "
           @click="toggleExercise(exercise.id)"
         >
           <div class="min-w-0">
-            <p class="text-sm font-medium text-gray-800">
+            <p class="text-sm font-medium text-fg">
               {{ exerciseName(exercise) }}
             </p>
 
             <div class="mt-0.5">
-              <p class="text-xs text-gray-400">
+              <p class="text-xs text-fg-muted">
                 {{ exerciseAltName(exercise) }}
               </p>
 
               <span
                 v-if="getSetCount(exercise.id) > 0"
-                class="text-[10px] font-semibold text-amber-600"
+                class="text-[10px] font-semibold text-primary"
               >
                 {{ t('exercises.setCount', getSetCount(exercise.id)) }}
               </span>
@@ -404,7 +404,7 @@ onMounted(() => {
                 :href="exercise.liftmanualUrl"
                 target="_blank"
                 rel="noopener noreferrer"
-                class="block mt-1 text-xs font-semibold text-amber-600 hover:text-amber-700"
+                class="block mt-1 text-xs font-semibold text-primary hover:text-primary"
                 :title="t('exercises.guideTitle')"
                 @click.stop
               >
@@ -417,8 +417,8 @@ onMounted(() => {
             class="ml-3 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border"
             :class="
               isSelected(exercise.id)
-                ? 'border-amber-500 bg-amber-500 text-white'
-                : 'border-gray-300 bg-white'
+                ? 'border-primary bg-primary text-on-primary'
+                : 'border-line-strong bg-surface'
             "
           >
             <svg
@@ -440,7 +440,7 @@ onMounted(() => {
 
       <p
         v-if="selectedCount === MAX_EXERCISES"
-        class="mt-3 text-xs text-gray-500"
+        class="mt-3 text-xs text-fg-secondary"
       >
         {{ t('exercises.maxReached', { max: MAX_EXERCISES }) }}
       </p>

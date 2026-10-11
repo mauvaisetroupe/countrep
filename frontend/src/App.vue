@@ -5,11 +5,22 @@ import { useI18n } from 'vue-i18n'
 import { needRefresh, updateSW } from './composables/usePwaUpdate'
 import { useAuthStore } from './stores/auth'
 import { ensureFreshToken } from './services/session'
+import NavIcon from './components/NavIcon.vue'
 
 const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
+
+const tabs = [
+  { to: '/today', icon: 'log', label: 'nav.log' },
+  { to: '/journal', icon: 'journal', label: 'nav.journal' },
+  { to: '/stats', icon: 'stats', label: 'nav.stats' },
+  { to: '/settings', icon: 'settings', label: 'nav.settings' }
+] as const
+
+// Les sous-pages des réglages gardent l'onglet Réglages actif
+const isActive = (to: string) => route.path === to || route.path.startsWith(`${to}/`)
 
 // Session refusée par le serveur (401) pendant l'utilisation :
 // retour à la connexion, les données locales sont conservées.
@@ -49,66 +60,33 @@ function dismissUpdate() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-[#fdf8f5] text-gray-900 pb-28 font-sans select-none">
+  <div class="min-h-screen bg-background text-fg pb-28 font-sans select-none">
     <router-view />
 
+    <!-- Barre de navigation Material 3, comme Step Challenge : pastille
+         derrière l'icône de l'onglet actif -->
     <nav
-      class="fixed bottom-0 left-0 right-0 bg-[#fdf8f5]/90 backdrop-blur-md border-t border-amber-100/60 px-4 py-3 flex justify-around items-center z-20"
+      v-if="route.name !== 'login'"
+      class="fixed bottom-0 left-0 right-0 z-20 flex justify-around border-t border-line bg-background pt-3 pb-[max(env(safe-area-inset-bottom),0.75rem)]"
     >
-      <!-- Saisie -->
       <router-link
-        to="/today"
-        :class="[
-          'flex flex-col items-center gap-1 transition-colors',
-          route.name === 'today'
-            ? 'text-amber-600 font-bold'
-            : 'text-gray-400'
-        ]"
+        v-for="tab in tabs"
+        :key="tab.to"
+        :to="tab.to"
+        class="flex min-w-16 flex-col items-center gap-1"
       >
-        <span class="text-xl">📅</span>
-        <span class="text-xs">{{ t('nav.log') }}</span>
-      </router-link>
-
-      <!-- Journal -->
-      <router-link
-        to="/journal"
-        :class="[
-          'flex flex-col items-center gap-1 transition-colors',
-          route.name === 'journal'
-            ? 'text-amber-600 font-bold'
-            : 'text-gray-400'
-        ]"
-      >
-        <span class="text-xl">📋</span>
-        <span class="text-xs">{{ t('nav.journal') }}</span>
-      </router-link>
-
-      <!-- Stats -->
-      <router-link
-        to="/stats"
-        :class="[
-          'flex flex-col items-center gap-1 transition-colors',
-          route.name === 'stats'
-            ? 'text-amber-600 font-bold'
-            : 'text-gray-400'
-        ]"
-      >
-        <span class="text-xl">📊</span>
-        <span class="text-xs">{{ t('nav.stats') }}</span>
-      </router-link>
-
-      <!-- Réglages -->
-      <router-link
-        to="/settings"
-        :class="[
-          'flex flex-col items-center gap-1 transition-colors',
-          route.path.startsWith('/settings')
-            ? 'text-amber-600 font-bold'
-            : 'text-gray-400'
-        ]"
-      >
-        <span class="text-xl">⚙️</span>
-        <span class="text-xs">{{ t('nav.settings') }}</span>
+        <span
+          class="flex h-8 w-16 items-center justify-center rounded-full transition-colors"
+          :class="isActive(tab.to) ? 'bg-primary-soft text-primary' : 'text-fg-secondary'"
+        >
+          <NavIcon :name="tab.icon" class="h-6 w-6" />
+        </span>
+        <span
+          class="text-xs"
+          :class="isActive(tab.to) ? 'font-semibold text-primary' : 'font-medium text-fg-secondary'"
+        >
+          {{ t(tab.label) }}
+        </span>
       </router-link>
     </nav>
 
@@ -119,7 +97,7 @@ function dismissUpdate() {
         class="fixed bottom-24 left-4 right-4 z-50"
       >
         <div
-          class="mx-auto max-w-md rounded-2xl bg-white border border-amber-100 shadow-lg p-4"
+          class="mx-auto max-w-md rounded-xl bg-surface shadow-lg p-4"
         >
           <div class="flex items-start gap-3">
             <div class="text-2xl">
@@ -127,18 +105,18 @@ function dismissUpdate() {
             </div>
 
             <div class="flex-1">
-              <div class="font-semibold text-gray-900">
+              <div class="font-semibold text-fg">
                 {{ t('update.title') }}
               </div>
 
-              <div class="text-sm text-gray-500 mt-1">
+              <div class="text-sm text-fg-secondary mt-1">
                 {{ t('update.body') }}
               </div>
 
               <div class="flex gap-2 mt-3">
                 <button
                   type="button"
-                  class="flex-1 rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-white active:scale-95 transition-transform"
+                  class="flex-1 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-on-primary active:scale-95 transition-transform"
                   @click="updateApp"
                 >
                   {{ t('update.apply') }}
@@ -146,7 +124,7 @@ function dismissUpdate() {
 
                 <button
                   type="button"
-                  class="rounded-xl px-4 py-2 text-sm font-medium text-gray-500 hover:bg-gray-100 active:scale-95 transition-transform"
+                  class="rounded-xl px-4 py-2 text-sm font-medium text-fg-secondary hover:bg-surface-alt active:scale-95 transition-transform"
                   @click="dismissUpdate"
                 >
                   {{ t('update.later') }}

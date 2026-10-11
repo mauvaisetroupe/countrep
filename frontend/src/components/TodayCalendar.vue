@@ -388,7 +388,7 @@ const isToday = (
 
 <template>
   <section
-    class="bg-amber-50/40 border border-amber-100/80 rounded-3xl p-2 shadow-xs"
+    class="bg-surface rounded-xl p-2"
   >
 
     <!-- EN-TÊTE DU CALENDRIER -->
@@ -397,7 +397,7 @@ const isToday = (
       class="flex justify-between items-center mb-4 min-h-[32px]"
     >
       <h2
-        class="text-base sm:text-lg font-bold capitalize text-gray-800 truncate pr-2"
+        class="text-base sm:text-lg font-bold capitalize text-fg truncate pr-2"
       >
         {{ currentMonth }}
       </h2>
@@ -411,15 +411,11 @@ const isToday = (
           @click="prevMonth"
           :disabled="currentCarouselIndex === 0"
           class="group w-9 h-9 flex items-center justify-center rounded-xl
-                 border border-amber-200/80
-                 bg-white/70
-                 text-gray-500
-                 shadow-sm
+                 bg-surface-alt
+                 text-fg-secondary
                  transition-all duration-200
-                 hover:border-amber-300
-                 hover:bg-amber-100/70
-                 hover:text-amber-700
-                 hover:shadow
+                 hover:bg-primary-soft
+                 hover:text-primary
                  active:scale-95
                  disabled:opacity-30
                  disabled:pointer-events-none"
@@ -446,15 +442,11 @@ const isToday = (
           type="button"
           @click="goToToday"
           class="px-3 h-9 flex items-center justify-center rounded-xl
-                 border border-amber-200/80
-                 bg-white/70
-                 text-xs font-semibold text-gray-600
-                 shadow-sm
+                 bg-surface-alt
+                 text-xs font-semibold text-fg-secondary
                  transition-all duration-200
-                 hover:border-amber-300
-                 hover:bg-amber-100/70
-                 hover:text-amber-700
-                 hover:shadow
+                 hover:bg-primary-soft
+                 hover:text-primary
                  active:scale-95
                  whitespace-nowrap"
         >
@@ -470,15 +462,11 @@ const isToday = (
             currentCarouselIndex === months.length - 1
           "
           class="group w-9 h-9 flex items-center justify-center rounded-xl
-                 border border-amber-200/80
-                 bg-white/70
-                 text-gray-500
-                 shadow-sm
+                 bg-surface-alt
+                 text-fg-secondary
                  transition-all duration-200
-                 hover:border-amber-300
-                 hover:bg-amber-100/70
-                 hover:text-amber-700
-                 hover:shadow
+                 hover:bg-primary-soft
+                 hover:text-primary
                  active:scale-95
                  disabled:opacity-30
                  disabled:pointer-events-none"
@@ -523,7 +511,7 @@ const isToday = (
           =================================================== -->
 
           <div
-            class="grid grid-cols-7 text-center text-xs font-semibold text-gray-400 mb-2"
+            class="grid grid-cols-7 text-center text-xs font-semibold text-fg-muted mb-2"
           >
             <span
               v-for="day in daysOfWeek"
@@ -578,16 +566,16 @@ const isToday = (
                       month.monthIndex,
                       day
                     )
-                      ? 'bg-amber-600 text-white font-bold shadow-sm'
+                      ? 'bg-primary text-on-primary font-bold shadow-sm'
 
                       : isToday(
                           month.year,
                           month.monthIndex,
                           day
                         )
-                        ? 'border border-amber-600 text-gray-900'
+                        ? 'border border-primary text-fg'
 
-                        : 'text-gray-700 hover:bg-amber-100/50'
+                        : 'text-fg-secondary hover:bg-primary-soft'
                   ]"
                 >
                   {{ day }}
@@ -596,7 +584,7 @@ const isToday = (
                 <!-- Répétitions -->
 
                 <span
-                  class="h-[14px] text-xs font-bold text-amber-600 leading-[14px] mt-0.5"
+                  class="h-[14px] text-xs font-bold text-primary leading-[14px] mt-0.5"
                 >
                   {{
                     formatDayTotal(

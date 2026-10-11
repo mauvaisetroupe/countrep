@@ -1,10 +1,27 @@
 <!doctype html>
-<html lang="en">
+<html lang="fr">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>countrep</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <!-- Mis à jour par src/appearance.ts selon le thème -->
+    <meta name="theme-color" content="#FFFFFF" />
+    <link rel="icon" type="image/svg+xml" href="/icons/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="48x48" href="/icons/favicon-48.png" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <title>CountRep</title>
+    <script>
+      // Thème appliqué avant le premier affichage (même règle que
+      // src/appearance.ts) : pas de flash blanc en mode sombre.
+      try {
+        var preference = localStorage.getItem('countrep.appearance')
+        var dark = preference === 'dark' ||
+          (preference !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches)
+        if (dark) {
+          document.documentElement.classList.add('dark')
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0B0E13')
+        }
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="app"></div>

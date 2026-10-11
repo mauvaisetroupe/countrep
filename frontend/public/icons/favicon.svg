@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  CountRep — icône de l'application (premier plan), SVG maître.
+
+  Source de toutes les icônes (PWA, favicon, future app Android) :
+  la modifier dans Inkscape, puis lancer `python3 icons/export-app-icons.py`.
+
+  - Canevas 1024 x 1024, transparent : la couleur de fond (#1389FC) est
+    ajoutée par le script d'export.
+  - Garder le dessin dans le calque « Zone de sécurité » (masqué ; l'afficher
+    dans le panneau Calques) : les lanceurs Android découpent l'icône en
+    cercle, squircle ou carré arrondi, et seul ce cercle central est
+    toujours visible.
+  - Le dessin est en traits blancs (Fond et contour → Style du contour →
+    Épaisseur) : quatre bâtons de comptage barrés.
+-->
+<svg xmlns="http://www.w3.org/2000/svg"
+     xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+     width="1024" height="1024" viewBox="0 0 1024 1024"><rect width="1024" height="1024" fill="#1389FC"/><g transform="translate(512,512) scale(1.4) translate(-512,-512)">
+  <g inkscape:groupmode="layer" id="layer-foreground" inkscape:label="Icône"
+     style="fill:none;stroke:#ffffff;stroke-width:60;stroke-linecap:round;stroke-linejoin:round">
+    <g id="tally" inkscape:label="Bâtons">
+      <path id="stroke-1" d="M 368,340 V 684" />
+      <path id="stroke-2" d="M 464,340 V 684" />
+      <path id="stroke-3" d="M 560,340 V 684" />
+      <path id="stroke-4" d="M 656,340 V 684" />
+    </g>
+    <path id="slash" inkscape:label="Barre" d="M 296,628 L 728,396" />
+  </g>
+  <g inkscape:groupmode="layer" id="layer-safe-zone" inkscape:label="Zone de sécurité" style="display:none">
+    <circle cx="512" cy="512" r="312.9" style="fill:none;stroke:#ff3b30;stroke-width:4;stroke-dasharray:16,12" />
+  </g>
+</g></svg>

@@ -61,7 +61,7 @@ const decodedToken = computed(() => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-[#fdf8f5] pb-28 px-5 pt-6">
+  <div class="min-h-screen bg-background pb-28 px-5 pt-6">
 
     <SettingsHeader :title="t('settings.account.title')" />
 
@@ -71,13 +71,13 @@ const decodedToken = computed(() => {
            PROFIL ACTIF (CONNECTÉ)
       ====================================================== -->
 
-      <section class="bg-white border border-gray-200/80 rounded-3xl p-5 shadow-xs">
+      <section class="bg-surface rounded-xl p-5">
 
         <div class="flex items-center gap-3">
 
           <!-- Avatar -->
           <div
-            class="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center"
+            class="w-10 h-10 rounded-full bg-primary-soft flex items-center justify-center"
           >
             🔒
           </div>
@@ -85,27 +85,27 @@ const decodedToken = computed(() => {
           <!-- Informations -->
           <div class="min-w-0">
 
-            <p class="text-sm font-semibold text-gray-800">
+            <p class="text-sm font-semibold text-fg">
               {{ t('account.sessionActive') }}
             </p>
 
-            <p class="text-xs text-gray-500 font-mono truncate">
+            <p class="text-xs text-fg-secondary font-mono truncate">
               {{ t('account.jwt') }}
             </p>
 
-            <p class="text-sm font-semibold text-gray-800">
+            <p class="text-sm font-semibold text-fg">
               Raw Token
             </p>
 
-            <p class="text-xs text-gray-500 font-mono truncate">
+            <p class="text-xs text-fg-secondary font-mono truncate">
               {{ authStore.token }}
             </p>
 
-            <p class="text-sm font-semibold text-gray-800">
+            <p class="text-sm font-semibold text-fg">
               Decoded Token
             </p>
 
-            <p class="text-xs text-gray-500 font-mono">
+            <p class="text-xs text-fg-secondary font-mono">
               {{ JSON.stringify(decodedToken, null, 2) }}
             </p>
 
@@ -113,19 +113,19 @@ const decodedToken = computed(() => {
         </div>
 
         <!-- Ajouter un appareil -->
-        <div class="mt-5 pt-4 border-t border-gray-100">
+        <div class="mt-5 pt-4 border-t border-line">
 
-          <p class="text-sm font-semibold text-gray-800">
+          <p class="text-sm font-semibold text-fg">
             {{ t('account.addDeviceTitle') }}
           </p>
 
-          <p class="mt-1 text-xs text-gray-500">
+          <p class="mt-1 text-xs text-fg-secondary">
             {{ t('account.addDeviceHint') }}
           </p>
 
           <p
             v-if="deviceMessage"
-            class="mt-3 text-sm text-green-600"
+            class="mt-3 text-sm text-success"
           >
             {{ deviceMessage }}
           </p>
@@ -133,7 +133,7 @@ const decodedToken = computed(() => {
           <button
             @click="handleAddDevice"
             :disabled="deviceLoading"
-            class="mt-3 w-full bg-amber-500 hover:bg-amber-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-2xl transition-all"
+            class="mt-3 w-full bg-primary hover:bg-primary/90 disabled:bg-surface-alt disabled:text-fg-muted disabled:cursor-not-allowed text-on-primary font-semibold py-3 rounded-xl transition-all"
           >
             {{ deviceLoading ? t('common.wait') : t('account.addDevice') }}
           </button>
@@ -143,7 +143,7 @@ const decodedToken = computed(() => {
         <!-- Erreur -->
         <p
           v-if="error"
-          class="mt-3 text-sm text-red-600"
+          class="mt-3 text-sm text-danger"
         >
           {{ error }}
         </p>
@@ -151,7 +151,7 @@ const decodedToken = computed(() => {
         <!-- Déconnexion / Changer de profil -->
         <button
           @click="logout"
-          class="mt-4 w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 rounded-2xl transition-colors"
+          class="mt-4 w-full bg-surface-alt hover:bg-surface-alt text-fg-secondary font-semibold py-3 rounded-xl transition-colors"
         >
           {{ t('account.logout') }}
         </button>

@@ -15,6 +15,10 @@ const messages: typeof fr = {
     "later": "Later"
   },
   "settings": {
+    "groups": {
+      "training": "Training",
+      "general": "General"
+    },
     "build": "Build: {hash}",
     "exercises": {
       "title": "Daily exercises",
@@ -23,6 +27,14 @@ const messages: typeof fr = {
     "workouts": {
       "title": "My workouts",
       "description": "Sequences of exercises over several rounds"
+    },
+    "appearance": {
+      "title": "Appearance",
+      "description": "Light, dark or like the phone",
+      "system": "System",
+      "systemHint": "Follows the phone setting",
+      "light": "Light",
+      "dark": "Dark"
     },
     "language": {
       "title": "Language",

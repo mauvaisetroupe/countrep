@@ -13,6 +13,10 @@ const messages = {
     "later": "Plus tard"
   },
   "settings": {
+    "groups": {
+      "training": "Entraînement",
+      "general": "Général"
+    },
     "build": "Build : {hash}",
     "exercises": {
       "title": "Exercices au quotidien",
@@ -21,6 +25,14 @@ const messages = {
     "workouts": {
       "title": "Mes séances",
       "description": "Enchaînements d’exercices sur plusieurs séries"
+    },
+    "appearance": {
+      "title": "Apparence",
+      "description": "Clair, sombre ou comme le téléphone",
+      "system": "Système",
+      "systemHint": "Suit le réglage du téléphone",
+      "light": "Clair",
+      "dark": "Sombre"
     },
     "language": {
       "title": "Langue",

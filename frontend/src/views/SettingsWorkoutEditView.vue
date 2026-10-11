@@ -217,7 +217,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-[#fdf8f5] pb-28 px-5 pt-6">
+  <div class="min-h-screen bg-background pb-28 px-5 pt-6">
 
     <SettingsHeader
       :title="isNew ? t('workouts.new') : t('editWorkout.title')"
@@ -227,15 +227,15 @@ onMounted(async () => {
 
     <main class="mt-6 space-y-4">
 
-      <p v-if="loading" class="text-sm text-gray-500">
+      <p v-if="loading" class="text-sm text-fg-secondary">
         {{ t('common.loading') }}
       </p>
 
       <template v-else>
 
         <!-- Nom -->
-        <section class="bg-white border border-gray-200/80 rounded-3xl p-5 shadow-xs">
-          <label for="workout-name" class="text-xs font-semibold text-gray-500 block mb-2">
+        <section class="bg-surface rounded-xl p-5">
+          <label for="workout-name" class="text-xs font-semibold text-fg-secondary block mb-2">
             {{ t('editWorkout.name') }}
           </label>
           <input
@@ -244,16 +244,16 @@ onMounted(async () => {
             type="text"
             maxlength="100"
             :placeholder="t('editWorkout.namePlaceholder')"
-            class="w-full bg-white border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+            class="w-full bg-surface-alt border border-transparent rounded-xl px-4 py-3 text-sm text-fg focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-soft"
           />
         </section>
 
         <!-- Exercices -->
-        <section class="bg-white border border-gray-200/80 rounded-3xl p-5 shadow-xs">
-          <p class="text-sm font-semibold text-gray-800">
+        <section class="bg-surface rounded-xl p-5">
+          <p class="text-sm font-semibold text-fg">
             {{ t('selector.title') }}
           </p>
-          <p class="mt-1 text-xs text-gray-500">
+          <p class="mt-1 text-xs text-fg-secondary">
             {{ t('editWorkout.exercisesHint') }}
           </p>
 
@@ -266,19 +266,19 @@ onMounted(async () => {
             <div
               v-for="(exercise, index) in exercises"
               :key="exercise.key"
-              class="flex items-center gap-2 rounded-2xl border border-amber-400 bg-amber-50 px-3 py-2.5"
+              class="flex items-center gap-2 rounded-xl bg-background px-3 py-2.5"
             >
-              <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-500 text-xs font-bold text-white">
+              <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-on-primary">
                 {{ index + 1 }}
               </div>
 
-              <p class="min-w-0 flex-1 text-sm font-medium text-gray-800 truncate">
+              <p class="min-w-0 flex-1 text-sm font-medium text-fg truncate">
                 {{ exerciseName(exercise.exerciseId) }}
               </p>
 
               <button
                 type="button"
-                class="shrink-0 rounded-full border border-amber-300 bg-white px-3 py-1.5 text-sm font-semibold text-amber-800 active:scale-95 transition-transform"
+                class="shrink-0 rounded-full bg-primary-soft px-3 py-1.5 text-sm font-semibold text-primary active:scale-95 transition-transform"
                 :aria-label="t('editWorkout.repsOf', { name: exerciseName(exercise.exerciseId) })"
                 @click="repsEditKey = exercise.key"
               >
@@ -287,7 +287,7 @@ onMounted(async () => {
 
               <button
                 type="button"
-                class="shrink-0 text-lg text-gray-400 hover:text-red-500"
+                class="shrink-0 text-lg text-fg-muted hover:text-danger"
                 :aria-label="t('exercises.remove')"
                 @click="removeExercise(index)"
               >
@@ -296,7 +296,7 @@ onMounted(async () => {
 
               <button
                 type="button"
-                class="drag-handle shrink-0 text-gray-300 hover:text-gray-500 text-xl leading-none touch-none select-none cursor-grab active:cursor-grabbing"
+                class="drag-handle shrink-0 text-fg-muted hover:text-fg-secondary text-xl leading-none touch-none select-none cursor-grab active:cursor-grabbing"
                 :aria-label="t('exercises.move')"
               >
                 ⋮⋮⋮
@@ -306,7 +306,7 @@ onMounted(async () => {
 
             <p
               v-if="exercises.length > 1"
-              class="pt-1 text-xs text-gray-400 text-center"
+              class="pt-1 text-xs text-fg-muted text-center"
             >
               {{ t('exercises.dragHint') }}
             </p>
@@ -314,16 +314,16 @@ onMounted(async () => {
 
           <div
             v-else
-            class="mt-4 rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-4 py-5 text-center"
+            class="mt-4 rounded-xl border border-dashed border-line bg-surface px-4 py-5 text-center"
           >
-            <p class="text-sm font-medium text-gray-600">
+            <p class="text-sm font-medium text-fg-secondary">
               {{ t('editWorkout.noExercise') }}
             </p>
           </div>
 
           <button
             type="button"
-            class="mt-4 w-full flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-all"
+            class="mt-4 w-full flex items-center justify-center gap-2 rounded-xl bg-surface-alt px-4 py-3 text-sm font-semibold text-fg-secondary hover:bg-line transition-all"
             @click="showPicker = !showPicker; searchQuery = ''"
           >
             <span class="text-lg leading-none">{{ showPicker ? '×' : '+' }}</span>
@@ -332,18 +332,18 @@ onMounted(async () => {
 
           <div v-if="showPicker" class="mt-4">
             <div class="relative">
-              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔎</span>
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-fg-muted">🔎</span>
               <input
                 v-model="searchQuery"
                 type="search"
                 :placeholder="t('exercises.search')"
-                class="w-full bg-white border border-gray-200 rounded-2xl pl-10 pr-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+                class="w-full bg-surface-alt border border-transparent rounded-xl pl-10 pr-4 py-3 text-sm text-fg focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-soft"
               />
             </div>
 
             <p
               v-if="filteredCatalog.length === 0"
-              class="mt-4 text-sm text-gray-500 text-center"
+              class="mt-4 text-sm text-fg-secondary text-center"
             >
               {{ t('exercises.notFound') }}
             </p>
@@ -353,27 +353,27 @@ onMounted(async () => {
                 v-for="exercise in filteredCatalog"
                 :key="exercise.id"
                 type="button"
-                class="flex w-full items-center justify-between rounded-2xl border border-gray-200 bg-white px-4 py-3 text-left transition-all active:bg-amber-50"
+                class="flex w-full items-center justify-between rounded-xl bg-background px-4 py-3 text-left transition-all active:bg-primary-soft"
                 @click="addExercise(exercise.id)"
               >
                 <div class="min-w-0">
-                  <p class="text-sm font-medium text-gray-800">{{ localizedName(exercise) }}</p>
-                  <p class="text-xs text-gray-400">{{ exerciseAltName(exercise) }}</p>
+                  <p class="text-sm font-medium text-fg">{{ localizedName(exercise) }}</p>
+                  <p class="text-xs text-fg-muted">{{ exerciseAltName(exercise) }}</p>
                 </div>
-                <span class="ml-3 text-lg text-amber-500">+</span>
+                <span class="ml-3 text-lg text-primary">+</span>
               </button>
             </div>
           </div>
         </section>
 
         <!-- Séries -->
-        <section class="bg-white border border-gray-200/80 rounded-3xl p-5 shadow-xs">
+        <section class="bg-surface rounded-xl p-5">
           <div class="flex items-center justify-between gap-3">
             <div>
-              <p class="text-sm font-semibold text-gray-800">
+              <p class="text-sm font-semibold text-fg">
                 {{ t('editWorkout.rounds') }}
               </p>
-              <p class="mt-1 text-xs text-gray-500">
+              <p class="mt-1 text-xs text-fg-secondary">
                 {{ t('editWorkout.roundsHint') }}
               </p>
             </div>
@@ -381,17 +381,17 @@ onMounted(async () => {
             <div class="flex items-center gap-2">
               <button
                 type="button"
-                class="h-9 w-9 rounded-full border border-gray-200 bg-white text-lg font-semibold text-gray-700 disabled:opacity-30"
+                class="h-9 w-9 rounded-full bg-surface-alt text-lg font-semibold text-fg-secondary disabled:opacity-30"
                 :disabled="rounds <= 1"
                 :aria-label="t('session.lessRounds')"
                 @click="changeRounds(-1)"
               >
                 −
               </button>
-              <span class="w-8 text-center text-lg font-bold text-gray-900">{{ rounds }}</span>
+              <span class="w-8 text-center text-lg font-bold text-fg">{{ rounds }}</span>
               <button
                 type="button"
-                class="h-9 w-9 rounded-full border border-gray-200 bg-white text-lg font-semibold text-gray-700 disabled:opacity-30"
+                class="h-9 w-9 rounded-full bg-surface-alt text-lg font-semibold text-fg-secondary disabled:opacity-30"
                 :disabled="rounds >= MAX_ROUNDS"
                 :aria-label="t('session.moreRounds')"
                 @click="changeRounds(1)"
@@ -401,20 +401,20 @@ onMounted(async () => {
             </div>
           </div>
 
-          <p v-if="exercises.length > 0" class="mt-4 text-xs text-gray-500">
+          <p v-if="exercises.length > 0" class="mt-4 text-xs text-fg-secondary">
             {{ t('workoutCard.perRound', { total: formatTotals(perRound) }) }} ·
             {{ t('editWorkout.inTotal', { total: formatTotals({ reps: perRound.reps * rounds, seconds: perRound.seconds * rounds }) }) }}
           </p>
         </section>
 
-        <p v-if="error" class="text-sm text-red-600">
+        <p v-if="error" class="text-sm text-danger">
           {{ error }}
         </p>
 
         <button
           type="button"
           :disabled="!canSave"
-          class="w-full bg-amber-500 hover:bg-amber-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-3.5 rounded-2xl shadow-md shadow-amber-200 transition-all active:scale-[0.98]"
+          class="w-full bg-primary hover:bg-primary/90 disabled:bg-surface-alt disabled:text-fg-muted disabled:cursor-not-allowed text-on-primary font-semibold py-3.5 rounded-xl shadow-md transition-all active:scale-[0.98]"
           @click="save"
         >
           {{ saving ? t('common.saving') : t('common.save') }}
@@ -424,7 +424,7 @@ onMounted(async () => {
           v-if="!isNew"
           type="button"
           :disabled="saving"
-          class="w-full bg-gray-100 hover:bg-gray-200 text-red-600 font-semibold py-3 rounded-2xl transition-colors"
+          class="w-full bg-surface-alt hover:bg-surface-alt text-danger font-semibold py-3 rounded-xl transition-colors"
           @click="remove"
         >
           {{ t('editWorkout.delete') }}

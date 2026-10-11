@@ -97,12 +97,12 @@ onMounted(load)
 </script>
 
 <template>
-  <div class="min-h-screen bg-[#fdf8f5] pb-28 px-5 pt-6">
+  <div class="min-h-screen bg-background pb-28 px-5 pt-6">
 
     <header>
       <router-link
         to="/today"
-        class="inline-flex items-center gap-1 text-sm font-medium text-amber-600"
+        class="inline-flex items-center gap-1 text-sm font-medium text-primary"
       >
         <span class="text-lg leading-none">‹</span>
         {{ t('preview.continue') }}
@@ -112,7 +112,7 @@ onMounted(load)
         {{ t('preview.title') }}
       </h1>
 
-      <p v-if="preview" class="mt-1 text-sm text-gray-500">
+      <p v-if="preview" class="mt-1 text-sm text-fg-secondary">
         {{ preview.workout.name }} · {{ preview.date }}
       </p>
     </header>
@@ -121,12 +121,12 @@ onMounted(load)
 
       <div
         v-if="loaded && !preview"
-        class="rounded-2xl border border-dashed border-gray-200 bg-white px-4 py-6 text-center"
+        class="rounded-xl border border-dashed border-line bg-surface px-4 py-6 text-center"
       >
-        <p class="text-sm font-medium text-gray-600">
+        <p class="text-sm font-medium text-fg-secondary">
           {{ t('preview.none') }}
         </p>
-        <router-link to="/today" class="mt-3 inline-block text-sm font-semibold text-amber-600">
+        <router-link to="/today" class="mt-3 inline-block text-sm font-semibold text-primary">
           {{ t('preview.backHome') }}
         </router-link>
       </div>
@@ -137,15 +137,15 @@ onMounted(load)
         <section
           v-for="(row, round) in grid"
           :key="round"
-          class="bg-white border border-gray-200/80 rounded-3xl p-4 shadow-xs"
+          class="bg-surface rounded-xl p-4"
         >
           <div class="flex items-center justify-between px-1">
-            <p class="text-sm font-semibold text-gray-800">
+            <p class="text-sm font-semibold text-fg">
               {{ t('preview.round', { round: round + 1 }) }}
             </p>
             <button
               type="button"
-              class="text-xs font-medium text-red-500"
+              class="text-xs font-medium text-danger"
               @click="confirmRemoveRound(round)"
             >
               {{ t('preview.removeRound') }}
@@ -156,12 +156,12 @@ onMounted(load)
             <div
               v-for="(entry, position) in row"
               :key="position"
-              class="flex items-center gap-2 rounded-2xl px-3 py-2"
-              :class="entry ? 'bg-amber-50' : 'bg-gray-50'"
+              class="flex items-center gap-2 rounded-xl px-3 py-2"
+              :class="entry ? 'bg-primary-soft' : 'bg-surface'"
             >
               <p
                 class="min-w-0 flex-1 text-sm truncate"
-                :class="entry ? 'font-medium text-gray-800' : 'text-gray-400'"
+                :class="entry ? 'font-medium text-fg' : 'text-fg-muted'"
               >
                 {{ exerciseName(preview.workout.exercises[position]) }}
               </p>
@@ -174,15 +174,15 @@ onMounted(load)
                   step="1"
                   inputmode="numeric"
                   :aria-label="unitAt(position) === 'seconds' ? t('addReps.seconds') : t('preview.reps')"
-                  class="w-16 rounded-lg border bg-white px-2 py-1.5 text-right text-sm font-semibold text-gray-800 outline-none focus:border-amber-400"
-                  :class="isValidReps(repsText(entry.id, entry.reps)) ? 'border-gray-200' : 'border-red-400'"
+                  class="w-16 rounded-lg border bg-surface px-2 py-1.5 text-right text-sm font-semibold text-fg outline-none focus:border-primary"
+                  :class="isValidReps(repsText(entry.id, entry.reps)) ? 'border-line' : 'border-danger'"
                   @input="onRepsInput(entry.id, ($event.target as HTMLInputElement).value)"
                   @change="onRepsChange(entry.id)"
                 />
-                <span class="text-xs text-gray-500">{{ unitLabel(unitAt(position)) }}</span>
+                <span class="text-xs text-fg-secondary">{{ unitLabel(unitAt(position)) }}</span>
                 <button
                   type="button"
-                  class="shrink-0 text-lg text-gray-400 hover:text-red-500"
+                  class="shrink-0 text-lg text-fg-muted hover:text-danger"
                   :aria-label="t('preview.removeEntry')"
                   @click="removeEntry(entry.id)"
                 >
@@ -190,14 +190,14 @@ onMounted(load)
                 </button>
               </template>
 
-              <span v-else class="text-xs text-gray-400">{{ t('preview.notDone') }}</span>
+              <span v-else class="text-xs text-fg-muted">{{ t('preview.notDone') }}</span>
             </div>
           </div>
         </section>
 
         <p
           v-if="grid.length === 0"
-          class="text-sm text-gray-500 text-center"
+          class="text-sm text-fg-secondary text-center"
         >
           {{ t('preview.empty') }}
         </p>
@@ -205,34 +205,34 @@ onMounted(load)
         <!-- Totaux -->
         <section
           v-if="grid.length > 0"
-          class="bg-white border border-gray-200/80 rounded-3xl p-4 shadow-xs"
+          class="bg-surface rounded-xl p-4"
         >
-          <p class="px-1 text-sm font-semibold text-gray-800">
+          <p class="px-1 text-sm font-semibold text-fg">
             {{ t('preview.total') }}
           </p>
-          <div class="mt-2 divide-y divide-gray-100">
+          <div class="mt-2 divide-y divide-line">
             <div
               v-for="(total, position) in totals"
               :key="position"
               class="flex items-center justify-between px-1 py-2 text-sm"
             >
-              <span class="text-gray-700 truncate">{{ total.name }}</span>
-              <span class="shrink-0 font-semibold text-gray-900">
+              <span class="text-fg-secondary truncate">{{ total.name }}</span>
+              <span class="shrink-0 font-semibold text-fg">
                 {{ formatAmount(total.reps, total.unit) }}
-                <span class="font-normal text-gray-500">({{ t('workoutCard.rounds', total.rounds) }})</span>
+                <span class="font-normal text-fg-secondary">({{ t('workoutCard.rounds', total.rounds) }})</span>
               </span>
             </div>
           </div>
         </section>
 
-        <p v-if="hasInvalidReps" class="text-sm text-red-600">
+        <p v-if="hasInvalidReps" class="text-sm text-danger">
           {{ t('preview.invalid') }}
         </p>
 
         <button
           type="button"
           :disabled="grid.length === 0 || hasInvalidReps || saving"
-          class="w-full bg-amber-500 hover:bg-amber-600 disabled:bg-gray-300 disabled:shadow-none text-white font-semibold py-3.5 rounded-2xl shadow-md shadow-amber-200 transition-all active:scale-[0.98]"
+          class="w-full bg-primary hover:bg-primary/90 disabled:bg-surface-alt disabled:text-fg-muted disabled:shadow-none text-on-primary font-semibold py-3.5 rounded-xl shadow-md transition-all active:scale-[0.98]"
           @click="save"
         >
           {{ saving ? t('common.saving') : t('preview.save') }}
@@ -240,7 +240,7 @@ onMounted(load)
 
         <button
           type="button"
-          class="w-full bg-gray-100 hover:bg-gray-200 text-red-600 font-semibold py-3 rounded-2xl transition-colors"
+          class="w-full bg-surface-alt hover:bg-surface-alt text-danger font-semibold py-3 rounded-xl transition-colors"
           @click="abandon"
         >
           {{ t('preview.abandon') }}

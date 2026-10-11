@@ -13,3 +13,4 @@ Voir [ADR 0001](0001-enregistrer-les-decisions-d-architecture.md) pour le format
 | 0007 | [Identifiant de séance sur les sets](0007-identifiant-de-seance-sur-les-sets.md) | Accepté |
 | 0008 | [Unité des exercices : répétitions ou secondes](0008-unite-des-exercices.md) | Accepté |
 | 0009 | [Interface multilingue : français et anglais](0009-interface-multilingue.md) | Accepté |
+| 0010 | [Thème, apparence claire ou sombre, et logo](0010-theme-apparence-et-logo.md) | Accepté |

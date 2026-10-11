@@ -26,21 +26,21 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-[#fdf8f5] pb-28 px-5 pt-6">
+  <div class="min-h-screen bg-background pb-28 px-5 pt-6">
 
     <SettingsHeader :title="t('settings.workouts.title')" />
 
-    <p class="mt-2 text-sm text-gray-500">
+    <p class="mt-2 text-sm text-fg-secondary">
       {{ t('workouts.intro') }}
     </p>
 
     <main class="mt-6 space-y-3">
 
-      <p v-if="loading" class="text-sm text-gray-500">
+      <p v-if="loading" class="text-sm text-fg-secondary">
         {{ t('workouts.loading') }}
       </p>
 
-      <p v-else-if="error" class="text-sm text-red-600">
+      <p v-else-if="error" class="text-sm text-danger">
         {{ error }}
       </p>
 
@@ -50,27 +50,27 @@ onMounted(async () => {
           v-for="workout in workouts"
           :key="workout.id"
           :to="`/settings/workouts/${workout.id}`"
-          class="block bg-white border border-gray-200/80 rounded-3xl p-5 shadow-xs active:bg-amber-50 transition-colors"
+          class="block bg-surface rounded-xl p-5 active:bg-primary-soft transition-colors"
         >
           <WorkoutCard :workout="workout">
             <template #trailing>
-              <span class="text-xl text-gray-300">›</span>
+              <span class="text-xl text-fg-muted">›</span>
             </template>
           </WorkoutCard>
         </router-link>
 
         <div
           v-if="workouts.length === 0"
-          class="rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-4 py-5 text-center"
+          class="rounded-xl border border-dashed border-line bg-surface px-4 py-5 text-center"
         >
-          <p class="text-sm font-medium text-gray-600">
+          <p class="text-sm font-medium text-fg-secondary">
             {{ t('workouts.empty') }}
           </p>
         </div>
 
         <router-link
           to="/settings/workouts/new"
-          class="flex w-full items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-white font-semibold py-3.5 rounded-2xl shadow-md shadow-amber-200 transition-all active:scale-[0.98]"
+          class="flex w-full items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-on-primary font-semibold py-3.5 rounded-xl shadow-md transition-all active:scale-[0.98]"
         >
           <span class="text-lg leading-none">+</span>
           {{ t('workouts.new') }}

@@ -17,7 +17,7 @@ const { t } = useI18n()
   <header>
     <router-link
       :to="backTo"
-      class="inline-flex items-center gap-1 text-sm font-medium text-amber-600"
+      class="inline-flex items-center gap-1 text-sm font-medium text-primary"
     >
       <span class="text-lg leading-none">‹</span>
       {{ backLabel ?? t('nav.settings') }}
