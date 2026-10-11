@@ -4,11 +4,17 @@ import { useI18n } from 'vue-i18n'
 import { dateLocale } from '../i18n'
 
 // Jour choisi (YYYY-MM-DD), ‹ › pour la veille et le lendemain, sans
-// dépasser aujourd'hui. Un appui sur la date émet `open` (le parent
-// ouvre un calendrier pour sauter plus loin).
-const props = defineProps<{
+// dépasser aujourd'hui ni `min`. Avec `pickable`, un appui sur la date
+// émet `open` (le parent ouvre un calendrier pour sauter plus loin).
+const props = withDefaults(defineProps<{
   modelValue: string
-}>()
+  // Premier jour accessible (YYYY-MM-DD), sans limite par défaut
+  min?: string
+  pickable?: boolean
+}>(), {
+  min: undefined,
+  pickable: true
+})
 
 const emit = defineEmits<{
   'update:modelValue': [value: string]
@@ -34,6 +40,7 @@ const shift = (days: number) => {
 }
 
 const isToday = computed(() => props.modelValue === todayKey())
+const isFirst = computed(() => !!props.min && props.modelValue <= props.min)
 
 const label = computed(() => {
   void locale.value
@@ -57,7 +64,8 @@ const date = computed(() => {
   <div class="flex items-center justify-between">
     <button
       type="button"
-      class="flex h-10 w-10 items-center justify-center rounded-full text-2xl text-fg-secondary"
+      class="flex h-10 w-10 items-center justify-center rounded-full text-2xl text-fg-secondary disabled:opacity-30"
+      :disabled="isFirst"
       :aria-label="t('stats.previousDay')"
       @click="shift(-1)"
     >
@@ -65,6 +73,7 @@ const date = computed(() => {
     </button>
 
     <button
+      v-if="pickable"
       type="button"
       class="rounded-xl px-4 py-1 text-center active:bg-surface-alt"
       :aria-label="t('dayNavigator.pick')"
@@ -75,6 +84,10 @@ const date = computed(() => {
       </p>
       <p class="text-xs text-fg-secondary">{{ date }}</p>
     </button>
+    <div v-else class="text-center">
+      <p class="text-base font-semibold text-fg">{{ label }}</p>
+      <p class="text-xs text-fg-secondary">{{ date }}</p>
+    </div>
 
     <button
       type="button"

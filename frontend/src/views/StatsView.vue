@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import ExerciseSelector from '../components/ExerciseSelector.vue'
+import DayNavigator from '../components/DayNavigator.vue'
 import { useSets } from '../composables/useSets'
 import { useExerciseUnits } from '../composables/useExerciseUnits'
 import { dateLocale, exerciseName } from '../i18n'
@@ -47,28 +48,13 @@ const startOfToday = () => {
 const addDays = (date: Date, days: number) =>
   new Date(date.getFullYear(), date.getMonth(), date.getDate() + days)
 
-// Jour affiché par la vue 1 jour
-const day = ref(startOfToday())
+// Jour affiché par la vue 1 jour (YYYY-MM-DD), au plus un an en arrière
+const dayKeyValue = ref(dayKey(startOfToday()))
+const firstDay = dayKey(addDays(startOfToday(), -MAX_DAYS_BACK))
 
-const canGoBack = computed(() => day.value > addDays(startOfToday(), -MAX_DAYS_BACK))
-const canGoForward = computed(() => day.value < startOfToday())
-
-const changeDay = (offset: number) => {
-  day.value = addDays(day.value, offset)
-}
-
-const dayLabel = computed(() => {
-  void locale.value
-  const today = startOfToday()
-  if (dayKey(day.value) === dayKey(today)) return t('calendar.today')
-  if (dayKey(day.value) === dayKey(addDays(today, -1))) return t('journal.yesterday')
-  const weekday = new Intl.DateTimeFormat(dateLocale(), { weekday: 'long' }).format(day.value)
-  return weekday.charAt(0).toUpperCase() + weekday.slice(1)
-})
-
-const dayDate = computed(() => {
-  void locale.value
-  return new Intl.DateTimeFormat(dateLocale(), { day: 'numeric', month: 'long' }).format(day.value)
+const day = computed(() => {
+  const [year, month, date] = dayKeyValue.value.split('-').map(Number)
+  return new Date(year!, month! - 1, date!)
 })
 
 // ============================================================
@@ -394,30 +380,12 @@ const LEVEL_CLASSES = ['bg-track', 'bg-primary/25', 'bg-primary/50', 'bg-primary
     <main class="px-5 mt-4 space-y-4">
 
       <!-- Vue 1 jour : jour affiché -->
-      <div v-if="period === '1d'" class="flex items-center justify-between">
-        <button
-          type="button"
-          class="flex h-10 w-10 items-center justify-center rounded-full text-2xl text-fg-secondary disabled:opacity-30"
-          :disabled="!canGoBack"
-          :aria-label="t('stats.previousDay')"
-          @click="changeDay(-1)"
-        >
-          ‹
-        </button>
-        <div class="text-center">
-          <p class="text-base font-semibold text-fg">{{ dayLabel }}</p>
-          <p class="text-xs text-fg-secondary">{{ dayDate }}</p>
-        </div>
-        <button
-          type="button"
-          class="flex h-10 w-10 items-center justify-center rounded-full text-2xl text-fg-secondary disabled:opacity-30"
-          :disabled="!canGoForward"
-          :aria-label="t('stats.nextDay')"
-          @click="changeDay(1)"
-        >
-          ›
-        </button>
-      </div>
+      <DayNavigator
+        v-if="period === '1d'"
+        v-model="dayKeyValue"
+        :min="firstDay"
+        :pickable="false"
+      />
 
       <!-- Graphique -->
       <section class="rounded-xl bg-surface p-4">
