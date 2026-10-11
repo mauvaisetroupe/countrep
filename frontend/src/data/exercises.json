@@ -1,0 +1,457 @@
+[
+  {
+    "id": "band-hip-abduction",
+    "nameEn": "Band Hip Abduction",
+    "nameFr": "Abduction de la hanche",
+    "liftmanualUrl": "https://liftmanual.com/band-hip-abduction/",
+    "unit": "reps"
+  },
+  {
+    "id": "band-lateral-raise",
+    "nameEn": "Band Lateral Raise",
+    "nameFr": "Élévation latérale avec bande élastique",
+    "liftmanualUrl": "https://liftmanual.com/band-lateral-raise/",
+    "unit": "reps"
+  },
+  {
+    "id": "band-overhead-triceps-extension",
+    "nameEn": "Band Overhead Triceps Extension",
+    "nameFr": "Extension triceps au-dessus de la tête avec bande élastique",
+    "liftmanualUrl": "https://liftmanual.com/band-overhead-triceps-extension/",
+    "unit": "reps"
+  },
+  {
+    "id": "band-shoulder-press",
+    "nameEn": "Band shoulder press",
+    "nameFr": "Développé épaules avec bande élastique",
+    "liftmanualUrl": "https://liftmanual.com/band-shoulder-press/",
+    "unit": "reps"
+  },
+  {
+    "id": "band-shrug",
+    "nameEn": "Band Shrug",
+    "nameFr": "Élévation des épaules avec bande élastique",
+    "liftmanualUrl": "https://liftmanual.com/band-shrug/",
+    "unit": "reps"
+  },
+  {
+    "id": "band-squat",
+    "nameEn": "Band Squat",
+    "nameFr": "Squat avec bande élastique",
+    "liftmanualUrl": "https://liftmanual.com/band-squat/",
+    "unit": "reps"
+  },
+  {
+    "id": "band-standing-chest-press-anchor",
+    "nameEn": "Band Standing Chest Press (Anchor point)",
+    "nameFr": "Développé poitrine avec bande élastique (point d’ancrage)",
+    "liftmanualUrl": "https://liftmanual.com/band-standing-chest-press/",
+    "unit": "reps"
+  },
+  {
+    "id": "band-standing-chest-press-self-anchored",
+    "nameEn": "Band Standing Chest Press (Self-Anchored)",
+    "nameFr": "Développé poitrine avec bande élastique (élastique dans le dos)",
+    "liftmanualUrl": "https://liftmanual.com/band-standing-chest-press/",
+    "unit": "reps"
+  },
+  {
+    "id": "band-standing-chest-press-under-feet",
+    "nameEn": "Band Standing Chest Press (band under feet)",
+    "nameFr": "Développé poitrine avec bande élastique (élastique sous les pieds)",
+    "liftmanualUrl": null,
+    "unit": "reps"
+  },
+  {
+    "id": "band-thrusters",
+    "nameEn": "Band Thrusters",
+    "nameFr": "Squat avec développé épaules",
+    "liftmanualUrl": "https://liftmanual.com/band-thruster/",
+    "unit": "reps"
+  },
+  {
+    "id": "band-upright-row",
+    "nameEn": "Band Upright Row",
+    "nameFr": "Tirage vertical / tirage menton",
+    "liftmanualUrl": "https://liftmanual.com/band-upright-row/",
+    "unit": "reps"
+  },
+  {
+    "id": "banded-deadlift",
+    "nameEn": "Banded Deadlift",
+    "nameFr": "Soulevé de terre avec bande élastique",
+    "liftmanualUrl": "https://liftmanual.com/band-deadlift/",
+    "unit": "reps"
+  },
+  {
+    "id": "banded-hip-hinge",
+    "nameEn": "Banded Hip Hinge",
+    "nameFr": "Bascule de hanches avec élastique",
+    "liftmanualUrl": "https://liftmanual.com/pvc-hip-hinge/",
+    "unit": "reps"
+  },
+  {
+    "id": "bench-dip-on-floor",
+    "nameEn": "Bench dip on floor",
+    "nameFr": "Dips sur banc",
+    "liftmanualUrl": "https://liftmanual.com/bench-dip-on-floor/",
+    "unit": "reps"
+  },
+  {
+    "id": "bent-over-row-band",
+    "nameEn": "Bent-over Row with band",
+    "nameFr": "Tirage buste penché avec élastique",
+    "liftmanualUrl": "https://liftmanual.com/resistance-band-bent-over-row/",
+    "unit": "reps"
+  },
+  {
+    "id": "bent-over-row-band-front",
+    "nameEn": "Bent-over Row with band (front)",
+    "nameFr": "Tirage buste penché avec élastique",
+    "liftmanualUrl": null,
+    "unit": "reps"
+  },
+  {
+    "id": "biceps-curl-band",
+    "nameEn": "Biceps curl with band",
+    "nameFr": "Curl biceps avec bande élastique",
+    "liftmanualUrl": "https://liftmanual.com/band-biceps-curl/",
+    "unit": "reps"
+  },
+  {
+    "id": "bird-dog-band",
+    "nameEn": "Bird dog with band",
+    "nameFr": "Bird dog avec élastique",
+    "liftmanualUrl": "https://liftmanual.com/resistance-band-bird-dog/",
+    "unit": "reps"
+  },
+  {
+    "id": "bodyweight-skull-crusher",
+    "nameEn": "Bodyweight Skull Crusher",
+    "nameFr": "Skull Crusher au poids du corps",
+    "liftmanualUrl": null,
+    "unit": "reps"
+  },
+  {
+    "id": "bodyweight-squat",
+    "nameEn": "Bodyweight Squat",
+    "nameFr": "Squat au poids du corps",
+    "liftmanualUrl": "https://liftmanual.com/air-squat/",
+    "unit": "reps"
+  },
+  {
+    "id": "burpee",
+    "nameEn": "Burpee",
+    "nameFr": "Burpee",
+    "liftmanualUrl": "https://liftmanual.com/burpee/",
+    "unit": "reps"
+  },
+  {
+    "id": "close-grip-push-up",
+    "nameEn": "Close-Grip Push-Up",
+    "nameFr": "Pompe serrée",
+    "liftmanualUrl": "https://liftmanual.com/close-grip-push-up/",
+    "unit": "reps"
+  },
+  {
+    "id": "concentration-curl",
+    "nameEn": "Concentration Curl",
+    "nameFr": "Curl concentration",
+    "liftmanualUrl": "https://liftmanual.com/dumbbell-concentration-curl/",
+    "unit": "reps"
+  },
+  {
+    "id": "crunch",
+    "nameEn": "Crunch",
+    "nameFr": "Crunch",
+    "liftmanualUrl": "https://liftmanual.com/crunch-hold/",
+    "unit": "reps"
+  },
+  {
+    "id": "curl-to-press-band",
+    "nameEn": "Curl to press with band",
+    "nameFr": "Curl + développé avec bande élastique",
+    "liftmanualUrl": "https://liftmanual.com/dumbbell-curl-to-press/",
+    "unit": "reps"
+  },
+  {
+    "id": "dumbbell-bench-press",
+    "nameEn": "Dumbbell Bench Press",
+    "nameFr": "Développé couché haltères",
+    "liftmanualUrl": "https://liftmanual.com/dumbbell-bench-press/",
+    "unit": "reps"
+  },
+  {
+    "id": "dumbbell-bent-over-row",
+    "nameEn": "Dumbbell Bent-Over Row",
+    "nameFr": "Rowing haltères buste penché",
+    "liftmanualUrl": "https://liftmanual.com/barbell-bent-over-row/",
+    "unit": "reps"
+  },
+  {
+    "id": "dumbbell-curl",
+    "nameEn": "Dumbbell Curl",
+    "nameFr": "Curl biceps haltères",
+    "liftmanualUrl": "https://liftmanual.com/dumbbell-standing-biceps-curl/",
+    "unit": "reps"
+  },
+  {
+    "id": "dumbbell-fly",
+    "nameEn": "Dumbbell Fly",
+    "nameFr": "Écarté couché haltères",
+    "liftmanualUrl": "liftmanual.com/dumbbell-fly/",
+    "unit": "reps"
+  },
+  {
+    "id": "dumbbell-front-raise",
+    "nameEn": "Dumbbell Front Raise",
+    "nameFr": "Élévation frontale haltères",
+    "liftmanualUrl": "https://liftmanual.com/dumbbell-front-raise/",
+    "unit": "reps"
+  },
+  {
+    "id": "dumbbell-lateral-raise",
+    "nameEn": "Dumbbell Lateral Raise",
+    "nameFr": "Élévation latérale haltères",
+    "liftmanualUrl": "https://liftmanual.com/dumbbell-lateral-raise/",
+    "unit": "reps"
+  },
+  {
+    "id": "dumbbell-overhead-triceps-extension",
+    "nameEn": "Dumbbell Overhead Triceps Extension",
+    "nameFr": "Extension triceps au-dessus de la tête haltère",
+    "liftmanualUrl": "https://liftmanual.com/dumbbell-seated-triceps-extension/",
+    "unit": "reps"
+  },
+  {
+    "id": "dumbbell-reverse-fly",
+    "nameEn": "Dumbbell Reverse Fly",
+    "nameFr": "Oiseau haltères",
+    "liftmanualUrl": "https://liftmanual.com/dumbbell-reverse-fly/",
+    "unit": "reps"
+  },
+  {
+    "id": "dumbbell-shoulder-press",
+    "nameEn": "Dumbbell Shoulder Press",
+    "nameFr": "Développé militaire haltères",
+    "liftmanualUrl": "https://liftmanual.com/dumbbell-standing-biceps-curl-to-shoulder-press/",
+    "unit": "reps"
+  },
+  {
+    "id": "dumbbell-shrug",
+    "nameEn": "Dumbbell Shrug",
+    "nameFr": "Shrug haltères",
+    "liftmanualUrl": "https://liftmanual.com/dumbbell-shrug/",
+    "unit": "reps"
+  },
+  {
+    "id": "front-to-side-plank",
+    "nameEn": "Front to side plank",
+    "nameFr": "Transition planche – planche latérale",
+    "liftmanualUrl": "https://liftmanual.com/front-to-side-plank/",
+    "unit": "reps"
+  },
+  {
+    "id": "good-morning-band",
+    "nameEn": "Good morning with band",
+    "nameFr": "Good Morning avec bande élastique",
+    "liftmanualUrl": "https://liftmanual.com/band-good-morning/",
+    "unit": "reps"
+  },
+  {
+    "id": "hammer-curl",
+    "nameEn": "Hammer Curl",
+    "nameFr": "Curl marteau",
+    "liftmanualUrl": "https://liftmanual.com/dumbbell-hammer-curl/",
+    "unit": "reps"
+  },
+  {
+    "id": "high-bar-inverted-row",
+    "nameEn": "High Bar Inverted Row",
+    "nameFr": "Traction inversée ou australienne",
+    "liftmanualUrl": "https://liftmanual.com/high-bar-inverted-row/",
+    "unit": "reps"
+  },
+  {
+    "id": "hollow-body-hold",
+    "nameEn": "Hollow body hold",
+    "nameFr": "Maintien en position creuse",
+    "liftmanualUrl": "https://liftmanual.com/hollow-hold/",
+    "unit": "seconds"
+  },
+  {
+    "id": "incline-band-chest-fly",
+    "nameEn": "Incline Band Chest Fly",
+    "nameFr": "Écarté incliné vers le bas avec bande élastique",
+    "liftmanualUrl": "https://liftmanual.com/cable-standing-fly/",
+    "unit": "reps"
+  },
+  {
+    "id": "incline-push-up",
+    "nameEn": "Incline push-up",
+    "nameFr": "Pompe inclinée",
+    "liftmanualUrl": "https://liftmanual.com/incline-push-up/",
+    "unit": "reps"
+  },
+  {
+    "id": "jump-squat-band",
+    "nameEn": "Jump squat with band",
+    "nameFr": "Squat sauté avec élastique",
+    "liftmanualUrl": "https://liftmanual.com/barbell-jump-squat/",
+    "unit": "reps"
+  },
+  {
+    "id": "leg-curl-band",
+    "nameEn": "Leg curl with band",
+    "nameFr": "Leg curl avec bande élastique",
+    "liftmanualUrl": "https://liftmanual.com/resistance-band-leg-curl/",
+    "unit": "reps"
+  },
+  {
+    "id": "leg-extension-band",
+    "nameEn": "Leg extension with band",
+    "nameFr": "Leg extension avec élastique",
+    "liftmanualUrl": "https://liftmanual.com/resistance-band-leg-extension/",
+    "unit": "reps"
+  },
+  {
+    "id": "leg-press-band",
+    "nameEn": "Leg press with band",
+    "nameFr": "Leg press avec élastique",
+    "liftmanualUrl": "https://www.rubberbanditz.com/leg-press/",
+    "unit": "reps"
+  },
+  {
+    "id": "lunge",
+    "nameEn": "Lunge",
+    "nameFr": "Fente",
+    "liftmanualUrl": "https://liftmanual.com/lunge/",
+    "unit": "reps"
+  },
+  {
+    "id": "one-arm-dumbbell-row",
+    "nameEn": "One-Arm Dumbbell Row",
+    "nameFr": "Rowing unilatéral haltère",
+    "liftmanualUrl": "https://liftmanual.com/kettlebell-one-arm-row/",
+    "unit": "reps"
+  },
+  {
+    "id": "plank",
+    "nameEn": "Plank",
+    "nameFr": "Gainage (planche)",
+    "liftmanualUrl": "https://liftmanual.com/plank-on-hands/",
+    "unit": "seconds"
+  },
+  {
+    "id": "push-up",
+    "nameEn": "Push-Up",
+    "nameFr": "Pompe",
+    "liftmanualUrl": "https://liftmanual.com/push-up/",
+    "unit": "reps"
+  },
+  {
+    "id": "resistance-band-pull-apart",
+    "nameEn": "Resistance Band Pull Apart",
+    "nameFr": "Écarté avec bande élastique",
+    "liftmanualUrl": "https://liftmanual.com/resistance-band-pull-apart/",
+    "unit": "reps"
+  },
+  {
+    "id": "reverse-crunch",
+    "nameEn": "Reverse crunch",
+    "nameFr": "Crunch inversé",
+    "liftmanualUrl": "https://liftmanual.com/reverse-crunch/",
+    "unit": "reps"
+  },
+  {
+    "id": "reverse-lunge-band",
+    "nameEn": "Rear/reverse lunge with band",
+    "nameFr": "Fente arrière",
+    "liftmanualUrl": "https://liftmanual.com/bodyweight-rear-lunge/",
+    "unit": "reps"
+  },
+  {
+    "id": "ring-chest-fly",
+    "nameEn": "Ring Chest Fly",
+    "nameFr": "Écarté aux anneaux",
+    "liftmanualUrl": "https://liftmanual.com/ring-chest-fly/",
+    "unit": "reps"
+  },
+  {
+    "id": "ring-high-row",
+    "nameEn": "Ring High Row",
+    "nameFr": "Tirage haut aux anneaux",
+    "liftmanualUrl": "https://liftmanual.com/ring-high-row/",
+    "unit": "reps"
+  },
+  {
+    "id": "ring-reverse-fly",
+    "nameEn": "Ring Reverse Fly",
+    "nameFr": "Écarté inversé aux anneaux",
+    "liftmanualUrl": "https://liftmanual.com/ring-reverse-fly/",
+    "unit": "reps"
+  },
+  {
+    "id": "seated-row-band",
+    "nameEn": "Seated row with band",
+    "nameFr": "Tirage assis avec bande élastique",
+    "liftmanualUrl": "https://liftmanual.com/cable-rope-seated-row",
+    "unit": "reps"
+  },
+  {
+    "id": "side-plank",
+    "nameEn": "Side plank",
+    "nameFr": "Planche latérale",
+    "liftmanualUrl": "https://liftmanual.com/side-plank/",
+    "unit": "seconds"
+  },
+  {
+    "id": "single-arm-banded-chest-fly",
+    "nameEn": "Single-arm banded chest fly",
+    "nameFr": "Écarté horizontal unilatéral avec bande",
+    "liftmanualUrl": null,
+    "unit": "reps"
+  },
+  {
+    "id": "split-squat",
+    "nameEn": "Split squat",
+    "nameFr": "Fente stationnaire / split squat",
+    "liftmanualUrl": "https://liftmanual.com/split-squats/",
+    "unit": "reps"
+  },
+  {
+    "id": "standing-banded-row-anchor",
+    "nameEn": "Standing Banded Row (Anchor point)",
+    "nameFr": "Tirage horizontal debout avec bande élastique (point d’ancrage)",
+    "liftmanualUrl": "https://liftmanual.com/cable-standing-row/",
+    "unit": "reps"
+  },
+  {
+    "id": "standing-calf-raise",
+    "nameEn": "Standing Calf Raise",
+    "nameFr": "Montée de mollets",
+    "liftmanualUrl": "https://liftmanual.com/standing-calf-raise/",
+    "unit": "reps"
+  },
+  {
+    "id": "sumo-deadlift-high-pull-band",
+    "nameEn": "Sumo Deadlift High Pull with band",
+    "nameFr": "Soulevé de terre + tirage",
+    "liftmanualUrl": "https://liftmanual.com/kettlebell-sumo-high-pull/",
+    "unit": "reps"
+  },
+  {
+    "id": "supinated-high-bar-inverted-row",
+    "nameEn": "Supinated High Bar Inverted Row",
+    "nameFr": "Traction inversée ou australienne – supination",
+    "liftmanualUrl": "https://liftmanual.com/supinated-grip-inverted-row/",
+    "unit": "reps"
+  },
+  {
+    "id": "support-hold",
+    "nameEn": "Support Hold",
+    "nameFr": "Maintien en appui aux anneaux",
+    "liftmanualUrl": null,
+    "unit": "seconds"
+  }
+]

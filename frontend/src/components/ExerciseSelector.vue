@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import { getExercises, getUserExercises, type ApiExercise } from '../api/exercises'
+import type { ApiExercise } from '../api/exercises'
+import { CATALOG } from '../catalog'
+import { useUserExercises } from '../composables/useUserExercises'
 import type { LocalSet } from '../db'
 import { useI18n } from 'vue-i18n'
 import { exerciseName } from '../i18n'
@@ -33,8 +35,9 @@ const emit = defineEmits<{
 const { t } = useI18n()
 
 const exercises = ref<ApiExercise[]>([])
-const catalog = ref<ApiExercise[]>([])
+const catalog = ref<ApiExercise[]>(CATALOG)
 const loading = ref(false)
+const { userExercises, load: loadUserExercises } = useUserExercises()
 
 // Exercices déjà saisis, du plus pratiqué au moins pratiqué
 const exercisesFromSets = () => {
@@ -65,34 +68,44 @@ const selectedExercise = computed({
   }
 })
 
+// Pour une sélection obligatoire, on sélectionne le premier exercice
+// si la sélection actuelle n'existe plus
+const ensureValidSelection = () => {
+  if (!props.required) return
+
+  const currentExists = exercises.value.some(
+    exercise => exercise.id === selectedExercise.value
+  )
+
+  if (!currentExists && exercises.value.length > 0) {
+    selectedExercise.value = exercises.value[0]!.id
+  }
+}
+
+// Tout est local (ADR 0014) : sélection de l'utilisateur ou catalogue
 const loadExercises = async () => {
   loading.value = true
 
   try {
     if (props.source === 'user') {
-      exercises.value = await getUserExercises()
+      await loadUserExercises()
+      exercises.value = userExercises.value
     } else {
-      catalog.value = await getExercises()
       exercises.value = exercisesFromSets()
     }
-
-    // Pour une sélection obligatoire, on sélectionne
-    // le premier exercice si la sélection actuelle est invalide.
-    if (props.required) {
-      const currentExists = exercises.value.some(
-        exercise => exercise.id === selectedExercise.value
-      )
-
-      if (!currentExists && exercises.value.length > 0) {
-        selectedExercise.value = exercises.value[0].id
-      }
-    }
-  } catch (error) {
-    console.error('Erreur lors du chargement des exercices', error)
+    ensureValidSelection()
   } finally {
     loading.value = false
   }
 }
+
+// La sélection change (réglages, synchro) : les boutons suivent
+watch(userExercises, list => {
+  if (props.source === 'user') {
+    exercises.value = list
+    ensureValidSelection()
+  }
+})
 
 const handleSelect = (id: string) => {
   if (!props.required && selectedExercise.value === id) {

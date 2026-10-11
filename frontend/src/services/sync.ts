@@ -1,4 +1,5 @@
 import type { LocalSet } from '../db'
+import { canSync } from './dataSync'
 import { setRepository } from '../repositories/setRepository'
 import {
   ApiError,
@@ -29,6 +30,9 @@ function toApiSet(set: LocalSet): ApiSet {
 export async function syncSet(
   set: LocalSet
 ): Promise<void> {
+  // Sans session : rien n'est envoyé, le set reste en attente
+  if (!canSync()) return
+
 
   await createSet(toApiSet(set))
 
@@ -39,6 +43,9 @@ export async function syncSet(
 export async function syncOne(
   set: LocalSet
 ): Promise<void> {
+  // Sans session : rien n'est envoyé, le set reste en attente
+  if (!canSync()) return
+
 
   if (set.syncOperation === 'create') {
     await syncSet(set)
@@ -54,6 +61,9 @@ export async function syncOne(
 }
 
 export async function syncPendingSets(): Promise<void> {
+  // Sans session : rien n'est envoyé, le set reste en attente
+  if (!canSync()) return
+
   const pendingSets = await setRepository.getPending()
 
   for (const set of pendingSets) {
@@ -69,6 +79,9 @@ export async function syncPendingSets(): Promise<void> {
 }
 
 export async function syncSetsFromServer(): Promise<void> {
+  // Sans session : rien n'est envoyé, le set reste en attente
+  if (!canSync()) return
+
   try {
     const remoteSets = await getSets()
 
@@ -141,6 +154,9 @@ export async function syncSetsFromServer(): Promise<void> {
 export async function syncUpdatedSet(
   set: LocalSet
 ): Promise<void> {
+  // Sans session : rien n'est envoyé, le set reste en attente
+  if (!canSync()) return
+
 
   try {
     await updateSet(set.id, toApiSet(set))
@@ -162,6 +178,9 @@ export async function syncUpdatedSet(
 export async function syncDeletedSet(
   set: LocalSet
 ): Promise<void> {
+  // Sans session : rien n'est envoyé, le set reste en attente
+  if (!canSync()) return
+
 
   try {
     await deleteSet(set.id)

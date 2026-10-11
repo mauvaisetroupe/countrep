@@ -8,6 +8,8 @@ import {
 import { setRepository } from '../repositories/setRepository'
 import { previewRepository } from '../repositories/previewRepository'
 import { syncPendingSets } from './sync'
+import { syncLocalData } from './dataSync'
+import { workoutRepository } from '../repositories/workoutRepository'
 import { i18n } from '../i18n'
 
 const t = i18n.global.t
@@ -61,21 +63,24 @@ export async function ensureFreshToken(): Promise<void> {
   await inFlight
 }
 
-// À appeler avec le token d'une nouvelle connexion, avant setToken.
-// Si les données locales appartiennent à un autre compte, elles sont
-// effacées (après confirmation s'il reste des séances non synchronisées,
-// qui ne pourraient pas être envoyées sur le bon compte).
-// Retourne false si l'utilisateur annule (voir docs/adr/0004).
+// À appeler avec le token d'une nouvelle connexion, avant setToken
+// (voir docs/adr/0014). Données sans propriétaire (utilisation sans
+// compte) : elles sont rattachées au compte, et la synchro les enverra.
+// Données d'un autre compte : effacées, après confirmation s'il reste des
+// données non envoyées, qui ne pourraient pas l'être sur le bon compte.
+// Retourne false si l'utilisateur annule.
 export async function prepareLocalDataFor(token: string): Promise<boolean> {
   const owner = getLocalDataOwner()
   const userId = getTokenUserId(token)
 
-  // Pas de propriétaire connu (ancienne install) ou même compte : on garde
+  // Sans propriétaire ou même compte : on garde et on rattache
   if (!owner || owner === userId) {
     return true
   }
 
-  const pendingCount = (await setRepository.getPending()).length
+  const pendingCount =
+    (await setRepository.getPending()).length +
+    (await workoutRepository.getPending()).length
 
   if (
     pendingCount > 0 &&
@@ -91,13 +96,20 @@ export async function prepareLocalDataFor(token: string): Promise<boolean> {
   return true
 }
 
-// Déconnexion qui protège les séances non synchronisées :
-// tente d'abord de les envoyer, puis demande confirmation
-// s'il en reste. Retourne false si l'utilisateur annule.
-export async function logoutSafely(): Promise<boolean> {
+// Déconnexion (voir docs/adr/0014). Sans effacement, rien n'est perdu :
+// les données restent sur l'appareil. Avec effacement, on tente d'abord
+// d'envoyer ce qui est en attente, puis on demande confirmation s'il en
+// reste. Retourne false si l'utilisateur annule.
+export async function logoutSafely({ wipe = false }: { wipe?: boolean } = {}): Promise<boolean> {
   const authStore = useAuthStore()
 
+  if (!wipe) {
+    await authStore.logout()
+    return true
+  }
+
   await syncPendingSets()
+  await syncLocalData()
 
   const pendingCount = (await setRepository.getPending()).length
 
@@ -120,7 +132,7 @@ export async function logoutSafely(): Promise<boolean> {
     return false
   }
 
-  await authStore.logout()
+  await authStore.logout({ wipe: true })
 
   return true
 }

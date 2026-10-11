@@ -16,18 +16,18 @@ import PreviewView from '../views/PreviewView.vue'
 const routes: Array<RouteRecordRaw> = [
   { path: '/login', name: 'login', component: LoginView },
   { path: '/', redirect: '/today' },
-  { path: '/today', name: 'today', component: TodayView, meta: { requiresAuth: true } },
-  { path: '/journal', name: 'journal', component: JournalView, meta: { requiresAuth: true } },
-  { path: '/preview', name: 'preview', component: PreviewView, meta: { requiresAuth: true } },
-  { path: '/stats', name: 'stats', component: StatsView, meta: { requiresAuth: true } },
-  { path: '/settings', name: 'settings', component: SettingsView, meta: { requiresAuth: true } },
-  { path: '/settings/account', name: 'settings-account', component: SettingsAccountView, meta: { requiresAuth: true } },
-  { path: '/settings/exercises', name: 'settings-exercises', component: SettingsExercisesView, meta: { requiresAuth: true } },
-  { path: '/settings/appearance', name: 'settings-appearance', component: SettingsAppearanceView, meta: { requiresAuth: true } },
-  { path: '/settings/language', name: 'settings-language', component: SettingsLanguageView, meta: { requiresAuth: true } },
-  { path: '/settings/workouts', name: 'settings-workouts', component: SettingsWorkoutsView, meta: { requiresAuth: true } },
-  { path: '/settings/workouts/new', name: 'settings-workout-new', component: SettingsWorkoutEditView, meta: { requiresAuth: true } },
-  { path: '/settings/workouts/:id', name: 'settings-workout-edit', component: SettingsWorkoutEditView, props: true, meta: { requiresAuth: true } },
+  { path: '/today', name: 'today', component: TodayView },
+  { path: '/journal', name: 'journal', component: JournalView },
+  { path: '/preview', name: 'preview', component: PreviewView },
+  { path: '/stats', name: 'stats', component: StatsView },
+  { path: '/settings', name: 'settings', component: SettingsView },
+  { path: '/settings/account', name: 'settings-account', component: SettingsAccountView },
+  { path: '/settings/exercises', name: 'settings-exercises', component: SettingsExercisesView },
+  { path: '/settings/appearance', name: 'settings-appearance', component: SettingsAppearanceView },
+  { path: '/settings/language', name: 'settings-language', component: SettingsLanguageView },
+  { path: '/settings/workouts', name: 'settings-workouts', component: SettingsWorkoutsView },
+  { path: '/settings/workouts/new', name: 'settings-workout-new', component: SettingsWorkoutEditView },
+  { path: '/settings/workouts/:id', name: 'settings-workout-edit', component: SettingsWorkoutEditView, props: true },
   // Ancienne page Profil (favoris, PWA installées)
   { path: '/profile', redirect: '/settings' },
 ]
@@ -44,9 +44,9 @@ const router = createRouter({
 router.beforeEach((to, _from, next) => {
   const authStore = useAuthStore()
 
-  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-    next({ name: 'login' })
-  } else if (to.name === 'login' && authStore.isAuthenticated) {
+  // Tous les écrans s'utilisent sans compte (ADR 0014) ; seul l'écran de
+  // connexion n'a plus de sens une fois connecté
+  if (to.name === 'login' && authStore.isAuthenticated) {
     next({ name: 'today' })
   } else {
     next()

@@ -5,13 +5,10 @@ import SettingsHeader from '../components/SettingsHeader.vue'
 import RepsPicker from '../components/RepsPicker.vue'
 import { VueDraggable } from 'vue-draggable-plus'
 import { reorderOptions } from '../reorder'
-import { getExercises, type ApiExercise } from '../api/exercises'
-import {
-  createWorkout,
-  deleteWorkout,
-  getWorkouts,
-  updateWorkout
-} from '../api/workouts'
+import type { ApiExercise } from '../api/exercises'
+import { CATALOG } from '../catalog'
+import { useWorkouts } from '../composables/useWorkouts'
+import { workoutRepository } from '../repositories/workoutRepository'
 import { formatAmount, formatTotals } from '../units'
 import { useI18n } from 'vue-i18n'
 import { exerciseAltName, exerciseName as localizedName } from '../i18n'
@@ -38,7 +35,9 @@ const router = useRouter()
 
 const isNew = computed(() => !props.id)
 
-const catalog = ref<ApiExercise[]>([])
+// Catalogue embarqué, modèles locaux (ADR 0014) : rien ne passe par le réseau
+const catalog = ref<ApiExercise[]>(CATALOG)
+const { save: saveWorkout, remove: removeWorkout } = useWorkouts()
 const name = ref('')
 const rounds = ref(3)
 const exercises = ref<EditedExercise[]>([])
@@ -147,12 +146,7 @@ const save = async () => {
   }
 
   try {
-    if (props.id) {
-      await updateWorkout(props.id, input)
-    } else {
-      await createWorkout(input)
-    }
-
+    await saveWorkout(props.id ?? null, input)
     router.replace('/settings/workouts')
   } catch (err: any) {
     console.error(err)
@@ -170,7 +164,7 @@ const remove = async () => {
   error.value = ''
 
   try {
-    await deleteWorkout(props.id)
+    await removeWorkout(props.id)
     router.replace('/settings/workouts')
   } catch (err: any) {
     console.error(err)
@@ -184,15 +178,8 @@ onMounted(async () => {
   loading.value = true
 
   try {
-    const [allExercises, workouts] = await Promise.all([
-      getExercises(),
-      props.id ? getWorkouts() : Promise.resolve([])
-    ])
-
-    catalog.value = allExercises
-
     if (props.id) {
-      const workout = workouts.find(workout => workout.id === props.id)
+      const workout = await workoutRepository.getById(props.id)
 
       if (!workout) {
         error.value = t('editWorkout.notFound')

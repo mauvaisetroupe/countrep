@@ -1,4 +1,5 @@
 import { apiFetch } from './client'
+import { ApiError } from './sets'
 import type { ExerciseUnit } from '../units'
 
 export interface WorkoutExercise {
@@ -42,21 +43,8 @@ export async function getWorkouts(): Promise<Workout[]> {
   return response.json()
 }
 
-export async function createWorkout(input: WorkoutInput): Promise<Workout> {
-  const response = await apiFetch('/api/workouts', {
-    method: 'POST',
-    headers: JSON_HEADERS,
-    body: JSON.stringify(input)
-  })
-
-  if (!response.ok) {
-    throw await errorFrom(response, 'Failed to create workout')
-  }
-
-  return response.json()
-}
-
-export async function updateWorkout(
+// Crée ou remplace le modèle d'id donné (upsert idempotent, ADR 0014)
+export async function putWorkout(
   id: string,
   input: WorkoutInput
 ): Promise<Workout> {
@@ -67,7 +55,7 @@ export async function updateWorkout(
   })
 
   if (!response.ok) {
-    throw await errorFrom(response, 'Failed to update workout')
+    throw new ApiError(response.status)
   }
 
   return response.json()
@@ -79,6 +67,6 @@ export async function deleteWorkout(id: string): Promise<void> {
   })
 
   if (!response.ok) {
-    throw await errorFrom(response, 'Failed to delete workout')
+    throw new ApiError(response.status)
   }
 }

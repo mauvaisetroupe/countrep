@@ -53,6 +53,29 @@ export interface LocalPreview {
   editing?: { originalSetIds: string[] }
 }
 
+// Modèle de séance (ADR 0006), local d'abord et synchronisé comme les
+// sets (ADR 0014) : id choisi par le client, envoyé par PUT (upsert)
+export interface LocalWorkout {
+  id: string
+  name: string
+  rounds: number
+  exercises: { exerciseId: string, reps: number }[]
+  createdAt: number
+  updatedAt: number
+  deletedAt?: number | null
+  syncStatus: 'pending' | 'synced'
+  syncOperation: 'none' | 'upsert' | 'delete'
+}
+
+// Sélection d'exercices du mode Exercice (un seul enregistrement, id
+// 'current'), dans l'ordre choisi par l'utilisateur (ADR 0014)
+export interface LocalUserExercises {
+  id: 'current'
+  exerciseIds: string[]
+  updatedAt: number
+  syncStatus: 'pending' | 'synced'
+}
+
 export interface SyncState {
   id: string
   lastSync: number
@@ -64,6 +87,8 @@ export class CountRepDatabase extends Dexie {
   sets!: Table<LocalSet, string>
   syncState!: Table<SyncState, string>
   previews!: Table<LocalPreview, string>
+  workouts!: Table<LocalWorkout, string>
+  userExercises!: Table<LocalUserExercises, string>
 
   constructor() {
     super('WorkoutDatabase')
@@ -114,6 +139,13 @@ export class CountRepDatabase extends Dexie {
     // ADR 0007 : regroupement des sets d'une même séance réalisée
     this.version(6).stores({
       sets: 'id, exercise, date, sessionId, createdAt, updatedAt, syncStatus, syncOperation'
+    })
+
+    // ADR 0014 : modèles de séance et sélection d'exercices en local.
+    // Le nom « workouts » est libéré depuis la version 5 (anciens sets).
+    this.version(7).stores({
+      workouts: 'id, syncStatus',
+      userExercises: 'id'
     })
   }
 }

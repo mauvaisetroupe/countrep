@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import AddRepsModal from './AddRepsModal.vue'
 import ExerciseTile from './ExerciseTile.vue'
 import WorkoutCard from './WorkoutCard.vue'
-import { getWorkouts, type Workout } from '../api/workouts'
+import { useWorkouts } from '../composables/useWorkouts'
 import { useExerciseStore } from '../stores/exercise'
 import { usePreview } from '../composables/usePreview'
 import { useExerciseUnits } from '../composables/useExerciseUnits'
@@ -20,8 +20,6 @@ const props = defineProps<{
   date: string
 }>()
 
-// Dernière liste connue : la séance reste utilisable hors ligne (en salle)
-const CACHE_KEY = 'countrep.workoutsCache'
 const MAX_ROUNDS_AT_ONCE = 50
 
 const { t } = useI18n()
@@ -35,9 +33,9 @@ const { unitOf } = useExerciseUnits()
 const unitFor = (exercise: { exerciseId: string, unit?: ExerciseUnit }) =>
   exercise.unit ?? unitOf(exercise.exerciseId)
 
-const workouts = ref<Workout[]>([])
+// Modèles locaux (ADR 0014) : disponibles hors ligne, sans copie à part
+const { workouts, load: loadWorkouts } = useWorkouts()
 const loading = ref(false)
-const offline = ref(false)
 
 const selectedWorkout = computed(() =>
   workouts.value.find(r => r.id === exerciseStore.selectedWorkout) ?? null
@@ -131,18 +129,9 @@ onMounted(async () => {
   loading.value = true
 
   try {
-    await load()
-    workouts.value = await getWorkouts()
-    localStorage.setItem(CACHE_KEY, JSON.stringify(workouts.value))
-    offline.value = false
-  } catch (error) {
-    console.warn('Séances indisponibles, utilisation du cache local', error)
-    try {
-      workouts.value = JSON.parse(localStorage.getItem(CACHE_KEY) || '[]')
-    } catch {
-      workouts.value = []
-    }
-    offline.value = true
+    await Promise.all([load(), loadWorkouts()])
+    // Ancienne copie de secours des modèles, devenue inutile
+    localStorage.removeItem('countrep.workoutsCache')
   } finally {
     loading.value = false
   }
@@ -191,9 +180,6 @@ onMounted(async () => {
     <!-- Choix de la séance, avant de commencer -->
     <template v-else>
 
-      <p v-if="offline" class="px-2 text-xs text-fg-muted">
-        {{ t('session.offline') }}
-      </p>
 
       <!-- Une carte par séance : un appui la sélectionne -->
       <div

@@ -137,6 +137,14 @@ const handleLogin = async () => {
           </button>
         </div>
       </section>
+
+      <!-- Tout fonctionne aussi sans compte (ADR 0014) -->
+      <router-link
+        to="/today"
+        class="block py-2 text-center text-sm font-medium text-primary"
+      >
+        {{ t('login.continueWithout') }}
+      </router-link>
     </main>
   </div>
 </template>

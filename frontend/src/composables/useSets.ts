@@ -7,6 +7,7 @@ import {
   syncOne
 } from '../services/sync'
 import { ensureFreshToken } from '../services/session'
+import { canSync, syncLocalData } from '../services/dataSync'
 
 export function useSets() {
 
@@ -139,13 +140,20 @@ const deleteSet = async (id: string) => {
       // Toujours commencer par les données locales
       await loadSets()
 
+      // Sans session, l'application reste en local (ADR 0014)
+      if (!canSync()) return
+
       await ensureFreshToken()
+      if (!canSync()) return
 
       // Envoyer les sets locaux non synchronisés
       await syncPendingSets()
 
       // Récupérer les sets du serveur
       await syncSetsFromServer()
+
+      // Modèles de séance et sélection d'exercices
+      await syncLocalData()
 
       // Recharger IndexedDB après synchronisation
       await loadSets()

@@ -190,9 +190,13 @@ export async function workoutRoutes(app: FastifyInstance) {
   )
 
   // ============================================================
-  // REPLACE
+  // CREATE OR REPLACE
   // ============================================================
 
+  // Upsert idempotent sur l'id choisi par le client (ADR 0014) : le
+  // modèle créé ou modifié hors ligne est envoyé tel quel, et l'envoi
+  // peut être rejoué. La clause WHERE empêche d'écraser le modèle d'un
+  // autre utilisateur (409).
   app.put(
     '/api/workouts/:id',
     { schema: { params: idParamsSchema, body: workoutBodySchema } },
@@ -201,15 +205,16 @@ export async function workoutRoutes(app: FastifyInstance) {
       const { id } = request.params as { id: string }
       const body = request.body as WorkoutBody
 
-      const found = await inTransaction(async client => {
+      const owned = await inTransaction(async client => {
         const result = await client.query(
           `
-          UPDATE workouts
-          SET name = $1, rounds = $2, updated_at = now()
-          WHERE id = $3
-            AND user_id = $4
+          INSERT INTO workouts (id, user_id, name, rounds)
+          VALUES ($1, $2, $3, $4)
+          ON CONFLICT (id) DO UPDATE
+          SET name = EXCLUDED.name, rounds = EXCLUDED.rounds, updated_at = now()
+          WHERE workouts.user_id = EXCLUDED.user_id
           `,
-          [body.name.trim(), body.rounds, id, userId]
+          [id, userId, body.name.trim(), body.rounds]
         )
 
         if (result.rowCount === 0) {
@@ -224,12 +229,12 @@ export async function workoutRoutes(app: FastifyInstance) {
         return true
       })
 
-      if (found === null) {
+      if (owned === null) {
         return reply.code(400).send({ error: 'Unknown exercise(s)' })
       }
 
-      if (!found) {
-        return reply.code(404).send({ error: 'Workout not found' })
+      if (!owned) {
+        return reply.code(409).send({ error: 'Workout id already used' })
       }
 
       const [workout] = await loadWorkouts(userId, id)

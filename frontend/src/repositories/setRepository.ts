@@ -54,10 +54,12 @@ export const setRepository = {
   },
 
   async clearAll(): Promise<void> {
-    await db.transaction('rw', [db.sets, db.syncState, db.previews], async () => {
+    await db.transaction('rw', [db.sets, db.syncState, db.previews, db.workouts, db.userExercises], async () => {
       await db.sets.clear()
       await db.syncState.clear()
       await db.previews.clear()
+      await db.workouts.clear()
+      await db.userExercises.clear()
     })
   }  
 

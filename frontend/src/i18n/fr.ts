@@ -63,7 +63,12 @@ const messages = {
     "addDeviceTitle": "Ajouter cet appareil",
     "addDeviceHint": "Enregistrez un nouveau Passkey pour pouvoir vous connecter à votre compte depuis cet appareil.",
     "addDevice": "Ajouter un moyen d’accès",
-    "logout": "Se déconnecter"
+    "logout": "Se déconnecter",
+    "localTitle": "Non connecté",
+    "expiredTitle": "Session expirée",
+    "localHint": "Tes données restent sur ce téléphone. Connecte-toi pour les sauvegarder et les retrouver sur tes autres appareils.",
+    "logoutHint": "Tes données restent sur ce téléphone, et se resynchronisent à ta prochaine connexion.",
+    "logoutWipe": "Se déconnecter et effacer les données de ce téléphone"
   },
   "common": {
     "wait": "Patientez...",
@@ -85,7 +90,6 @@ const messages = {
     "create": "Créer une séance ›",
     "inProgress": "Séance en cours · {date}",
     "resume": "Reprendre ›",
-    "offline": "Hors ligne : dernière version connue des séances.",
     "start": "Démarrer la séance",
     "minimize": "‹ Réduire",
     "lessRounds": "Une série de moins",
@@ -112,7 +116,8 @@ const messages = {
     "pendingKept": "{n} saisie en attente est conservée sur cet appareil et sera synchronisée après la connexion. | {n} saisies en attente sont conservées sur cet appareil et seront synchronisées après la connexion.",
     "username": "Identifiant / Email",
     "signIn": "Se connecter",
-    "register": "S'enregistrer (Passkey)"
+    "register": "S'enregistrer (Passkey)",
+    "continueWithout": "Continuer sans compte"
   },
   "exercises": {
     "loadError": "Erreur lors du chargement des exercices",

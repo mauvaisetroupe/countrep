@@ -2,9 +2,11 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { appearancePreference } from '../appearance'
+import { useAuthStore } from '../stores/auth'
 import { localePreference } from '../i18n'
 
 const { t } = useI18n()
+const authStore = useAuthStore()
 const gitHash = __GIT_HASH__
 
 // Menu des réglages, comme Step Challenge : des groupes d'entrées, chacune
@@ -20,7 +22,7 @@ const groups = computed(() => [
   {
     title: t('settings.groups.general'),
     entries: [
-      { to: '/settings/account', title: t('settings.account.title'), detail: t('settings.account.description') },
+      { to: '/settings/account', title: t('settings.account.title'), detail: authStore.isAuthenticated ? t('settings.account.description') : t('account.localTitle') },
       { to: '/settings/appearance', title: t('settings.appearance.title'), detail: t(`settings.appearance.${appearancePreference.value}`) },
       { to: '/settings/language', title: t('settings.language.title'), detail: t(`settings.language.${localePreference.value}`) }
     ]

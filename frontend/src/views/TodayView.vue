@@ -7,7 +7,7 @@ import { useSets } from '../composables/useSets'
 import { syncSet } from '../services/sync'
 import { useExerciseStore, type HomeMode } from '../stores/exercise'
 import type { LocalSet } from '../db'
-import { getUserExercises, type UserExercise } from '../api/exercises'
+import { useUserExercises } from '../composables/useUserExercises'
 import TodayCalendar from '../components/TodayCalendar.vue'
 import DayNavigator from '../components/DayNavigator.vue'
 import { useI18n } from 'vue-i18n'
@@ -15,7 +15,8 @@ import { exerciseName } from '../i18n'
 import { formatAmount } from '../units'
 
 const exerciseStore = useExerciseStore()
-const userExercises = ref<UserExercise[]>([])
+// Sélection locale (ADR 0014)
+const { userExercises, load: loadUserExercises } = useUserExercises()
 
 const { t } = useI18n()
 
@@ -44,17 +45,6 @@ const selectedExerciseUnit = computed(() =>
     exercise => exercise.id === exerciseStore.selectedExercise
   )?.unit ?? 'reps'
 )
-
-const loadUserExercises = async () => {
-  try {
-    userExercises.value = await getUserExercises()
-  } catch (error) {
-    console.error(
-      'Erreur lors du chargement des exercices',
-      error
-    )
-  }
-}
 
 // ============================================================
 // DATE : aujourd'hui par défaut, ‹ › ou calendrier en fenêtre

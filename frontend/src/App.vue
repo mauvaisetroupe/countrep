@@ -1,16 +1,13 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { onMounted, onUnmounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { needRefresh, updateSW } from './composables/usePwaUpdate'
-import { useAuthStore } from './stores/auth'
 import { ensureFreshToken } from './services/session'
 import NavIcon from './components/NavIcon.vue'
 
 const { t } = useI18n()
 const route = useRoute()
-const router = useRouter()
-const authStore = useAuthStore()
 
 const tabs = [
   { to: '/today', icon: 'log', label: 'nav.log' },
@@ -21,17 +18,6 @@ const tabs = [
 
 // Les sous-pages des réglages gardent l'onglet Réglages actif
 const isActive = (to: string) => route.path === to || route.path.startsWith(`${to}/`)
-
-// Session refusée par le serveur (401) pendant l'utilisation :
-// retour à la connexion, les données locales sont conservées.
-watch(
-  () => authStore.sessionExpired,
-  expired => {
-    if (expired && route.meta.requiresAuth) {
-      router.replace({ name: 'login' })
-    }
-  }
-)
 
 // Une PWA reste souvent ouverte en arrière-plan :
 // on renouvelle aussi le token au retour au premier plan.

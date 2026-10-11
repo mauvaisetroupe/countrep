@@ -76,11 +76,16 @@ export const useAuthStore = defineStore('auth', () => {
     sessionExpired.value = true
   }
 
-  // Efface le token et toutes les données locales.
-  // Passer par services/session.ts#logoutSafely, qui protège
-  // les séances non synchronisées.
-  const logout = async () => {
+  // Déconnexion (ADR 0014). Sans `wipe`, les données restent sur
+  // l'appareil, toujours rattachées au compte : l'application continue en
+  // local et elles se resynchronisent à la prochaine connexion. Avec
+  // `wipe`, toute la base locale est effacée. Passer par
+  // services/session.ts#logoutSafely, qui protège les données non envoyées.
+  const logout = async ({ wipe = false }: { wipe?: boolean } = {}) => {
     setToken(null)
+
+    if (!wipe) return
+
     localStorage.removeItem(OWNER_KEY)
 
     try {

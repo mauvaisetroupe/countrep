@@ -2,12 +2,13 @@
 import { onMounted, ref } from 'vue'
 import SettingsHeader from '../components/SettingsHeader.vue'
 import WorkoutCard from '../components/WorkoutCard.vue'
-import { getWorkouts, type Workout } from '../api/workouts'
+import { useWorkouts } from '../composables/useWorkouts'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
 
-const workouts = ref<Workout[]>([])
+// Modèles locaux (ADR 0014)
+const { workouts, load } = useWorkouts()
 const loading = ref(false)
 const error = ref('')
 
@@ -15,10 +16,7 @@ onMounted(async () => {
   loading.value = true
 
   try {
-    workouts.value = await getWorkouts()
-  } catch (err: any) {
-    console.error(err)
-    error.value = err.message || t('workouts.loadError')
+    await load()
   } finally {
     loading.value = false
   }

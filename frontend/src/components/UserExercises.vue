@@ -1,13 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { useAuthStore } from '../stores/auth'
-import {
-  getExercises,
-  getUserExercises,
-  updateUserExercises,
-  type ApiExercise,
-  type UserExercise
-} from '../api/exercises'
+import type { ApiExercise } from '../api/exercises'
+import { CATALOG } from '../catalog'
+import { useUserExercises } from '../composables/useUserExercises'
 import { useSets } from '../composables/useSets'
 import { VueDraggable } from 'vue-draggable-plus'
 import { reorderOptions } from '../reorder'
@@ -17,10 +12,10 @@ import { exerciseAltName, exerciseName } from '../i18n'
 const MAX_EXERCISES = 10
 
 const { t } = useI18n()
-const authStore = useAuthStore()
-
-const exercises = ref<ApiExercise[]>([])
-const userExercises = ref<UserExercise[]>([])
+// Catalogue embarqué, sélection locale (ADR 0014) : rien ne passe par
+// le réseau ; la sélection est envoyée au serveur une fois connecté
+const exercises = ref<ApiExercise[]>(CATALOG)
+const { userExercises, load: loadSelection, save: saveSelection } = useUserExercises()
 
 const loading = ref(false)
 const saving = ref(false)
@@ -105,29 +100,13 @@ const toggleExercisePicker = () => {
 }
 
 const loadExercises = async () => {
-  if (!authStore.token) return
-
   loading.value = true
   error.value = ''
   saveMessage.value = ''
 
   try {
-    const [catalog, selected] = await Promise.all([
-      getExercises(),
-      getUserExercises()
-    ])
-
-    exercises.value = catalog
-    userExercises.value = selected
-
-    selectedExerciseIds.value = [...selected]
-      .sort((a, b) => a.position - b.position)
-      .map(exercise => exercise.id)
-  } catch (err: any) {
-    console.error(err)
-
-    error.value =
-      err.message || t('exercises.loadError')
+    await loadSelection()
+    selectedExerciseIds.value = userExercises.value.map(exercise => exercise.id)
   } finally {
     loading.value = false
   }
@@ -160,16 +139,7 @@ const saveExercises = async () => {
   saveMessage.value = ''
 
   try {
-    const selected = await updateUserExercises(
-      selectedExerciseIds.value
-    )
-
-    userExercises.value = selected
-
-    selectedExerciseIds.value = [...selected]
-      .sort((a, b) => a.position - b.position)
-      .map(exercise => exercise.id)
-
+    await saveSelection([...selectedExerciseIds.value])
     saveMessage.value = t('exercises.saved')
   } catch (err: any) {
     console.error(err)

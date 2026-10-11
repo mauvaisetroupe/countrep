@@ -34,11 +34,13 @@ const handleAddDevice = async () => {
   }
 }
 
-const logout = async () => {
-  if (!(await logoutSafely())) {
+// Déconnexion (ADR 0014) : on reste dans l'application, en local. Avec
+// `wipe`, les données de ce téléphone sont aussi effacées.
+const logout = async (wipe: boolean) => {
+  if (!(await logoutSafely({ wipe }))) {
     return
   }
-  router.replace({ name: 'login' })
+  router.replace({ name: 'today' })
 }
 
 const decodedToken = computed(() => {
@@ -68,10 +70,29 @@ const decodedToken = computed(() => {
     <main class="mt-6 space-y-4">
 
       <!-- =====================================================
+           SANS COMPTE (ADR 0014) : tout fonctionne en local
+      ====================================================== -->
+
+      <section v-if="!authStore.isAuthenticated" class="bg-surface rounded-xl p-5">
+        <p class="text-sm font-semibold text-fg">
+          {{ authStore.sessionExpired ? t('account.expiredTitle') : t('account.localTitle') }}
+        </p>
+        <p class="mt-1 text-sm text-fg-secondary">
+          {{ t('account.localHint') }}
+        </p>
+        <router-link
+          to="/login"
+          class="mt-4 flex w-full items-center justify-center rounded-xl bg-primary py-3 font-semibold text-on-primary"
+        >
+          {{ t('login.signIn') }}
+        </router-link>
+      </section>
+
+      <!-- =====================================================
            PROFIL ACTIF (CONNECTÉ)
       ====================================================== -->
 
-      <section class="bg-surface rounded-xl p-5">
+      <section v-else class="bg-surface rounded-xl p-5">
 
         <div class="flex items-center gap-3">
 
@@ -148,12 +169,21 @@ const decodedToken = computed(() => {
           {{ error }}
         </p>
         
-        <!-- Déconnexion / Changer de profil -->
+        <!-- Déconnexion : garder ou effacer les données de ce téléphone -->
         <button
-          @click="logout"
-          class="mt-4 w-full bg-surface-alt hover:bg-surface-alt text-fg-secondary font-semibold py-3 rounded-xl transition-colors"
+          @click="logout(false)"
+          class="mt-4 w-full bg-surface-alt text-fg-secondary font-semibold py-3 rounded-xl transition-colors"
         >
           {{ t('account.logout') }}
+        </button>
+        <p class="mt-1.5 px-1 text-xs text-fg-muted">
+          {{ t('account.logoutHint') }}
+        </p>
+        <button
+          @click="logout(true)"
+          class="mt-3 w-full bg-surface-alt text-danger font-semibold py-3 rounded-xl transition-colors"
+        >
+          {{ t('account.logoutWipe') }}
         </button>
 
       </section>

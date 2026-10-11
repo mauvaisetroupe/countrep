@@ -65,7 +65,12 @@ const messages: typeof fr = {
     "addDeviceTitle": "Add this device",
     "addDeviceHint": "Register a new passkey to sign in to your account from this device.",
     "addDevice": "Add a sign-in method",
-    "logout": "Sign out"
+    "logout": "Sign out",
+    "localTitle": "Not signed in",
+    "expiredTitle": "Session expired",
+    "localHint": "Your data stays on this phone. Sign in to back it up and find it on your other devices.",
+    "logoutHint": "Your data stays on this phone and syncs again next time you sign in.",
+    "logoutWipe": "Sign out and erase the data on this phone"
   },
   "common": {
     "wait": "Please wait...",
@@ -87,7 +92,6 @@ const messages: typeof fr = {
     "create": "Create a workout ›",
     "inProgress": "Workout in progress · {date}",
     "resume": "Resume ›",
-    "offline": "Offline: last known version of your workouts.",
     "start": "Start workout",
     "minimize": "‹ Minimize",
     "lessRounds": "One round less",
@@ -114,7 +118,8 @@ const messages: typeof fr = {
     "pendingKept": "{n} pending entry is kept on this device and will be synced after signing in. | {n} pending entries are kept on this device and will be synced after signing in.",
     "username": "Username / Email",
     "signIn": "Sign in",
-    "register": "Register (passkey)"
+    "register": "Register (passkey)",
+    "continueWithout": "Continue without an account"
   },
   "exercises": {
     "loadError": "Could not load exercises",

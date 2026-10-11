@@ -6,7 +6,7 @@ import TodayCalendar from '../components/TodayCalendar.vue'
 import { useSets } from '../composables/useSets'
 import { usePreview } from '../composables/usePreview'
 import { useExerciseStore } from '../stores/exercise'
-import { getExercises } from '../api/exercises'
+import { CATALOG } from '../catalog'
 import type { LocalSet } from '../db'
 import { useExerciseUnits } from '../composables/useExerciseUnits'
 import { useI18n } from 'vue-i18n'
@@ -314,8 +314,7 @@ const dayRows = (daySets: LocalSet[]): DayRow[] => {
 const editSession = async (sessionId: string) => {
   await loadPreview()
 
-  const catalog = await getExercises().catch(() => [])
-  const opened = await openForEdit(sessionSets(sessionId), sessionName(sessionId), catalog)
+  const opened = await openForEdit(sessionSets(sessionId), sessionName(sessionId), CATALOG)
 
   if (!opened) {
     window.alert(t('journal.sessionInProgress'))
