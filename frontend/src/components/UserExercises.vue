@@ -11,9 +11,12 @@ import {
 import { useSets } from '../composables/useSets'
 import { VueDraggable } from 'vue-draggable-plus'
 import { reorderOptions } from '../reorder'
+import { useI18n } from 'vue-i18n'
+import { exerciseAltName, exerciseName } from '../i18n'
 
 const MAX_EXERCISES = 10
 
+const { t } = useI18n()
 const authStore = useAuthStore()
 
 const exercises = ref<ApiExercise[]>([])
@@ -124,7 +127,7 @@ const loadExercises = async () => {
     console.error(err)
 
     error.value =
-      err.message || 'Erreur lors du chargement des exercices'
+      err.message || t('exercises.loadError')
   } finally {
     loading.value = false
   }
@@ -167,12 +170,12 @@ const saveExercises = async () => {
       .sort((a, b) => a.position - b.position)
       .map(exercise => exercise.id)
 
-    saveMessage.value = 'Exercices enregistrés.'
+    saveMessage.value = t('exercises.saved')
   } catch (err: any) {
     console.error(err)
 
     error.value =
-      err.message || 'Erreur lors de la sauvegarde des exercices'
+      err.message || t('exercises.saveError')
   } finally {
     saving.value = false
   }
@@ -188,12 +191,11 @@ onMounted(() => {
     <div class="flex items-start justify-between gap-3">
       <div>
         <p class="text-sm font-semibold text-gray-800">
-          Exercices au quotidien
+          {{ t('settings.exercises.title') }}
         </p>
 
         <p class="mt-1 text-xs text-gray-500">
-          Choisissez jusqu'à {{ MAX_EXERCISES }} exercices à pratiquer
-          régulièrement. Faites-les glisser pour définir votre ordre de priorité.
+          {{ t('exercises.intro', { max: MAX_EXERCISES }) }}
         </p>
       </div>
 
@@ -233,20 +235,19 @@ onMounted(() => {
 
         <div class="min-w-0 flex-1">
           <p class="text-sm font-medium text-gray-800">
-            {{ exerciseById(exerciseId)?.nameFr ?? exerciseId }}
+            {{ exerciseName(exerciseById(exerciseId)) || exerciseId }}
           </p>
 
           <div class="mt-0.5 flex items-center gap-2">
             <p class="text-xs text-gray-400">
-              {{ exerciseById(exerciseId)?.nameEn }}
+              {{ exerciseAltName(exerciseById(exerciseId)) }}
             </p>
 
             <span
               v-if="getSetCount(exerciseId) > 0"
               class="text-[10px] font-semibold text-amber-600"
             >
-              {{ getSetCount(exerciseId) }}
-              {{ getSetCount(exerciseId) === 1 ? 'saisie' : 'saisies' }}
+              {{ t('exercises.setCount', getSetCount(exerciseId)) }}
             </span>
           </div>
         </div>
@@ -254,7 +255,7 @@ onMounted(() => {
         <button
           type="button"
           class="shrink-0 text-gray-400 hover:text-red-500 text-lg"
-          aria-label="Retirer cet exercice"
+          :aria-label="t('exercises.remove')"
           @click.stop="toggleExercise(exerciseId)"
         >
           ×
@@ -263,7 +264,7 @@ onMounted(() => {
         <button
           type="button"
           class="drag-handle shrink-0 text-gray-300 hover:text-gray-500 text-xl leading-none touch-none select-none cursor-grab active:cursor-grabbing"
-          aria-label="Déplacer cet exercice"
+          :aria-label="t('exercises.move')"
         >
           ⋮⋮⋮
         </button>
@@ -271,7 +272,7 @@ onMounted(() => {
       </VueDraggable>
 
       <p class="pt-1 text-xs text-gray-400 text-center">
-        ↕ Faites glisser les exercices pour modifier leur ordre.
+        {{ t('exercises.dragHint') }}
       </p>
 
       <button
@@ -280,7 +281,7 @@ onMounted(() => {
         class="mt-4 w-full bg-amber-500 hover:bg-amber-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-2xl transition-all"
         @click="saveExercises"
       >
-        {{ saving ? 'Enregistrement...' : 'Enregistrer' }}
+        {{ saving ? t('common.saving') : t('common.save') }}
       </button>
 
       <p
@@ -297,11 +298,11 @@ onMounted(() => {
       class="mt-4 rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-4 py-5 text-center"
     >
       <p class="text-sm font-medium text-gray-600">
-        Aucun exercice sélectionné.
+        {{ t('exercises.noneSelected') }}
       </p>
 
       <p class="mt-1 text-xs text-gray-400">
-        Ajoutez vos exercices ci-dessous.
+        {{ t('exercises.addBelow') }}
       </p>
     </div>
 
@@ -316,7 +317,7 @@ onMounted(() => {
           {{ showExercisePicker ? '×' : '+' }}
         </span>
 
-        {{ showExercisePicker ? 'Fermer' : 'Ajouter un exercice' }}
+        {{ showExercisePicker ? t('common.close') : t('exercises.add') }}
       </button>
     </div>
 
@@ -335,7 +336,7 @@ onMounted(() => {
         <input
           v-model="searchQuery"
           type="search"
-          placeholder="Rechercher un exercice..."
+          :placeholder="t('exercises.search')"
           class="w-full bg-white border border-gray-200 rounded-2xl pl-10 pr-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
         />
       </div>
@@ -344,7 +345,7 @@ onMounted(() => {
         v-if="loading"
         class="mt-4 text-sm text-gray-500"
       >
-        Chargement des exercices...
+        {{ t('exercises.loading') }}
       </p>
 
       <p
@@ -358,7 +359,7 @@ onMounted(() => {
         v-else-if="filteredExercises.length === 0"
         class="mt-4 text-sm text-gray-500 text-center"
       >
-        Aucun exercice trouvé.
+        {{ t('exercises.notFound') }}
       </p>
 
       <div
@@ -383,20 +384,19 @@ onMounted(() => {
         >
           <div class="min-w-0">
             <p class="text-sm font-medium text-gray-800">
-              {{ exercise.nameFr }}
+              {{ exerciseName(exercise) }}
             </p>
 
             <div class="mt-0.5">
               <p class="text-xs text-gray-400">
-                {{ exercise.nameEn }}
+                {{ exerciseAltName(exercise) }}
               </p>
 
               <span
                 v-if="getSetCount(exercise.id) > 0"
                 class="text-[10px] font-semibold text-amber-600"
               >
-                {{ getSetCount(exercise.id) }}
-                {{ getSetCount(exercise.id) === 1 ? 'saisie' : 'saisies' }}
+                {{ t('exercises.setCount', getSetCount(exercise.id)) }}
               </span>
 
               <a
@@ -405,7 +405,7 @@ onMounted(() => {
                 target="_blank"
                 rel="noopener noreferrer"
                 class="block mt-1 text-xs font-semibold text-amber-600 hover:text-amber-700"
-                title="Voir l'exercice sur Lift Manual"
+                :title="t('exercises.guideTitle')"
                 @click.stop
               >
                 Guide
@@ -442,7 +442,7 @@ onMounted(() => {
         v-if="selectedCount === MAX_EXERCISES"
         class="mt-3 text-xs text-gray-500"
       >
-        Maximum de {{ MAX_EXERCISES }} exercices sélectionnés.
+        {{ t('exercises.maxReached', { max: MAX_EXERCISES }) }}
       </p>
     </div>
   </section>

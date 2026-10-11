@@ -9,14 +9,18 @@ import { useExerciseStore, type HomeMode } from '../stores/exercise'
 import type { LocalSet } from '../db'
 import { getUserExercises, type UserExercise } from '../api/exercises'
 import TodayCalendar from '../components/TodayCalendar.vue'
+import { useI18n } from 'vue-i18n'
+import { exerciseName } from '../i18n'
 
 const exerciseStore = useExerciseStore()
 const userExercises = ref<UserExercise[]>([])
 
-const modes: { value: HomeMode, label: string }[] = [
-  { value: 'exercise', label: 'Exercice' },
-  { value: 'workout', label: 'Séance' }
-]
+const { t } = useI18n()
+
+const modes = computed<{ value: HomeMode, label: string }[]>(() => [
+  { value: 'exercise', label: t('today.modeExercise') },
+  { value: 'workout', label: t('today.modeWorkout') }
+])
 
 const selectedExerciseName = computed(() => {
   if (!exerciseStore.selectedExercise) {
@@ -24,9 +28,11 @@ const selectedExerciseName = computed(() => {
   }
 
   return (
-    userExercises.value.find(
-      exercise => exercise.id === exerciseStore.selectedExercise
-    )?.nameFr ||
+    exerciseName(
+      userExercises.value.find(
+        exercise => exercise.id === exerciseStore.selectedExercise
+      )
+    ) ||
     exerciseStore.selectedExercise
   )
 })
@@ -148,7 +154,7 @@ loadUserExercises()
 
   <header class="px-5 pt-6 pb-4 flex items-center justify-between gap-3">
     <h1 class="page-title">
-      Saisie
+      {{ t('nav.log') }}
     </h1>
 
     <!-- Mode : un exercice au fil de la journée, ou une séance complète.
@@ -219,7 +225,7 @@ loadUserExercises()
       @click="showModal = true"
       class="bg-amber-200 text-amber-950 text-sm font-semibold px-5 py-3.5 rounded-full shadow-lg flex items-center gap-2 border border-amber-300/60 active:scale-95 transition-transform"
     >
-      <span>⚡</span> Ajouter {{ selectedExerciseName }}
+      <span>⚡</span> {{ t('addReps.title', { name: selectedExerciseName }) }}
     </button>
   </div>
 

@@ -5,6 +5,9 @@ import { useAuthStore } from '../stores/auth'
 import { addDevice } from '../services/auth'
 import { logoutSafely } from '../services/session'
 import SettingsHeader from '../components/SettingsHeader.vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const authStore = useAuthStore()
 const router = useRouter()
@@ -22,10 +25,10 @@ const handleAddDevice = async () => {
 
   try {
     await addDevice(authStore.token)
-    deviceMessage.value = 'Cet appareil est maintenant enregistré.'
+    deviceMessage.value = t('account.deviceAdded')
   } catch (err: any) {
     console.error(err)
-    error.value = err.message || "Une erreur est survenue lors de l'ajout de l'appareil."
+    error.value = err.message || t('account.deviceError')
   } finally {
     deviceLoading.value = false
   }
@@ -52,7 +55,7 @@ const decodedToken = computed(() => {
     )
     return JSON.parse(jsonPayload)
   } catch (e) {
-    return { error: 'Impossible de décoder le JWT' }
+    return { error: t('account.decodeError') }
   }
 })
 </script>
@@ -60,7 +63,7 @@ const decodedToken = computed(() => {
 <template>
   <div class="min-h-screen bg-[#fdf8f5] pb-28 px-5 pt-6">
 
-    <SettingsHeader title="Compte et sécurité" />
+    <SettingsHeader :title="t('settings.account.title')" />
 
     <main class="mt-6 space-y-4">
 
@@ -83,11 +86,11 @@ const decodedToken = computed(() => {
           <div class="min-w-0">
 
             <p class="text-sm font-semibold text-gray-800">
-              Session sécurisée active
+              {{ t('account.sessionActive') }}
             </p>
 
             <p class="text-xs text-gray-500 font-mono truncate">
-              Authentifié par Jeton JWT
+              {{ t('account.jwt') }}
             </p>
 
             <p class="text-sm font-semibold text-gray-800">
@@ -113,11 +116,11 @@ const decodedToken = computed(() => {
         <div class="mt-5 pt-4 border-t border-gray-100">
 
           <p class="text-sm font-semibold text-gray-800">
-            Ajouter cet appareil
+            {{ t('account.addDeviceTitle') }}
           </p>
 
           <p class="mt-1 text-xs text-gray-500">
-            Enregistrez un nouveau Passkey pour pouvoir vous connecter à votre compte depuis cet appareil.
+            {{ t('account.addDeviceHint') }}
           </p>
 
           <p
@@ -132,7 +135,7 @@ const decodedToken = computed(() => {
             :disabled="deviceLoading"
             class="mt-3 w-full bg-amber-500 hover:bg-amber-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-2xl transition-all"
           >
-            {{ deviceLoading ? 'Patientez...' : 'Ajouter un moyen d’accès' }}
+            {{ deviceLoading ? t('common.wait') : t('account.addDevice') }}
           </button>
 
         </div>
@@ -150,7 +153,7 @@ const decodedToken = computed(() => {
           @click="logout"
           class="mt-4 w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 rounded-2xl transition-colors"
         >
-          Se déconnecter
+          {{ t('account.logout') }}
         </button>
 
       </section>

@@ -39,8 +39,8 @@ export interface LocalPreview {
     id: string
     name: string
     rounds: number
-    // unit absente pour une séance démarrée avant l'ADR 0008
-    exercises: { exerciseId: string, nameFr: string, reps: number, unit?: ExerciseUnit }[]
+    // unit et nameEn absents pour une séance démarrée avant les ADR 0008 / 0009
+    exercises: { exerciseId: string, nameFr: string, nameEn?: string, reps: number, unit?: ExerciseUnit }[]
   }
   entries: PreviewEntry[]
 }

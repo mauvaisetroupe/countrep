@@ -9,7 +9,7 @@ CountRep is an offline-first PWA for logging daily exercise repetitions (bodywei
 - `frontend/` — Vue 3 + TypeScript, Vite, Pinia, Vue Router, Tailwind 4, Dexie (IndexedDB), `vite-plugin-pwa`
 - `backend/` — Fastify 5 + raw SQL via `pg` (no ORM), JWT auth, WebAuthn passkeys (`@simplewebauthn`)
 
-Production: `https://countrep.architech.lu` (Cloudflare → Nginx + systemd `countrep-api` on a Proxmox LXC, built and deployed from a git clone in `/opt/countrep`; see `docs/deployment.md`). Frontend and backend deploy together, but installed PWAs keep running their cached frontend until the user accepts the update prompt, so keep API changes backward compatible. UI text, comments and log messages are mostly in French.
+Production: `https://countrep.architech.lu` (Cloudflare → Nginx + systemd `countrep-api` on a Proxmox LXC, built and deployed from a git clone in `/opt/countrep`; see `docs/deployment.md`). Frontend and backend deploy together, but installed PWAs keep running their cached frontend until the user accepts the update prompt, so keep API changes backward compatible. Comments and log messages are mostly in French; UI text is translated (French / English, ADR 0009).
 
 ## Commands
 
@@ -78,6 +78,7 @@ Exercises are **not** offline: `composables/useExercises.ts` (module-level share
 ### Frontend UI
 
 - Views: `today` (calendar + exercise selector + rep entry modal), `journal`, `stats`, `profile`, `login`; bottom nav in `App.vue`.
+- i18n (ADR 0009): `vue-i18n`, messages in `frontend/src/i18n/fr.ts` and `en.ts` (typed on `fr.ts`, keep keys in sync). Never hard-code UI text; use `t()` (`useI18n`) in components and `i18n.global.t` elsewhere. Exercise names via `i18n/index.ts#exerciseName`, dates via `dateLocale()`. Language preference is per device (`localStorage` `countrep.locale`, Réglages › Langue, default system).
 - `stores/exercise.ts` persists the selected exercise in `localStorage`; `ExerciseSelector` is a controlled component (`v-model`) and is not coupled to the store.
 - Exercise illustrations are static files at `frontend/public/exercises/<exercise-id>.jpg`, the filename must match the exercise `id`.
 - `__GIT_HASH__` is injected at build time by `vite.config.ts`; PWA updates use `registerType: 'prompt'` (`composables/usePwaUpdate.ts`).

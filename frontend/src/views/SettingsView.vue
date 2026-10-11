@@ -1,34 +1,44 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 const gitHash = __GIT_HASH__
 
 // Entrées du menu des réglages : une sous-page chacune
-const items = [
+const items = computed(() => [
   {
     to: '/settings/exercises',
     icon: '🏋️',
-    title: 'Exercices au quotidien',
-    description: 'Les exercices du mode Exercice, au fil de la journée'
+    title: t('settings.exercises.title'),
+    description: t('settings.exercises.description')
   },
   {
     to: '/settings/workouts',
     icon: '📋',
-    title: 'Mes séances',
-    description: 'Enchaînements d’exercices sur plusieurs séries'
+    title: t('settings.workouts.title'),
+    description: t('settings.workouts.description')
+  },
+  {
+    to: '/settings/language',
+    icon: '🌐',
+    title: t('settings.language.title'),
+    description: t('settings.language.description')
   },
   {
     to: '/settings/account',
     icon: '🔒',
-    title: 'Compte et sécurité',
-    description: 'Session, appareils, déconnexion'
+    title: t('settings.account.title'),
+    description: t('settings.account.description')
   }
-]
+])
 </script>
 
 <template>
   <div class="min-h-screen bg-[#fdf8f5] pb-28 px-5 pt-6">
 
     <h1 class="page-title">
-      Réglages
+      {{ t('nav.settings') }}
     </h1>
 
     <main class="mt-6">
@@ -58,7 +68,7 @@ const items = [
       </nav>
 
       <div class="mt-8 text-center text-xs text-gray-400">
-        Build : {{ gitHash }}
+        {{ t('settings.build', { hash: gitHash }) }}
       </div>
 
     </main>

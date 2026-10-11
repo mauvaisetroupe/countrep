@@ -8,6 +8,9 @@ import {
 import { setRepository } from '../repositories/setRepository'
 import { previewRepository } from '../repositories/previewRepository'
 import { syncPendingSets } from './sync'
+import { i18n } from '../i18n'
+
+const t = i18n.global.t
 
 // Le token dure 7 jours ; on le renouvelle dès qu'il a plus d'un jour.
 // Un utilisateur qui ouvre l'app au moins une fois par semaine
@@ -58,11 +61,6 @@ export async function ensureFreshToken(): Promise<void> {
   await inFlight
 }
 
-// Accorde un texte au nombre de séances : plural(n, 'a', 'ont')
-function plural(count: number, one: string, many: string): string {
-  return count > 1 ? many : one
-}
-
 // À appeler avec le token d'une nouvelle connexion, avant setToken.
 // Si les données locales appartiennent à un autre compte, elles sont
 // effacées (après confirmation s'il reste des séances non synchronisées,
@@ -82,10 +80,7 @@ export async function prepareLocalDataFor(token: string): Promise<boolean> {
   if (
     pendingCount > 0 &&
     !window.confirm(
-      `${pendingCount} ${plural(pendingCount, 'séance', 'séances')} d'un autre compte ` +
-      `${plural(pendingCount, "n'a", "n'ont")} pas été ` +
-      `${plural(pendingCount, 'synchronisée', 'synchronisées')} et ` +
-      `${plural(pendingCount, 'sera supprimée', 'seront supprimées')} de cet appareil. Continuer ?`
+      t('session.otherAccountPending', pendingCount)
     )
   ) {
     return false
@@ -109,11 +104,7 @@ export async function logoutSafely(): Promise<boolean> {
   if (
     pendingCount > 0 &&
     !window.confirm(
-      `${pendingCount} ${plural(pendingCount, 'séance', 'séances')} ` +
-      `${plural(pendingCount, "n'a", "n'ont")} pas pu être ` +
-      `${plural(pendingCount, 'synchronisée', 'synchronisées')} et ` +
-      `${plural(pendingCount, 'sera perdue', 'seront perdues')} ` +
-      'si tu te déconnectes. Se déconnecter quand même ?'
+      t('session.logoutPending', pendingCount)
     )
   ) {
     return false
@@ -123,8 +114,7 @@ export async function logoutSafely(): Promise<boolean> {
   if (
     (await previewRepository.count()) > 0 &&
     !window.confirm(
-      "Une séance en cours n'a pas été enregistrée et sera perdue " +
-      'si tu te déconnectes. Se déconnecter quand même ?'
+      t('session.logoutPreview')
     )
   ) {
     return false

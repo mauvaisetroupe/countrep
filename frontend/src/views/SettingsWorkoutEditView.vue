@@ -13,6 +13,10 @@ import {
   updateWorkout
 } from '../api/workouts'
 import { formatAmount, formatTotals } from '../units'
+import { useI18n } from 'vue-i18n'
+import { exerciseAltName, exerciseName as localizedName } from '../i18n'
+
+const { t } = useI18n()
 
 const MAX_ROUNDS = 50
 const DEFAULT_REPS = 10
@@ -49,7 +53,7 @@ const searchQuery = ref('')
 let nextKey = 0
 
 const exerciseName = (exerciseId: string) => {
-  return catalog.value.find(exercise => exercise.id === exerciseId)?.nameFr ?? exerciseId
+  return localizedName(catalog.value.find(exercise => exercise.id === exerciseId)) || exerciseId
 }
 
 const filteredCatalog = computed(() => {
@@ -152,7 +156,7 @@ const save = async () => {
     router.replace('/settings/workouts')
   } catch (err: any) {
     console.error(err)
-    error.value = err.message || "Erreur lors de l'enregistrement de la séance"
+    error.value = err.message || t('editWorkout.saveError')
   } finally {
     saving.value = false
   }
@@ -160,7 +164,7 @@ const save = async () => {
 
 const remove = async () => {
   if (!props.id) return
-  if (!window.confirm(`Supprimer la séance « ${name.value} » ?`)) return
+  if (!window.confirm(t('editWorkout.deleteConfirm', { name: name.value }))) return
 
   saving.value = true
   error.value = ''
@@ -170,7 +174,7 @@ const remove = async () => {
     router.replace('/settings/workouts')
   } catch (err: any) {
     console.error(err)
-    error.value = err.message || 'Erreur lors de la suppression de la séance'
+    error.value = err.message || t('editWorkout.deleteError')
   } finally {
     saving.value = false
   }
@@ -191,7 +195,7 @@ onMounted(async () => {
       const workout = workouts.find(workout => workout.id === props.id)
 
       if (!workout) {
-        error.value = 'Séance introuvable.'
+        error.value = t('editWorkout.notFound')
         return
       }
 
@@ -216,15 +220,15 @@ onMounted(async () => {
   <div class="min-h-screen bg-[#fdf8f5] pb-28 px-5 pt-6">
 
     <SettingsHeader
-      :title="isNew ? 'Nouvelle séance' : 'Modifier la séance'"
+      :title="isNew ? t('workouts.new') : t('editWorkout.title')"
       back-to="/settings/workouts"
-      back-label="Mes séances"
+      :back-label="t('settings.workouts.title')"
     />
 
     <main class="mt-6 space-y-4">
 
       <p v-if="loading" class="text-sm text-gray-500">
-        Chargement...
+        {{ t('common.loading') }}
       </p>
 
       <template v-else>
@@ -232,14 +236,14 @@ onMounted(async () => {
         <!-- Nom -->
         <section class="bg-white border border-gray-200/80 rounded-3xl p-5 shadow-xs">
           <label for="workout-name" class="text-xs font-semibold text-gray-500 block mb-2">
-            Nom de la séance
+            {{ t('editWorkout.name') }}
           </label>
           <input
             id="workout-name"
             v-model="name"
             type="text"
             maxlength="100"
-            placeholder="Calisthénie maison"
+            :placeholder="t('editWorkout.namePlaceholder')"
             class="w-full bg-white border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
           />
         </section>
@@ -247,10 +251,10 @@ onMounted(async () => {
         <!-- Exercices -->
         <section class="bg-white border border-gray-200/80 rounded-3xl p-5 shadow-xs">
           <p class="text-sm font-semibold text-gray-800">
-            Exercices
+            {{ t('selector.title') }}
           </p>
           <p class="mt-1 text-xs text-gray-500">
-            Dans l'ordre où ils s'enchaînent, avec le nombre de répétitions (ou la durée) de chacun.
+            {{ t('editWorkout.exercisesHint') }}
           </p>
 
           <div v-if="exercises.length > 0" class="mt-4 space-y-2">
@@ -275,7 +279,7 @@ onMounted(async () => {
               <button
                 type="button"
                 class="shrink-0 rounded-full border border-amber-300 bg-white px-3 py-1.5 text-sm font-semibold text-amber-800 active:scale-95 transition-transform"
-                :aria-label="`Répétitions de ${exerciseName(exercise.exerciseId)}`"
+                :aria-label="t('editWorkout.repsOf', { name: exerciseName(exercise.exerciseId) })"
                 @click="repsEditKey = exercise.key"
               >
                 {{ formatAmount(exercise.reps, unitOf(exercise.exerciseId)) }}
@@ -284,7 +288,7 @@ onMounted(async () => {
               <button
                 type="button"
                 class="shrink-0 text-lg text-gray-400 hover:text-red-500"
-                aria-label="Retirer cet exercice"
+                :aria-label="t('exercises.remove')"
                 @click="removeExercise(index)"
               >
                 ×
@@ -293,7 +297,7 @@ onMounted(async () => {
               <button
                 type="button"
                 class="drag-handle shrink-0 text-gray-300 hover:text-gray-500 text-xl leading-none touch-none select-none cursor-grab active:cursor-grabbing"
-                aria-label="Déplacer cet exercice"
+                :aria-label="t('exercises.move')"
               >
                 ⋮⋮⋮
               </button>
@@ -304,7 +308,7 @@ onMounted(async () => {
               v-if="exercises.length > 1"
               class="pt-1 text-xs text-gray-400 text-center"
             >
-              ↕ Faites glisser les exercices pour modifier leur ordre.
+              {{ t('exercises.dragHint') }}
             </p>
           </div>
 
@@ -313,7 +317,7 @@ onMounted(async () => {
             class="mt-4 rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-4 py-5 text-center"
           >
             <p class="text-sm font-medium text-gray-600">
-              Aucun exercice.
+              {{ t('editWorkout.noExercise') }}
             </p>
           </div>
 
@@ -323,7 +327,7 @@ onMounted(async () => {
             @click="showPicker = !showPicker; searchQuery = ''"
           >
             <span class="text-lg leading-none">{{ showPicker ? '×' : '+' }}</span>
-            {{ showPicker ? 'Fermer' : 'Ajouter un exercice' }}
+            {{ showPicker ? t('common.close') : t('exercises.add') }}
           </button>
 
           <div v-if="showPicker" class="mt-4">
@@ -332,7 +336,7 @@ onMounted(async () => {
               <input
                 v-model="searchQuery"
                 type="search"
-                placeholder="Rechercher un exercice..."
+                :placeholder="t('exercises.search')"
                 class="w-full bg-white border border-gray-200 rounded-2xl pl-10 pr-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
               />
             </div>
@@ -341,7 +345,7 @@ onMounted(async () => {
               v-if="filteredCatalog.length === 0"
               class="mt-4 text-sm text-gray-500 text-center"
             >
-              Aucun exercice trouvé.
+              {{ t('exercises.notFound') }}
             </p>
 
             <div v-else class="mt-4 max-h-80 overflow-y-auto space-y-2">
@@ -353,8 +357,8 @@ onMounted(async () => {
                 @click="addExercise(exercise.id)"
               >
                 <div class="min-w-0">
-                  <p class="text-sm font-medium text-gray-800">{{ exercise.nameFr }}</p>
-                  <p class="text-xs text-gray-400">{{ exercise.nameEn }}</p>
+                  <p class="text-sm font-medium text-gray-800">{{ localizedName(exercise) }}</p>
+                  <p class="text-xs text-gray-400">{{ exerciseAltName(exercise) }}</p>
                 </div>
                 <span class="ml-3 text-lg text-amber-500">+</span>
               </button>
@@ -367,10 +371,10 @@ onMounted(async () => {
           <div class="flex items-center justify-between gap-3">
             <div>
               <p class="text-sm font-semibold text-gray-800">
-                Nombre de séries
+                {{ t('editWorkout.rounds') }}
               </p>
               <p class="mt-1 text-xs text-gray-500">
-                Combien de fois enchaîner l'ensemble des exercices.
+                {{ t('editWorkout.roundsHint') }}
               </p>
             </div>
 
@@ -379,7 +383,7 @@ onMounted(async () => {
                 type="button"
                 class="h-9 w-9 rounded-full border border-gray-200 bg-white text-lg font-semibold text-gray-700 disabled:opacity-30"
                 :disabled="rounds <= 1"
-                aria-label="Une série de moins"
+                :aria-label="t('session.lessRounds')"
                 @click="changeRounds(-1)"
               >
                 −
@@ -389,7 +393,7 @@ onMounted(async () => {
                 type="button"
                 class="h-9 w-9 rounded-full border border-gray-200 bg-white text-lg font-semibold text-gray-700 disabled:opacity-30"
                 :disabled="rounds >= MAX_ROUNDS"
-                aria-label="Une série de plus"
+                :aria-label="t('session.moreRounds')"
                 @click="changeRounds(1)"
               >
                 +
@@ -398,8 +402,8 @@ onMounted(async () => {
           </div>
 
           <p v-if="exercises.length > 0" class="mt-4 text-xs text-gray-500">
-            {{ formatTotals(perRound) }} par série ·
-            {{ formatTotals({ reps: perRound.reps * rounds, seconds: perRound.seconds * rounds }) }} au total
+            {{ t('workoutCard.perRound', { total: formatTotals(perRound) }) }} ·
+            {{ t('editWorkout.inTotal', { total: formatTotals({ reps: perRound.reps * rounds, seconds: perRound.seconds * rounds }) }) }}
           </p>
         </section>
 
@@ -413,7 +417,7 @@ onMounted(async () => {
           class="w-full bg-amber-500 hover:bg-amber-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-3.5 rounded-2xl shadow-md shadow-amber-200 transition-all active:scale-[0.98]"
           @click="save"
         >
-          {{ saving ? 'Enregistrement...' : 'Enregistrer' }}
+          {{ saving ? t('common.saving') : t('common.save') }}
         </button>
 
         <button
@@ -423,7 +427,7 @@ onMounted(async () => {
           class="w-full bg-gray-100 hover:bg-gray-200 text-red-600 font-semibold py-3 rounded-2xl transition-colors"
           @click="remove"
         >
-          Supprimer la séance
+          {{ t('editWorkout.delete') }}
         </button>
 
       </template>

@@ -2,6 +2,8 @@
 import { computed, onMounted, ref } from 'vue'
 import { getExercises, getUserExercises, type ApiExercise } from '../api/exercises'
 import { useSets } from '../composables/useSets'
+import { useI18n } from 'vue-i18n'
+import { exerciseName } from '../i18n'
 
 const props = withDefaults(
   defineProps<{
@@ -20,6 +22,7 @@ const emit = defineEmits<{
   'update:modelValue': [id: string | null]
 }>()
 
+const { t } = useI18n()
 const { sets } = useSets()
 
 const exercises = ref<ApiExercise[]>([])
@@ -163,14 +166,14 @@ onMounted(() => {
     v-if="currentExercise"
     class="px-5 text-base font-medium text-amber-600 mt-0.5"
   >
-    {{ currentExercise.nameFr }}
+    {{ exerciseName(currentExercise) }}
   </p>
 
   <p
     v-else-if="!loading && !props.required"
     class="px-5 text-sm font-medium text-gray-400 mt-0.5"
   >
-    Tous les exercices
+    {{ t('selector.all') }}
   </p>
 
   <!-- Tous les exercices -->
@@ -183,12 +186,12 @@ onMounted(() => {
       <div class="w-full max-w-md max-h-[80dvh] flex flex-col rounded-t-[32px] border border-amber-100 bg-[#fdf8f5] p-6 shadow-2xl sm:rounded-3xl">
         <div class="flex items-center justify-between gap-3">
           <h3 class="text-lg font-bold text-gray-900">
-            Exercices
+            {{ t('selector.title') }}
           </h3>
           <button
             type="button"
             class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-200/60 text-gray-600"
-            aria-label="Fermer"
+            :aria-label="t('common.close')"
             @click="showAll = false"
           >
             ✕
@@ -200,7 +203,7 @@ onMounted(() => {
             v-for="ex in exercises"
             :key="ex.id"
             type="button"
-            :title="ex.nameFr"
+            :title="exerciseName(ex)"
             @click="selectFromAll(ex.id)"
             :class="[
               'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-base font-medium shadow-xs transition-all',

@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { formatDuration, formatTotals, type ExerciseUnit } from '../units'
+import { useI18n } from 'vue-i18n'
+import { exerciseName } from '../i18n'
+
+const { t } = useI18n()
 
 // Résumé d'une séance (nom, séries, exercices) : contenu de carte partagé
 // par Réglages › Mes séances et l'écran Séance avant démarrage.
@@ -10,7 +14,7 @@ const props = defineProps<{
   workout: {
     name: string
     rounds: number
-    exercises: { nameFr: string, reps: number, unit?: ExerciseUnit }[]
+    exercises: { nameFr: string, nameEn?: string, reps: number, unit?: ExerciseUnit }[]
   }
 }>()
 
@@ -35,10 +39,9 @@ const perRound = computed(() => ({
     </div>
 
     <p class="mt-1 text-xs text-gray-500">
-      {{ workout.rounds }} {{ workout.rounds > 1 ? 'séries' : 'série' }}
-      · {{ workout.exercises.length }}
-      {{ workout.exercises.length > 1 ? 'exercices' : 'exercice' }}
-      · {{ formatTotals(perRound) }} par série
+      {{ t('workoutCard.rounds', workout.rounds) }}
+      · {{ t('workoutCard.exercises', workout.exercises.length) }}
+      · {{ t('workoutCard.perRound', { total: formatTotals(perRound) }) }}
     </p>
 
     <div class="mt-3 flex flex-wrap gap-1.5">
@@ -48,10 +51,10 @@ const perRound = computed(() => ({
         class="rounded-full bg-amber-50 border border-amber-200 px-2.5 py-1 text-xs text-amber-800"
       >
         <template v-if="exercise.unit === 'seconds'">
-          {{ exercise.nameFr }} {{ formatDuration(exercise.reps) }}
+          {{ exerciseName(exercise) }} {{ formatDuration(exercise.reps) }}
         </template>
         <template v-else>
-          {{ exercise.reps }} × {{ exercise.nameFr }}
+          {{ exercise.reps }} × {{ exerciseName(exercise) }}
         </template>
       </span>
     </div>

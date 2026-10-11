@@ -1,4 +1,7 @@
 import { startRegistration, startAuthentication } from '@simplewebauthn/browser';
+import { i18n } from '../i18n'
+
+const t = i18n.global.t
 
 const API_URL = import.meta.env.VITE_API_URL || '';
 
@@ -11,7 +14,7 @@ export async function registerUser(username: string) {
   
   if (!res.ok) {
     const errData = await res.json();
-    throw new Error(errData.error || "Échec de la création du challenge d'enregistrement");
+    throw new Error(errData.error || t('auth.registerChallenge'));
   }
   
   const optionsJSON = await res.json();
@@ -25,7 +28,7 @@ export async function registerUser(username: string) {
   
   const verification = await verificationRes.json();
   if (!verification.verified) {
-    throw new Error(verification.error || "L'enregistrement a échoué.");
+    throw new Error(verification.error || t('auth.registerFailed'));
   }
   
   return verification;
@@ -40,7 +43,7 @@ export async function loginUser(username: string) {
 
   if (!res.ok) {
     const errData = await res.json();
-    throw new Error(errData.error || "Échec de la création du challenge de connexion");
+    throw new Error(errData.error || t('auth.loginChallenge'));
   }
 
   const optionsJSON = await res.json();
@@ -70,7 +73,7 @@ export async function addDevice(token: string) {
 
   if (!res.ok) {
     const errData = await res.json();
-    throw new Error(errData.error || "Échec de la création du challenge.");
+    throw new Error(errData.error || t('auth.challenge'));
   }
 
   const optionsJSON = await res.json();
@@ -88,7 +91,7 @@ export async function addDevice(token: string) {
   const verification = await verificationRes.json();
 
   if (!verification.verified) {
-    throw new Error(verification.error || "L'ajout de l'appareil a échoué.");
+    throw new Error(verification.error || t('auth.addDeviceFailed'));
   }
 
   return verification;

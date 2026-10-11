@@ -7,6 +7,8 @@ import {
 } from 'vue'
 import type { LocalSet } from '../db'
 import { formatDurationShort, type ExerciseUnit } from '../units'
+import { useI18n } from 'vue-i18n'
+import { dateLocale } from '../i18n'
 import emblaCarouselVue from 'embla-carousel-vue'
 
 const props = defineProps<{
@@ -90,13 +92,16 @@ void emblaRef
 // NOM DU MOIS ACTUEL
 // ============================================================
 
-const monthFormatter = new Intl.DateTimeFormat(
-  'fr-FR',
-  {
+const { t, locale } = useI18n()
+
+// Recréé au changement de langue
+const monthFormatter = computed(() => {
+  void locale.value
+  return new Intl.DateTimeFormat(dateLocale(), {
     month: 'long',
     year: 'numeric'
-  }
-)
+  })
+})
 
 const currentMonth = computed(() => {
   const month =
@@ -106,7 +111,7 @@ const currentMonth = computed(() => {
     return ''
   }
 
-  return monthFormatter.format(
+  return monthFormatter.value.format(
     new Date(
       month.year,
       month.monthIndex,
@@ -119,15 +124,17 @@ const currentMonth = computed(() => {
 // JOURS DE LA SEMAINE
 // ============================================================
 
-const daysOfWeek = [
-  'Lun',
-  'Mar',
-  'Mer',
-  'Jeu',
-  'Ven',
-  'Sam',
-  'Dim'
-]
+// Lundi → dimanche, abrégés dans la langue courante (« Lun », « Mon »)
+const daysOfWeek = computed(() => {
+  void locale.value
+  const formatter = new Intl.DateTimeFormat(dateLocale(), { weekday: 'short' })
+
+  // 1er janvier 2024 : un lundi
+  return Array.from({ length: 7 }, (_, index) => {
+    const name = formatter.format(new Date(2024, 0, 1 + index)).replace('.', '')
+    return name.charAt(0).toUpperCase() + name.slice(1)
+  })
+})
 
 // ============================================================
 // JOURS D'UN MOIS
@@ -416,7 +423,7 @@ const isToday = (
                  active:scale-95
                  disabled:opacity-30
                  disabled:pointer-events-none"
-          aria-label="Mois précédent"
+          :aria-label="t('calendar.previous')"
         >
           <svg
             viewBox="0 0 20 20"
@@ -451,7 +458,7 @@ const isToday = (
                  active:scale-95
                  whitespace-nowrap"
         >
-          Aujourd'hui
+          {{ t('calendar.today') }}
         </button>
 
         <!-- Mois suivant -->
@@ -475,7 +482,7 @@ const isToday = (
                  active:scale-95
                  disabled:opacity-30
                  disabled:pointer-events-none"
-          aria-label="Mois suivant"
+          :aria-label="t('calendar.next')"
         >
           <svg
             viewBox="0 0 20 20"

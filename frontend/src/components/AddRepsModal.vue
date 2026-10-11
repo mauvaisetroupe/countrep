@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { ExerciseUnit } from '../units'
 
 // Fenêtre de saisie d'une série : heure, nombre de répétitions (ou de
@@ -13,6 +14,8 @@ const props = defineProps<{
   // Valeur proposée (objectif de la séance), vide sinon
   initialReps?: number | null
 }>()
+
+const { t } = useI18n()
 
 const emit = defineEmits<{
   close: []
@@ -59,7 +62,7 @@ const save = () => {
         <div class="flex items-center gap-2.5">
           <span class="bg-amber-500 text-white p-2 rounded-xl text-sm shadow-sm">⚡</span>
           <h3 class="text-xl font-bold text-gray-900">
-            Ajouter {{ exerciseName }}
+            {{ t('addReps.title', { name: exerciseName }) }}
           </h3>
         </div>
         <button @click="emit('close')"
@@ -72,7 +75,7 @@ const save = () => {
       <img
         v-if="imageAvailable"
         :src="`/exercises/${exerciseId}.jpg`"
-        :alt="`Illustration de ${exerciseName}`"
+        :alt="t('addReps.illustration', { name: exerciseName })"
         class="w-full h-48 object-contain rounded-2xl bg-white border border-amber-100"
         @error="imageAvailable = false"
       />
@@ -87,7 +90,7 @@ const save = () => {
         class="relative border-2 border-amber-600/70 rounded-2xl bg-white px-4 py-3 flex items-center gap-3 shadow-xs"
       >
         <span class="absolute -top-3 left-4 bg-white px-1.5 text-xs font-semibold text-amber-700">
-          Heure
+          {{ t('addReps.time') }}
         </span>
 
         <span class="text-amber-600">
@@ -104,21 +107,21 @@ const save = () => {
       <!-- Question -->
       <p class="text-sm font-medium text-gray-800 text-center">
         <template v-if="isDuration">
-          Combien de secondes de {{ exerciseName }} avez-vous tenu ?
+          {{ t('addReps.questionSeconds', { name: exerciseName }) }}
         </template>
         <template v-else>
-          Combien de {{ exerciseName }} avez-vous fait ?
+          {{ t('addReps.questionReps', { name: exerciseName }) }}
         </template>
       </p>
 
       <!-- Champ de saisie -->
       <div class="relative border-2 border-amber-600/70 rounded-2xl bg-white px-4 py-3 flex items-center gap-3 shadow-xs">
-        <span class="absolute -top-3 left-4 bg-white px-1.5 text-xs font-semibold text-amber-700">{{ isDuration ? 'Secondes' : 'Nombre' }}</span>
+        <span class="absolute -top-3 left-4 bg-white px-1.5 text-xs font-semibold text-amber-700">{{ isDuration ? t('addReps.seconds') : t('addReps.count') }}</span>
         <span class="text-amber-600">⚡</span>
         <input
           type="number"
           v-model="repsValue"
-          placeholder="Entrez un nombre"
+          :placeholder="t('addReps.placeholder')"
           min="1"
           step="1"
           inputmode="numeric"
@@ -129,7 +132,7 @@ const save = () => {
       <!-- Ajout rapide -->
       <div>
         <span class="text-xs font-semibold text-gray-500 block mb-2">
-          Ajout rapide :
+          {{ t('addReps.quick') }}
         </span>
         <div class="grid grid-cols-4 gap-2">
           <button v-for="n in quickValues" :key="n" @click="addQuick(n)"
@@ -143,11 +146,11 @@ const save = () => {
       <div class="flex gap-3 pt-2">
         <button @click="emit('close')"
           class="flex-1 bg-transparent hover:bg-gray-100 text-gray-700 font-semibold py-3.5 rounded-2xl transition-colors">
-          Annuler
+          {{ t('common.cancel') }}
         </button>
         <button @click="save"
           class="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-semibold py-3.5 rounded-2xl shadow-md shadow-amber-200 transition-all active:scale-[0.98]">
-          Enregistrer
+          {{ t('common.save') }}
         </button>
       </div>
 

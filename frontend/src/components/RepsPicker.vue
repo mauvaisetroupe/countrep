@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { unitLabel, type ExerciseUnit } from '../units'
 
 // Panneau de choix d'un nombre de répétitions (ou de secondes pour un
@@ -9,6 +10,8 @@ const props = defineProps<{
   value: number
   unit?: ExerciseUnit
 }>()
+
+const { t } = useI18n()
 
 const emit = defineEmits<{
   close: []
@@ -45,7 +48,7 @@ const change = (offset: number) => {
         <button
           type="button"
           class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-200/60 text-gray-600"
-          aria-label="Fermer"
+          :aria-label="t('common.close')"
           @click="emit('close')"
         >
           ✕
@@ -58,7 +61,7 @@ const change = (offset: number) => {
           type="button"
           class="h-14 w-14 rounded-full border border-gray-200 bg-white text-2xl font-semibold text-gray-700 active:scale-95 disabled:opacity-30"
           :disabled="reps <= 1"
-          :aria-label="isDuration ? 'Moins de secondes' : 'Une répétition de moins'"
+          :aria-label="isDuration ? t('picker.lessSeconds') : t('picker.lessReps')"
           @click="change(-step)"
         >
           −
@@ -72,7 +75,7 @@ const change = (offset: number) => {
         <button
           type="button"
           class="h-14 w-14 rounded-full border border-gray-200 bg-white text-2xl font-semibold text-gray-700 active:scale-95"
-          :aria-label="isDuration ? 'Plus de secondes' : 'Une répétition de plus'"
+          :aria-label="isDuration ? t('picker.moreSeconds') : t('picker.moreReps')"
           @click="change(step)"
         >
           +
@@ -100,7 +103,7 @@ const change = (offset: number) => {
         class="w-full rounded-2xl bg-amber-500 py-3.5 font-semibold text-white shadow-md shadow-amber-200 transition-all active:scale-[0.98]"
         @click="emit('confirm', reps)"
       >
-        Valider
+        {{ t('common.confirm') }}
       </button>
 
     </div>

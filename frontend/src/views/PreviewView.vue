@@ -4,10 +4,13 @@ import { useRouter } from 'vue-router'
 import { usePreview } from '../composables/usePreview'
 import { useExerciseUnits } from '../composables/useExerciseUnits'
 import { formatAmount, unitLabel, type ExerciseUnit } from '../units'
+import { useI18n } from 'vue-i18n'
+import { exerciseName } from '../i18n'
 
 // Aperçu de la séance en cours : relire, corriger, puis enregistrer
 // (les séries partent dans le journal) ou abandonner.
 
+const { t } = useI18n()
 const router = useRouter()
 const { preview, loaded, grid, load, updateReps, removeEntry, removeRound, discard, commit } = usePreview()
 const { unitOf } = useExerciseUnits()
@@ -55,7 +58,7 @@ const totals = computed(() => {
   return preview.value.workout.exercises.map((exercise, position) => {
     const entries = preview.value!.entries.filter(entry => entry.position === position)
     return {
-      nameFr: exercise.nameFr,
+      name: exerciseName(exercise),
       unit: unitAt(position),
       rounds: entries.length,
       reps: entries.reduce((sum, entry) => sum + entry.reps, 0)
@@ -64,7 +67,7 @@ const totals = computed(() => {
 })
 
 const confirmRemoveRound = async (round: number) => {
-  if (window.confirm(`Supprimer la série ${round + 1} ?`)) {
+  if (window.confirm(t('preview.removeRoundConfirm', { round: round + 1 }))) {
     await removeRound(round)
   }
 }
@@ -84,7 +87,7 @@ const save = async () => {
 }
 
 const abandon = async () => {
-  if (!window.confirm('Abandonner cette séance ? Les séries saisies seront perdues.')) return
+  if (!window.confirm(t('session.abandonConfirm'))) return
 
   await discard()
   router.replace('/today')
@@ -102,11 +105,11 @@ onMounted(load)
         class="inline-flex items-center gap-1 text-sm font-medium text-amber-600"
       >
         <span class="text-lg leading-none">‹</span>
-        Continuer la séance
+        {{ t('preview.continue') }}
       </router-link>
 
       <h1 class="mt-2 page-title">
-        Aperçu de la séance
+        {{ t('preview.title') }}
       </h1>
 
       <p v-if="preview" class="mt-1 text-sm text-gray-500">
@@ -121,10 +124,10 @@ onMounted(load)
         class="rounded-2xl border border-dashed border-gray-200 bg-white px-4 py-6 text-center"
       >
         <p class="text-sm font-medium text-gray-600">
-          Aucune séance en cours.
+          {{ t('preview.none') }}
         </p>
         <router-link to="/today" class="mt-3 inline-block text-sm font-semibold text-amber-600">
-          Retour à l'accueil ›
+          {{ t('preview.backHome') }}
         </router-link>
       </div>
 
@@ -138,14 +141,14 @@ onMounted(load)
         >
           <div class="flex items-center justify-between px-1">
             <p class="text-sm font-semibold text-gray-800">
-              Série {{ round + 1 }}
+              {{ t('preview.round', { round: round + 1 }) }}
             </p>
             <button
               type="button"
               class="text-xs font-medium text-red-500"
               @click="confirmRemoveRound(round)"
             >
-              Supprimer la série
+              {{ t('preview.removeRound') }}
             </button>
           </div>
 
@@ -160,7 +163,7 @@ onMounted(load)
                 class="min-w-0 flex-1 text-sm truncate"
                 :class="entry ? 'font-medium text-gray-800' : 'text-gray-400'"
               >
-                {{ preview.workout.exercises[position]?.nameFr }}
+                {{ exerciseName(preview.workout.exercises[position]) }}
               </p>
 
               <template v-if="entry">
@@ -170,7 +173,7 @@ onMounted(load)
                   min="1"
                   step="1"
                   inputmode="numeric"
-                  :aria-label="unitAt(position) === 'seconds' ? 'Secondes' : 'Répétitions'"
+                  :aria-label="unitAt(position) === 'seconds' ? t('addReps.seconds') : t('preview.reps')"
                   class="w-16 rounded-lg border bg-white px-2 py-1.5 text-right text-sm font-semibold text-gray-800 outline-none focus:border-amber-400"
                   :class="isValidReps(repsText(entry.id, entry.reps)) ? 'border-gray-200' : 'border-red-400'"
                   @input="onRepsInput(entry.id, ($event.target as HTMLInputElement).value)"
@@ -180,14 +183,14 @@ onMounted(load)
                 <button
                   type="button"
                   class="shrink-0 text-lg text-gray-400 hover:text-red-500"
-                  aria-label="Retirer"
+                  :aria-label="t('preview.removeEntry')"
                   @click="removeEntry(entry.id)"
                 >
                   ×
                 </button>
               </template>
 
-              <span v-else class="text-xs text-gray-400">non fait</span>
+              <span v-else class="text-xs text-gray-400">{{ t('preview.notDone') }}</span>
             </div>
           </div>
         </section>
@@ -196,7 +199,7 @@ onMounted(load)
           v-if="grid.length === 0"
           class="text-sm text-gray-500 text-center"
         >
-          Aucune série saisie.
+          {{ t('preview.empty') }}
         </p>
 
         <!-- Totaux -->
@@ -205,7 +208,7 @@ onMounted(load)
           class="bg-white border border-gray-200/80 rounded-3xl p-4 shadow-xs"
         >
           <p class="px-1 text-sm font-semibold text-gray-800">
-            Total
+            {{ t('preview.total') }}
           </p>
           <div class="mt-2 divide-y divide-gray-100">
             <div
@@ -213,17 +216,17 @@ onMounted(load)
               :key="position"
               class="flex items-center justify-between px-1 py-2 text-sm"
             >
-              <span class="text-gray-700 truncate">{{ total.nameFr }}</span>
+              <span class="text-gray-700 truncate">{{ total.name }}</span>
               <span class="shrink-0 font-semibold text-gray-900">
                 {{ formatAmount(total.reps, total.unit) }}
-                <span class="font-normal text-gray-500">({{ total.rounds }} {{ total.rounds > 1 ? 'séries' : 'série' }})</span>
+                <span class="font-normal text-gray-500">({{ t('workoutCard.rounds', total.rounds) }})</span>
               </span>
             </div>
           </div>
         </section>
 
         <p v-if="hasInvalidReps" class="text-sm text-red-600">
-          Corrige les nombres de répétitions invalides avant d'enregistrer.
+          {{ t('preview.invalid') }}
         </p>
 
         <button
@@ -232,7 +235,7 @@ onMounted(load)
           class="w-full bg-amber-500 hover:bg-amber-600 disabled:bg-gray-300 disabled:shadow-none text-white font-semibold py-3.5 rounded-2xl shadow-md shadow-amber-200 transition-all active:scale-[0.98]"
           @click="save"
         >
-          {{ saving ? 'Enregistrement...' : 'Enregistrer la séance' }}
+          {{ saving ? t('common.saving') : t('preview.save') }}
         </button>
 
         <button
@@ -240,7 +243,7 @@ onMounted(load)
           class="w-full bg-gray-100 hover:bg-gray-200 text-red-600 font-semibold py-3 rounded-2xl transition-colors"
           @click="abandon"
         >
-          Abandonner la séance
+          {{ t('preview.abandon') }}
         </button>
 
       </template>

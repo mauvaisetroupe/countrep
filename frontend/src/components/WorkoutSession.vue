@@ -9,6 +9,8 @@ import { useExerciseStore } from '../stores/exercise'
 import { usePreview } from '../composables/usePreview'
 import { useExerciseUnits } from '../composables/useExerciseUnits'
 import type { ExerciseUnit } from '../units'
+import { useI18n } from 'vue-i18n'
+import { exerciseName } from '../i18n'
 
 // Mode séance de l'écran d'accueil : un bouton par exercice, avec son
 // avancement. Les saisies vont dans la séance en cours (preview), qu'on
@@ -22,6 +24,7 @@ const props = defineProps<{
 const CACHE_KEY = 'countrep.workoutsCache'
 const MAX_ROUNDS_AT_ONCE = 50
 
+const { t } = useI18n()
 const router = useRouter()
 const exerciseStore = useExerciseStore()
 const { preview, counts, load, start, addEntries, discard } = usePreview()
@@ -108,7 +111,7 @@ const startSession = async () => {
 }
 
 const abandon = async () => {
-  if (window.confirm('Abandonner cette séance ? Les séries saisies seront perdues.')) {
+  if (window.confirm(t('session.abandonConfirm'))) {
     await discard()
   }
 }
@@ -150,7 +153,7 @@ onMounted(async () => {
   <div class="px-3 space-y-4">
 
     <p v-if="loading" class="px-2 text-sm text-gray-500">
-      Chargement des séances...
+      {{ t('workouts.loading') }}
     </p>
 
     <!-- Aucune séance -->
@@ -159,13 +162,13 @@ onMounted(async () => {
       class="mx-2 rounded-3xl border border-dashed border-gray-200 bg-white px-5 py-6 text-center"
     >
       <p class="text-sm font-medium text-gray-700">
-        Aucune séance définie.
+        {{ t('session.none') }}
       </p>
       <router-link
         to="/settings/workouts/new"
         class="mt-3 inline-block text-sm font-semibold text-amber-600"
       >
-        Créer une séance ›
+        {{ t('session.create') }}
       </router-link>
     </div>
 
@@ -177,11 +180,11 @@ onMounted(async () => {
       @click="minimized = false"
     >
       <div class="min-w-0">
-        <p class="text-xs opacity-90">Séance en cours · {{ preview.date }}</p>
+        <p class="text-xs opacity-90">{{ t('session.inProgress', { date: preview.date }) }}</p>
         <p class="text-base font-bold truncate">{{ preview.workout.name }}</p>
       </div>
       <span class="shrink-0 text-sm font-semibold">
-        {{ completedRounds }}/{{ preview.workout.rounds }} · Reprendre ›
+        {{ completedRounds }}/{{ preview.workout.rounds }} · {{ t('session.resume') }}
       </span>
     </button>
 
@@ -189,7 +192,7 @@ onMounted(async () => {
     <template v-else>
 
       <p v-if="offline" class="px-2 text-xs text-gray-400">
-        Hors ligne : dernière version connue des séances.
+        {{ t('session.offline') }}
       </p>
 
       <!-- Une carte par séance : un appui la sélectionne -->
@@ -212,7 +215,7 @@ onMounted(async () => {
           class="mt-4 w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold py-3.5 rounded-2xl shadow-md shadow-amber-200 transition-all active:scale-[0.98]"
           @click.stop="startSession"
         >
-          Démarrer la séance
+          {{ t('session.start') }}
         </button>
       </div>
 
@@ -234,7 +237,7 @@ onMounted(async () => {
             class="shrink-0 text-sm font-medium text-amber-600"
             @click="minimized = true"
           >
-            ‹ Réduire
+            {{ t('session.minimize') }}
           </button>
 
           <div class="min-w-0 flex-1 text-center">
@@ -253,7 +256,7 @@ onMounted(async () => {
             <ExerciseTile
               v-for="(exercise, index) in current.exercises"
               :key="index"
-              :name="exercise.nameFr"
+              :name="exerciseName(exercise)"
               :reps="exercise.reps"
               :unit="unitFor(exercise)"
               :done="doneCount(index)"
@@ -271,7 +274,7 @@ onMounted(async () => {
                 type="button"
                 class="h-10 w-10 rounded-full border border-gray-200 bg-white text-lg font-semibold text-gray-700 disabled:opacity-30"
                 :disabled="roundsToAdd <= 1"
-                aria-label="Une série de moins"
+                :aria-label="t('session.lessRounds')"
                 @click="changeRoundsToAdd(-1)"
               >
                 −
@@ -280,7 +283,7 @@ onMounted(async () => {
               <button
                 type="button"
                 class="h-10 w-10 rounded-full border border-gray-200 bg-white text-lg font-semibold text-gray-700"
-                aria-label="Une série de plus"
+                :aria-label="t('session.moreRounds')"
                 @click="changeRoundsToAdd(1)"
               >
                 +
@@ -292,7 +295,7 @@ onMounted(async () => {
               class="flex-1 bg-white border border-amber-400 text-amber-800 text-sm font-semibold py-3 rounded-2xl transition-all active:scale-[0.98]"
               @click="addRounds"
             >
-              Ajouter {{ roundsToAdd > 1 ? `${roundsToAdd} séries` : 'la série' }}
+              {{ t('session.addRounds', roundsToAdd) }}
             </button>
           </div>
 
@@ -302,7 +305,7 @@ onMounted(async () => {
               class="shrink-0 bg-gray-100 hover:bg-gray-200 text-red-600 font-semibold px-4 py-3.5 rounded-2xl transition-colors"
               @click="abandon"
             >
-              Abandonner
+              {{ t('session.abandon') }}
             </button>
 
             <button
@@ -311,7 +314,7 @@ onMounted(async () => {
               class="flex-1 bg-amber-500 hover:bg-amber-600 disabled:bg-gray-300 disabled:shadow-none text-white font-semibold py-3.5 rounded-2xl shadow-md shadow-amber-200 transition-all active:scale-[0.98]"
               @click="router.push('/preview')"
             >
-              Terminer la séance
+              {{ t('session.finish') }}
             </button>
           </div>
         </footer>
@@ -321,7 +324,7 @@ onMounted(async () => {
     <AddRepsModal
       v-if="modalExercise"
       :exercise-id="modalExercise.exerciseId"
-      :exercise-name="modalExercise.nameFr"
+      :exercise-name="exerciseName(modalExercise)"
       :unit="unitFor(modalExercise)"
       :date="sessionDate"
       :initial-reps="modalExercise.reps"

@@ -4,9 +4,11 @@ import ExerciseSelector from '../components/ExerciseSelector.vue'
 import { useSets } from '../composables/useSets'
 import { useExerciseUnits } from '../composables/useExerciseUnits'
 import { formatAmount, formatDuration } from '../units'
+import { useI18n } from 'vue-i18n'
 
 const { sets } = useSets()
 const { unitOf } = useExerciseUnits()
+const { t } = useI18n()
 const selectedExercise = ref<string | null>(null)
 
 // Filtrer les sets : si aucun exercice n'est sélectionné (null), on prend tout
@@ -227,7 +229,7 @@ const monthChartData = computed(() => {
   <div class="pb-24">
     <!-- En-tête -->
     <header class="px-5 pt-6 pb-4">
-      <h1 class="page-title">Stats</h1>
+      <h1 class="page-title">{{ t('nav.stats') }}</h1>
     </header>
 
     <!-- Sélecteur d'exercices -->
@@ -242,7 +244,7 @@ const monthChartData = computed(() => {
       <!-- Carte Graphique "30 derniers jours" -->
       <section class="bg-amber-50/40 border border-amber-100/80 rounded-3xl p-5 shadow-xs space-y-4">
         <div class="flex items-center gap-2">
-          <h2 class="text-lg font-bold text-gray-800">30 derniers jours</h2>
+          <h2 class="text-lg font-bold text-gray-800">{{ t('stats.last30') }}</h2>
         </div>
 
         <div class="flex gap-2">
@@ -300,29 +302,29 @@ const monthChartData = computed(() => {
 
       <!-- Cartes Périodes -->
       <section class="bg-amber-50/40 border border-amber-100/80 rounded-3xl p-5 shadow-xs space-y-4">
-        <h2 class="text-lg font-bold text-gray-800">Cette semaine</h2>
+        <h2 class="text-lg font-bold text-gray-800">{{ t('stats.week') }}</h2>
         <div class="space-y-2 text-sm">
-          <div class="flex justify-between text-gray-600"><span>Total</span><span class="font-bold text-gray-900">{{ weekStats.total }}</span></div>
-          <div class="flex justify-between text-gray-600"><span>Jours actifs</span><span class="font-bold text-gray-900">{{ weekStats.activeDays }}</span></div>
-          <div class="flex justify-between text-gray-600"><span>Moyenne par jour actif</span><span class="font-bold text-gray-900">{{ weekStats.average }}</span></div>
+          <div class="flex justify-between text-gray-600"><span>{{ t('preview.total') }}</span><span class="font-bold text-gray-900">{{ weekStats.total }}</span></div>
+          <div class="flex justify-between text-gray-600"><span>{{ t('stats.activeDays') }}</span><span class="font-bold text-gray-900">{{ weekStats.activeDays }}</span></div>
+          <div class="flex justify-between text-gray-600"><span>{{ t('stats.average') }}</span><span class="font-bold text-gray-900">{{ weekStats.average }}</span></div>
         </div>
       </section>
 
       <section class="bg-amber-50/40 border border-amber-100/80 rounded-3xl p-5 shadow-xs space-y-4">
-        <h2 class="text-lg font-bold text-gray-800">Ce mois-ci</h2>
+        <h2 class="text-lg font-bold text-gray-800">{{ t('stats.month') }}</h2>
         <div class="space-y-2 text-sm">
-          <div class="flex justify-between text-gray-600"><span>Total</span><span class="font-bold text-gray-900">{{ monthStats.total }}</span></div>
-          <div class="flex justify-between text-gray-600"><span>Jours actifs</span><span class="font-bold text-gray-900">{{ monthStats.activeDays }}</span></div>
-          <div class="flex justify-between text-gray-600"><span>Moyenne par jour actif</span><span class="font-bold text-gray-900">{{ monthStats.average }}</span></div>
+          <div class="flex justify-between text-gray-600"><span>{{ t('preview.total') }}</span><span class="font-bold text-gray-900">{{ monthStats.total }}</span></div>
+          <div class="flex justify-between text-gray-600"><span>{{ t('stats.activeDays') }}</span><span class="font-bold text-gray-900">{{ monthStats.activeDays }}</span></div>
+          <div class="flex justify-between text-gray-600"><span>{{ t('stats.average') }}</span><span class="font-bold text-gray-900">{{ monthStats.average }}</span></div>
         </div>
       </section>
 
       <section class="bg-amber-50/40 border border-amber-100/80 rounded-3xl p-5 shadow-xs space-y-4">
-        <h2 class="text-lg font-bold text-gray-800">Cette année</h2>
+        <h2 class="text-lg font-bold text-gray-800">{{ t('stats.year') }}</h2>
         <div class="space-y-2 text-sm">
-          <div class="flex justify-between text-gray-600"><span>Total</span><span class="font-bold text-gray-900">{{ yearStats.total }}</span></div>
-          <div class="flex justify-between text-gray-600"><span>Jours actifs</span><span class="font-bold text-gray-900">{{ yearStats.activeDays }}</span></div>
-          <div class="flex justify-between text-gray-600"><span>Moyenne par jour actif</span><span class="font-bold text-gray-900">{{ yearStats.average }}</span></div>
+          <div class="flex justify-between text-gray-600"><span>{{ t('preview.total') }}</span><span class="font-bold text-gray-900">{{ yearStats.total }}</span></div>
+          <div class="flex justify-between text-gray-600"><span>{{ t('stats.activeDays') }}</span><span class="font-bold text-gray-900">{{ yearStats.activeDays }}</span></div>
+          <div class="flex justify-between text-gray-600"><span>{{ t('stats.average') }}</span><span class="font-bold text-gray-900">{{ yearStats.average }}</span></div>
         </div>
       </section>
 
@@ -330,13 +332,13 @@ const monthChartData = computed(() => {
       <section class="bg-amber-50/40 border border-amber-100/80 rounded-3xl p-5 shadow-xs space-y-3">
         <div class="flex justify-between items-center">
           <span class="text-gray-600 font-medium">
-            Total {{ selectedExercise || 'de tous les exercices' }}
+            {{ selectedExercise ? t('stats.totalOf', { exercise: selectedExercise }) : t('stats.totalAll') }}
           </span>
           <span class="text-xl font-bold text-gray-900">{{ totalRepsAllTime }}</span>
         </div>
         <div class="flex justify-between items-center border-t border-amber-100/60 pt-3">
-          <span class="text-gray-600 font-medium">Streak le plus long</span>
-          <span class="text-lg font-bold text-gray-900">{{ longestStreak }} jours</span>
+          <span class="text-gray-600 font-medium">{{ t('stats.longestStreak') }}</span>
+          <span class="text-lg font-bold text-gray-900">{{ t('stats.days', longestStreak) }}</span>
         </div>
       </section>     
 

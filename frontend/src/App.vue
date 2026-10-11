@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { needRefresh, updateSW } from './composables/usePwaUpdate'
 import { useAuthStore } from './stores/auth'
 import { ensureFreshToken } from './services/session'
 
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
@@ -64,7 +66,7 @@ function dismissUpdate() {
         ]"
       >
         <span class="text-xl">📅</span>
-        <span class="text-xs">Saisie</span>
+        <span class="text-xs">{{ t('nav.log') }}</span>
       </router-link>
 
       <!-- Journal -->
@@ -78,7 +80,7 @@ function dismissUpdate() {
         ]"
       >
         <span class="text-xl">📋</span>
-        <span class="text-xs">Journal</span>
+        <span class="text-xs">{{ t('nav.journal') }}</span>
       </router-link>
 
       <!-- Stats -->
@@ -92,7 +94,7 @@ function dismissUpdate() {
         ]"
       >
         <span class="text-xl">📊</span>
-        <span class="text-xs">Stats</span>
+        <span class="text-xs">{{ t('nav.stats') }}</span>
       </router-link>
 
       <!-- Réglages -->
@@ -106,7 +108,7 @@ function dismissUpdate() {
         ]"
       >
         <span class="text-xl">⚙️</span>
-        <span class="text-xs">Réglages</span>
+        <span class="text-xs">{{ t('nav.settings') }}</span>
       </router-link>
     </nav>
 
@@ -126,11 +128,11 @@ function dismissUpdate() {
 
             <div class="flex-1">
               <div class="font-semibold text-gray-900">
-                Nouvelle version disponible
+                {{ t('update.title') }}
               </div>
 
               <div class="text-sm text-gray-500 mt-1">
-                Une nouvelle version de CountRep est disponible.
+                {{ t('update.body') }}
               </div>
 
               <div class="flex gap-2 mt-3">
@@ -139,7 +141,7 @@ function dismissUpdate() {
                   class="flex-1 rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-white active:scale-95 transition-transform"
                   @click="updateApp"
                 >
-                  Mettre à jour
+                  {{ t('update.apply') }}
                 </button>
 
                 <button
@@ -147,7 +149,7 @@ function dismissUpdate() {
                   class="rounded-xl px-4 py-2 text-sm font-medium text-gray-500 hover:bg-gray-100 active:scale-95 transition-transform"
                   @click="dismissUpdate"
                 >
-                  Plus tard
+                  {{ t('update.later') }}
                 </button>
               </div>
             </div>

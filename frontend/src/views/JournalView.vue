@@ -4,12 +4,15 @@ import ExerciseSelector from '../components/ExerciseSelector.vue'
 import { useSets } from '../composables/useSets'
 import type { LocalSet } from '../db'
 import { useExerciseUnits } from '../composables/useExerciseUnits'
+import { useI18n } from 'vue-i18n'
+import { dateLocale } from '../i18n'
 import { formatAmount, formatDuration, formatTotals, type AmountTotals } from '../units'
 
 const selectedExercise = ref<string | null>(null)
 
 const { sets, updateSet, deleteSet } = useSets()
 const { unitOf } = useExerciseUnits()
+const { t } = useI18n()
 
 const PAGE_SIZE = 30
 
@@ -100,15 +103,15 @@ const formatDay = (date: string) => {
   const day = date.slice(0, 10)
 
   if (day === getTodayString()) {
-    return "Aujourd'hui"
+    return t('calendar.today')
   }
 
   if (day === getYesterdayString()) {
-    return 'Hier'
+    return t('journal.yesterday')
   }
 
   return new Date(`${day}T12:00:00`).toLocaleDateString(
-    'fr-FR',
+    dateLocale(),
     {
       weekday: 'long',
       day: 'numeric',
@@ -195,7 +198,7 @@ const formatGarminDuration = (date: string) => {
 
 const copyGarminSummary = async (date: string) => {
   const text =
-    `Musculation · ${formatGarminDuration(date)} · ${garminExerciseSummary(date)}`
+    `${t('journal.strength')} · ${formatGarminDuration(date)} · ${garminExerciseSummary(date)}`
 
   try {
     await navigator.clipboard.writeText(text)
@@ -268,7 +271,10 @@ const handleDeleteSet = async (set: LocalSet) => {
   openMenuId.value = null
 
   const confirmed = window.confirm(
-    `Supprimer ${set.exercise} — ${formatAmount(set.reps, unitOf(set.exercise))} ?`
+    t('journal.deleteConfirm', {
+      exercise: set.exercise,
+      amount: formatAmount(set.reps, unitOf(set.exercise))
+    })
   )
 
   if (!confirmed) return
@@ -304,7 +310,7 @@ onUnmounted(() => {
 
     <div class="px-1 pt-6 pb-3">
       <h1 class="page-title">
-        Journal
+        {{ t('nav.journal') }}
       </h1>
     </div>
 
@@ -320,7 +326,7 @@ onUnmounted(() => {
       v-if="visibleDays.length === 0"
       class="py-12 text-center text-gray-400"
     >
-      Aucun entraînement.
+      {{ t('journal.empty') }}
     </div>
 
     <div
@@ -376,7 +382,7 @@ onUnmounted(() => {
         >
           <span class="min-w-0 flex-1">
             <span class="font-medium text-gray-600">
-              Garmin · Musculation ·
+              Garmin · {{ t('journal.strength') }} ·
               {{ formatGarminDuration(day.date) }}
             </span>
 
@@ -392,8 +398,8 @@ onUnmounted(() => {
             class="shrink-0 text-gray-400 transition-colors hover:text-gray-600"
             :aria-label="
               copiedGarminDate === day.date
-                ? 'Copié'
-                : 'Copier pour Garmin'
+                ? t('journal.copied')
+                : t('journal.copyGarmin')
             "
             @click="copyGarminSummary(day.date)"
           >
@@ -490,7 +496,7 @@ onUnmounted(() => {
                 class="rounded-lg px-3 py-1.5 text-sm font-medium text-gray-500 hover:bg-gray-100"
                 @click="cancelEdit"
               >
-                Annuler
+                {{ t('common.cancel') }}
               </button>
 
               <button
@@ -498,7 +504,7 @@ onUnmounted(() => {
                 class="rounded-lg bg-amber-500 px-3 py-1.5 text-sm font-semibold text-white hover:bg-amber-600"
                 @click="saveEdit(set)"
               >
-                Enregistrer
+                {{ t('common.save') }}
               </button>
 
             </div>
@@ -546,7 +552,7 @@ onUnmounted(() => {
               <button
                 type="button"
                 class="flex h-8 w-8 items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-                aria-label="Options"
+                :aria-label="t('journal.options')"
                 @click.stop="toggleMenu(set.id)"
               >
                 <svg
@@ -583,7 +589,7 @@ onUnmounted(() => {
                   class="block w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
                   @click="startEdit(set.id)"
                 >
-                  Modifier
+                  {{ t('journal.edit') }}
                 </button>
 
                 <button
@@ -591,7 +597,7 @@ onUnmounted(() => {
                   class="block w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50"
                   @click="handleDeleteSet(set)"
                 >
-                  Supprimer
+                  {{ t('journal.delete') }}
                 </button>
               </div>
 
@@ -608,7 +614,7 @@ onUnmounted(() => {
       v-if="hasMore"
       class="py-6 text-center text-sm text-gray-400"
     >
-      Chargement…
+      {{ t('common.loading') }}
     </div>
 
   </div>
