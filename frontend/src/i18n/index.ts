@@ -20,10 +20,13 @@ const readPreference = (): LocalePreference => {
   }
 }
 
-// Français si le système le demande, anglais pour toute autre langue
+// Français si la langue principale du système l'est, anglais sinon.
+// Seule la première langue compte : Chrome garde dans navigator.languages
+// les langues de contenu déjà utilisées, même après un changement de
+// langue du téléphone. navigator.language suit la langue de l'interface.
 export const systemLocale = (): Locale => {
-  const languages = navigator.languages?.length ? navigator.languages : [navigator.language]
-  return languages.some(language => language?.toLowerCase().startsWith('fr')) ? 'fr' : 'en'
+  const language = navigator.language || navigator.languages?.[0] || ''
+  return language.toLowerCase().startsWith('fr') ? 'fr' : 'en'
 }
 
 const resolve = (preference: LocalePreference): Locale =>
