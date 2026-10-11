@@ -7,7 +7,7 @@ Voir [ADR 0001](0001-enregistrer-les-decisions-d-architecture.md) pour le format
 | 0001 | [Enregistrer les décisions d'architecture](0001-enregistrer-les-decisions-d-architecture.md) | Accepté |
 | 0002 | [Création idempotente et opération de synchro conservée](0002-creation-idempotente-et-operation-de-synchro.md) | Accepté |
 | 0003 | [Renouvellement glissant du token et expiration sans perte](0003-renouvellement-glissant-du-token.md) | Accepté |
-| 0004 | [Protection des données locales à la déconnexion et au changement de compte](0004-protection-des-donnees-locales.md) | Accepté |
+| 0004 | [Protection des données locales à la déconnexion et au changement de compte](0004-protection-des-donnees-locales.md) | Remplacé par 0014 |
 | 0005 | [Backend de synchronisation : le nôtre ou Google Drive](0005-backend-de-synchronisation.md) | Proposé |
 | 0006 | [Vocabulaire du domaine : set, workout, round](0006-vocabulaire-du-domaine.md) | Accepté |
 | 0007 | [Identifiant de séance sur les sets](0007-identifiant-de-seance-sur-les-sets.md) | Accepté |
@@ -17,3 +17,4 @@ Voir [ADR 0001](0001-enregistrer-les-decisions-d-architecture.md) pour le format
 | 0011 | [Nom et modification d'une séance réalisée](0011-nom-et-modification-d-une-seance.md) | Accepté |
 | 0012 | [Application Android avec Capacitor](0012-application-android-capacitor.md) | Accepté |
 | 0013 | [Connexion par compte Google](0013-connexion-par-compte-google.md) | Accepté |
+| 0014 | [Application utilisable sans compte](0014-application-utilisable-sans-compte.md) | Accepté |

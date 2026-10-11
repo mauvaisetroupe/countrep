@@ -1,6 +1,6 @@
 # 4. Protection des données locales à la déconnexion et au changement de compte
 
-- Statut : Accepté
+- Statut : Remplacé par [ADR 0014](0014-application-utilisable-sans-compte.md)
 - Date : 2026-10-09
 
 ## Contexte
