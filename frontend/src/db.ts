@@ -10,6 +10,8 @@ export interface LocalSet {
   // id de la séance (preview) enregistrée dont le set fait partie ;
   // absent ou null pour une saisie isolée (ADR 0007)
   sessionId?: string | null
+  // Nom de la séance au moment de l'enregistrement (ADR 0011)
+  sessionName?: string | null
   createdAt: number
   updatedAt: number
   deletedAt?: number | null
@@ -21,6 +23,8 @@ export interface LocalSet {
 // soit enregistrée (ses séries deviennent alors des sets) ou abandonnée.
 export interface PreviewEntry {
   id: string
+  // Set existant, quand la séance est rouverte pour modification
+  setId?: string
   // Position de l'exercice dans la séance
   position: number
   reps: number
@@ -43,6 +47,10 @@ export interface LocalPreview {
     exercises: { exerciseId: string, nameFr: string, nameEn?: string, reps: number, unit?: ExerciseUnit }[]
   }
   entries: PreviewEntry[]
+  // Séance déjà enregistrée, rouverte depuis le journal (ADR 0011) :
+  // l'id du brouillon est son sessionId, et originalSetIds ses sets au
+  // moment de l'ouverture (ceux qui ont disparu seront supprimés)
+  editing?: { originalSetIds: string[] }
 }
 
 export interface SyncState {

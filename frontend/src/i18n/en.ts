@@ -77,6 +77,8 @@ const messages: typeof fr = {
     "confirm": "Confirm"
   },
   "session": {
+    "editing": "Editing workout · {date}",
+    "abandonEditConfirm": "Discard your changes to this workout? The saved workout stays unchanged.",
     "otherAccountPending": "{n} entry from another account has not been synced and will be deleted from this device. Continue? | {n} entries from another account have not been synced and will be deleted from this device. Continue?",
     "logoutPending": "{n} entry could not be synced and will be lost if you sign out. Sign out anyway? | {n} entries could not be synced and will be lost if you sign out. Sign out anyway?",
     "logoutPreview": "A workout in progress has not been saved and will be lost if you sign out. Sign out anyway?",
@@ -168,6 +170,9 @@ const messages: typeof fr = {
     "perRound": "{total} per round"
   },
   "preview": {
+    "editTitle": "Edit workout",
+    "saveEdit": "Save changes",
+    "abandonEdit": "Discard changes",
     "removeEntry": "Remove",
     "removeRoundConfirm": "Delete round {round}?",
     "continue": "Continue workout",
@@ -201,6 +206,8 @@ const messages: typeof fr = {
     "delete": "Delete workout"
   },
   "journal": {
+    "session": "Workout",
+    "sessionInProgress": "A workout is already in progress: finish or abandon it before editing another one.",
     "yesterday": "Yesterday",
     "strength": "Strength training",
     "deleteConfirm": "Delete {exercise} — {amount}?",

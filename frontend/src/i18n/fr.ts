@@ -75,6 +75,8 @@ const messages = {
     "confirm": "Valider"
   },
   "session": {
+    "editing": "Modification de la séance · {date}",
+    "abandonEditConfirm": "Annuler les modifications de cette séance ? La séance enregistrée reste inchangée.",
     "otherAccountPending": "{n} saisie d'un autre compte n'a pas été synchronisée et sera supprimée de cet appareil. Continuer ? | {n} saisies d'un autre compte n'ont pas été synchronisées et seront supprimées de cet appareil. Continuer ?",
     "logoutPending": "{n} saisie n'a pas pu être synchronisée et sera perdue si tu te déconnectes. Se déconnecter quand même ? | {n} saisies n'ont pas pu être synchronisées et seront perdues si tu te déconnectes. Se déconnecter quand même ?",
     "logoutPreview": "Une séance en cours n'a pas été enregistrée et sera perdue si tu te déconnectes. Se déconnecter quand même ?",
@@ -166,6 +168,9 @@ const messages = {
     "perRound": "{total} par série"
   },
   "preview": {
+    "editTitle": "Modifier la séance",
+    "saveEdit": "Enregistrer les modifications",
+    "abandonEdit": "Annuler les modifications",
     "removeEntry": "Retirer",
     "removeRoundConfirm": "Supprimer la série {round} ?",
     "continue": "Continuer la séance",
@@ -199,6 +204,8 @@ const messages = {
     "delete": "Supprimer la séance"
   },
   "journal": {
+    "session": "Séance",
+    "sessionInProgress": "Une séance est déjà en cours : termine-la ou abandonne-la avant d'en modifier une autre.",
     "yesterday": "Hier",
     "strength": "Musculation",
     "deleteConfirm": "Supprimer {exercise} — {amount} ?",

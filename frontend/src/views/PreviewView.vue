@@ -78,19 +78,22 @@ const save = async () => {
   saving.value = true
 
   try {
+    const editing = !!preview.value?.editing
     await commit()
-    // L'accueil synchronise les nouvelles séries à son ouverture
-    router.replace('/today')
+    // L'écran d'arrivée synchronise les séries à son ouverture ; une
+    // séance rouverte depuis le journal y retourne
+    router.replace(editing ? '/journal' : '/today')
   } finally {
     saving.value = false
   }
 }
 
 const abandon = async () => {
-  if (!window.confirm(t('session.abandonConfirm'))) return
+  const editing = !!preview.value?.editing
+  if (!window.confirm(t(editing ? 'session.abandonEditConfirm' : 'session.abandonConfirm'))) return
 
   await discard()
-  router.replace('/today')
+  router.replace(editing ? '/journal' : '/today')
 }
 
 onMounted(load)
@@ -109,7 +112,7 @@ onMounted(load)
       </router-link>
 
       <h1 class="mt-2 page-title">
-        {{ t('preview.title') }}
+        {{ t(preview?.editing ? 'preview.editTitle' : 'preview.title') }}
       </h1>
 
       <p v-if="preview" class="mt-1 text-sm text-fg-secondary">
@@ -235,7 +238,7 @@ onMounted(load)
           class="w-full bg-primary hover:bg-primary/90 disabled:bg-surface-alt disabled:text-fg-muted disabled:shadow-none text-on-primary font-semibold py-3.5 rounded-xl shadow-md transition-all active:scale-[0.98]"
           @click="save"
         >
-          {{ saving ? t('common.saving') : t('preview.save') }}
+          {{ saving ? t('common.saving') : t(preview.editing ? 'preview.saveEdit' : 'preview.save') }}
         </button>
 
         <button
@@ -243,7 +246,7 @@ onMounted(load)
           class="w-full bg-surface-alt hover:bg-surface-alt text-danger font-semibold py-3 rounded-xl transition-colors"
           @click="abandon"
         >
-          {{ t('preview.abandon') }}
+          {{ t(preview.editing ? 'preview.abandonEdit' : 'preview.abandon') }}
         </button>
 
       </template>

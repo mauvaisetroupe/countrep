@@ -62,6 +62,9 @@ CREATE TABLE sets (
     -- une saisie isolée. Pas de clé étrangère : rien n'est stocké d'autre
     -- sur la séance (ADR 0007)
     session_id uuid,
+    -- Nom de la séance au moment de l'enregistrement (copie, pas une
+    -- référence au modèle) ; NULL pour une saisie isolée (ADR 0011)
+    session_name character varying(100),
     CONSTRAINT sets_pkey PRIMARY KEY (id),
     CONSTRAINT sets_reps_check CHECK (reps > 0)
 );

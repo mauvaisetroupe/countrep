@@ -135,3 +135,6 @@ INSERT INTO exercises (id, name_en, name_fr, liftmanual_url, unit) VALUES
 ('push-up', 'Push-Up', 'Pompe', NULL, 'reps'),
 ('close-grip-push-up', 'Close-Grip Push-Up', 'Pompe serrée', NULL, 'reps'),
 ('plank', 'Plank', 'Gainage (planche)', NULL, 'seconds');
+
+-- 2026-10-11 : nom de la séance réalisée, copié sur ses sets (ADR 0011)
+ALTER TABLE sets ADD COLUMN session_name character varying(100);

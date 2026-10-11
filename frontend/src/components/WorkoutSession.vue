@@ -111,7 +111,7 @@ const startSession = async () => {
 }
 
 const abandon = async () => {
-  if (window.confirm(t('session.abandonConfirm'))) {
+  if (window.confirm(t(preview.value?.editing ? 'session.abandonEditConfirm' : 'session.abandonConfirm'))) {
     await discard()
   }
 }
@@ -180,7 +180,7 @@ onMounted(async () => {
       @click="minimized = false"
     >
       <div class="min-w-0">
-        <p class="text-xs opacity-90">{{ t('session.inProgress', { date: preview.date }) }}</p>
+        <p class="text-xs opacity-90">{{ t(preview.editing ? 'session.editing' : 'session.inProgress', { date: preview.date }) }}</p>
         <p class="text-base font-bold truncate">{{ preview.workout.name }}</p>
       </div>
       <span class="shrink-0 text-sm font-semibold">

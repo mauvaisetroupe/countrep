@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import ExerciseSelector from '../components/ExerciseSelector.vue'
 import { useSets } from '../composables/useSets'
+import { usePreview } from '../composables/usePreview'
+import { useExerciseStore } from '../stores/exercise'
+import { getExercises } from '../api/exercises'
 import type { LocalSet } from '../db'
 import { useExerciseUnits } from '../composables/useExerciseUnits'
 import { useI18n } from 'vue-i18n'
@@ -13,6 +17,9 @@ const selectedExercise = ref<string | null>(null)
 const { sets, updateSet, deleteSet } = useSets()
 const { unitOf } = useExerciseUnits()
 const { t } = useI18n()
+const router = useRouter()
+const exerciseStore = useExerciseStore()
+const { load: loadPreview, openForEdit } = usePreview()
 
 const PAGE_SIZE = 30
 
@@ -213,6 +220,73 @@ const copyGarminSummary = async (date: string) => {
   } catch {
     copiedGarminDate.value = null
   }
+}
+
+// ============================================================
+// SÉANCES (ADR 0011) : les sets d'une même séance sont regroupés
+// ============================================================
+
+type DayRow =
+  | { kind: 'session', key: string, sessionId: string, name: string, time: string, rounds: number }
+  | { kind: 'set', key: string, set: LocalSet, inSession: boolean }
+
+// Sets de la séance, tous exercices confondus (même si un filtre est actif)
+const sessionSets = (sessionId: string) =>
+  sets.value.filter(set => !set.deletedAt && set.sessionId === sessionId)
+
+const sessionName = (sessionId: string) =>
+  sessionSets(sessionId).find(set => set.sessionName)?.sessionName || t('journal.session')
+
+// Lignes d'un jour : chaque séance (en-tête, puis ses sets dans l'ordre
+// de saisie) à la place de son set le plus récent, et les saisies isolées
+const dayRows = (daySets: LocalSet[]): DayRow[] => {
+  const rows: DayRow[] = []
+  const seen = new Set<string>()
+
+  for (const set of daySets) {
+    if (!set.sessionId) {
+      rows.push({ kind: 'set', key: set.id, set, inSession: false })
+      continue
+    }
+    if (seen.has(set.sessionId)) continue
+    seen.add(set.sessionId)
+
+    const all = sessionSets(set.sessionId)
+    const perExercise = new Map<string, number>()
+    all.forEach(item => perExercise.set(item.exercise, (perExercise.get(item.exercise) ?? 0) + 1))
+
+    rows.push({
+      kind: 'session',
+      key: `session-${set.sessionId}`,
+      sessionId: set.sessionId,
+      name: sessionName(set.sessionId),
+      time: formatSetTime(all.map(item => item.time).sort()[0] ?? ''),
+      rounds: Math.max(...perExercise.values())
+    })
+
+    daySets
+      .filter(item => item.sessionId === set.sessionId)
+      .sort((a, b) => a.createdAt - b.createdAt)
+      .forEach(item => rows.push({ kind: 'set', key: item.id, set: item, inSession: true }))
+  }
+
+  return rows
+}
+
+// Rouvre la séance dans l'écran de séance de l'accueil
+const editSession = async (sessionId: string) => {
+  await loadPreview()
+
+  const catalog = await getExercises().catch(() => [])
+  const opened = await openForEdit(sessionSets(sessionId), sessionName(sessionId), catalog)
+
+  if (!opened) {
+    window.alert(t('journal.sessionInProgress'))
+    return
+  }
+
+  exerciseStore.setMode('workout')
+  router.push('/today')
 }
 
 const isExpanded = (date: string) => {
@@ -442,24 +516,52 @@ onUnmounted(() => {
         class="border-t border-line"
       >
 
+        <template
+          v-for="row in dayRows(day.sets)"
+          :key="row.key"
+        >
+
+        <!-- En-tête de séance -->
+        <div
+          v-if="row.kind === 'session'"
+          class="flex items-center gap-3 border-b border-line bg-primary-soft/50 px-4 py-2.5"
+        >
+          <div class="min-w-0 flex-1">
+            <p class="truncate text-sm font-semibold text-fg">
+              {{ row.name }}
+            </p>
+            <p class="text-xs text-fg-secondary">
+              {{ row.time }} · {{ t('workoutCard.rounds', row.rounds) }}
+            </p>
+          </div>
+
+          <button
+            type="button"
+            class="shrink-0 rounded-full bg-primary-soft px-3 py-1.5 text-sm font-semibold text-primary active:scale-95 transition-transform"
+            @click="editSession(row.sessionId)"
+          >
+            {{ t('journal.edit') }}
+          </button>
+        </div>
+
         <article
-          v-for="set in day.sets"
-          :key="set.id"
+          v-else
           class="relative border-b border-line last:border-b-0"
           :class="{
-            'z-40': editingSetId === set.id
+            'z-40': editingSetId === row.set.id,
+            'ms-4 border-s-2 border-s-primary-soft': row.inSession
           }"
         >
 
           <!-- Edit mode -->
           <div
-            v-if="editingSetId === set.id"
+            v-if="editingSetId === row.set.id"
             class="px-4 py-3"
           >
             <div class="flex items-center gap-3">
 
               <input
-                v-model="set.time"
+                v-model="row.set.time"
                 type="time"
                 class="w-24 rounded-lg border border-transparent bg-surface-alt px-2 py-1.5 text-sm text-fg-secondary outline-none focus:border-primary"
               />
@@ -468,12 +570,12 @@ onUnmounted(() => {
                 <div
                   class="truncate font-semibold text-fg"
                 >
-                  {{ set.exercise }}
+                  {{ row.set.exercise }}
                 </div>
               </div>
 
               <input
-                v-model.number="set.reps"
+                v-model.number="row.set.reps"
                 type="number"
                 min="1"
                 step="1"
@@ -482,7 +584,7 @@ onUnmounted(() => {
               />
 
               <span
-                v-if="unitOf(set.exercise) === 'seconds'"
+                v-if="unitOf(row.set.exercise) === 'seconds'"
                 class="text-xs font-medium text-fg-muted"
               >
                 s
@@ -503,7 +605,7 @@ onUnmounted(() => {
               <button
                 type="button"
                 class="rounded-lg bg-primary px-3 py-1.5 text-sm font-semibold text-on-primary hover:bg-primary/90"
-                @click="saveEdit(set)"
+                @click="saveEdit(row.set)"
               >
                 {{ t('common.save') }}
               </button>
@@ -519,25 +621,25 @@ onUnmounted(() => {
             <span
               class="w-12 shrink-0 text-sm font-medium text-fg-muted"
             >
-              {{ formatSetTime(set.time) }}
+              {{ formatSetTime(row.set.time) }}
             </span>
 
             <div class="min-w-0 flex-1">
               <div
                 class="truncate font-semibold text-fg"
               >
-                {{ set.exercise }}
+                {{ row.set.exercise }}
               </div>
             </div>
 
             <span
               class="whitespace-nowrap font-bold text-fg"
             >
-              <template v-if="unitOf(set.exercise) === 'seconds'">
-                {{ formatDuration(set.reps) }}
+              <template v-if="unitOf(row.set.exercise) === 'seconds'">
+                {{ formatDuration(row.set.reps) }}
               </template>
               <template v-else>
-                {{ set.reps }}
+                {{ row.set.reps }}
 
                 <span
                   class="text-xs font-medium text-fg-muted"
@@ -554,7 +656,7 @@ onUnmounted(() => {
                 type="button"
                 class="flex h-8 w-8 items-center justify-center rounded-full text-fg-muted hover:bg-surface-alt hover:text-fg-secondary"
                 :aria-label="t('journal.options')"
-                @click.stop="toggleMenu(set.id)"
+                @click.stop="toggleMenu(row.set.id)"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -581,14 +683,14 @@ onUnmounted(() => {
               </button>
 
               <div
-                v-if="openMenuId === set.id"
+                v-if="openMenuId === row.set.id"
                 class="absolute right-0 top-9 z-50 w-32 overflow-hidden rounded-xl bg-surface py-1 shadow-lg"
                 @click.stop
               >
                 <button
                   type="button"
                   class="block w-full px-3 py-2 text-left text-sm text-fg-secondary hover:bg-surface-alt"
-                  @click="startEdit(set.id)"
+                  @click="startEdit(row.set.id)"
                 >
                   {{ t('journal.edit') }}
                 </button>
@@ -596,7 +698,7 @@ onUnmounted(() => {
                 <button
                   type="button"
                   class="block w-full px-3 py-2 text-left text-sm text-danger hover:bg-danger-soft"
-                  @click="handleDeleteSet(set)"
+                  @click="handleDeleteSet(row.set)"
                 >
                   {{ t('journal.delete') }}
                 </button>
@@ -606,6 +708,7 @@ onUnmounted(() => {
           </div>
 
         </article>
+        </template>
 
       </div>
 

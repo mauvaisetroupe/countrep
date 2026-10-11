@@ -14,3 +14,4 @@ Voir [ADR 0001](0001-enregistrer-les-decisions-d-architecture.md) pour le format
 | 0008 | [Unité des exercices : répétitions ou secondes](0008-unite-des-exercices.md) | Accepté |
 | 0009 | [Interface multilingue : français et anglais](0009-interface-multilingue.md) | Accepté |
 | 0010 | [Thème, apparence claire ou sombre, et logo](0010-theme-apparence-et-logo.md) | Accepté |
+| 0011 | [Nom et modification d'une séance réalisée](0011-nom-et-modification-d-une-seance.md) | Accepté |

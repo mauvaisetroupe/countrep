@@ -1,5 +1,6 @@
 import { computed, ref } from 'vue'
 import type { LocalPreview, LocalSet, PreviewEntry } from '../db'
+import type { ExerciseUnit } from '../units'
 import { previewRepository } from '../repositories/previewRepository'
 
 // Séance en cours (preview) : les séries saisies pendant la séance restent
@@ -146,30 +147,102 @@ export function usePreview() {
     preview.value = null
   }
 
+  // Rouvre une séance enregistrée pour la modifier (ADR 0011) : ses sets
+  // redeviennent un brouillon, avec le même écran que pour une nouvelle
+  // séance. Les exercices sont repris dans l'ordre de leur première saisie,
+  // le nombre de séries est celui de l'exercice le plus répété. Un même
+  // exercice présent deux fois dans le modèle n'occupe ici qu'une colonne.
+  const openForEdit = async (
+    sessionSets: LocalSet[],
+    name: string,
+    catalog: { id: string, nameFr: string, nameEn?: string, unit?: ExerciseUnit }[]
+  ): Promise<boolean> => {
+    if (preview.value || sessionSets.length === 0) return false
+
+    const ordered = sessionSets.slice().sort((a, b) => a.createdAt - b.createdAt)
+    const exerciseIds = [...new Set(ordered.map(set => set.exercise))]
+    const position = (exerciseId: string) => exerciseIds.indexOf(exerciseId)
+    const count = (exerciseId: string) => ordered.filter(set => set.exercise === exerciseId).length
+    const now = Date.now()
+
+    await persist({
+      id: ordered[0]!.sessionId!,
+      date: ordered[0]!.date,
+      startedAt: now,
+      updatedAt: now,
+      workout: {
+        id: ordered[0]!.sessionId!,
+        name,
+        rounds: Math.max(...exerciseIds.map(count)),
+        exercises: exerciseIds.map(exerciseId => {
+          const exercise = catalog.find(item => item.id === exerciseId)
+          return {
+            exerciseId,
+            nameFr: exercise?.nameFr ?? exerciseId,
+            nameEn: exercise?.nameEn,
+            unit: exercise?.unit,
+            // Objectif : la valeur de la première série
+            reps: ordered.find(set => set.exercise === exerciseId)!.reps
+          }
+        })
+      },
+      entries: ordered.map(set => ({
+        id: crypto.randomUUID(),
+        setId: set.id,
+        position: position(set.exercise),
+        reps: set.reps,
+        time: set.time.slice(0, 5),
+        createdAt: set.createdAt
+      })),
+      editing: { originalSetIds: ordered.map(set => set.id) }
+    })
+
+    return true
+  }
+
   // Transforme les saisies en sets (en attente de synchro) et supprime
-  // le brouillon. Les sets gardent l'id de la séance (sessionId, ADR 0007)
-  // pour pouvoir la retrouver et la modifier ensuite. La synchro avec le serveur se fait ensuite, comme pour
-  // toute saisie.
+  // le brouillon. Les sets gardent l'id et le nom de la séance (ADR 0007,
+  // 0011) pour pouvoir la retrouver et la modifier ensuite. La synchro
+  // avec le serveur se fait ensuite, comme pour toute saisie.
   const commit = async (): Promise<LocalSet[]> => {
     if (!preview.value) return []
 
     const current = preview.value
-    const sets: LocalSet[] = current.entries
-      .slice()
-      .sort((a, b) => a.createdAt - b.createdAt)
-      .map(entry => ({
-        id: crypto.randomUUID(),
-        exercise: current.workout.exercises[entry.position]!.exerciseId,
-        date: current.date,
-        time: entry.time,
-        reps: entry.reps,
-        sessionId: current.id,
-        createdAt: entry.createdAt,
-        updatedAt: entry.createdAt,
-        deletedAt: null,
-        syncStatus: 'pending',
-        syncOperation: 'create'
-      }))
+    const newSet = (entry: PreviewEntry): LocalSet => ({
+      id: crypto.randomUUID(),
+      exercise: current.workout.exercises[entry.position]!.exerciseId,
+      date: current.date,
+      time: entry.time,
+      reps: entry.reps,
+      sessionId: current.id,
+      sessionName: current.workout.name,
+      createdAt: entry.createdAt,
+      updatedAt: entry.createdAt,
+      deletedAt: null,
+      syncStatus: 'pending',
+      syncOperation: 'create'
+    })
+
+    const entries = current.entries.slice().sort((a, b) => a.createdAt - b.createdAt)
+
+    if (current.editing) {
+      const kept = new Set(entries.filter(entry => entry.setId).map(entry => entry.setId!))
+      const created = entries.filter(entry => !entry.setId).map(newSet)
+
+      await previewRepository.commitEdit(
+        plain(current),
+        entries
+          .filter(entry => entry.setId)
+          .map(entry => ({ id: entry.setId!, reps: entry.reps, time: entry.time })),
+        created,
+        current.editing.originalSetIds.filter(id => !kept.has(id))
+      )
+      preview.value = null
+
+      return created
+    }
+
+    const sets = entries.map(newSet)
 
     await previewRepository.commit(current.id, sets)
     preview.value = null
@@ -189,6 +262,7 @@ export function usePreview() {
     removeEntry,
     removeRound,
     discard,
+    openForEdit,
     commit
   }
 }
