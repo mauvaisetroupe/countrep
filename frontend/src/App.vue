@@ -46,7 +46,9 @@ function dismissUpdate() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-background text-fg pb-28 font-sans select-none">
+  <!-- viewport-fit=cover : la page s'étend sous la barre d'état (application
+       Android plein écran, PWA iOS), le contenu commence sous elle -->
+  <div class="min-h-screen bg-background text-fg pt-[env(safe-area-inset-top)] pb-28 font-sans select-none">
     <router-view />
 
     <!-- Barre de navigation Material 3, comme Step Challenge : pastille
