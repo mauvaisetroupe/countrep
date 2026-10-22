@@ -4,6 +4,7 @@ import { pool } from './db.js'
 import { userRoutes } from './routes/users.js'
 import { setRoutes } from './routes/sets.js'
 import { authRoutes } from './routes/auth.js'
+import { googleAuthRoutes } from './routes/googleAuth.js'
 import { exerciseRoutes } from './routes/exercises.js'
 import { workoutRoutes } from './routes/workouts.js'
 
@@ -40,6 +41,7 @@ app.get('/api/health/db', async () => {
 app.register(userRoutes)
 app.register(setRoutes)
 app.register(authRoutes)
+app.register(googleAuthRoutes)
 app.register(exerciseRoutes)
 app.register(workoutRoutes)
 

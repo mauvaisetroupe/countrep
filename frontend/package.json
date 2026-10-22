@@ -9,6 +9,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@capacitor/core": "^8.5.3",
+    "@capgo/capacitor-social-login": "^8.5.15",
     "@simplewebauthn/browser": "^13.3.0",
     "dexie": "^4.4.5",
     "embla-carousel-vue": "^8.6.0",

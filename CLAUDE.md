@@ -27,8 +27,8 @@ There are no tests and no linter configured. Use `npm run build` in each package
 
 ## Configuration
 
-- `backend/.env` (gitignored, loaded by `dotenv` in `src/db.ts`): `DATABASE_HOST/PORT/NAME/USER/PASSWORD`, `JWT_SECRET`, `RP_ID` (WebAuthn relying party, default `localhost`), `EXPECTED_ORIGIN` (WebAuthn origin + CORS).
-- `frontend/.env.development` (and the local, gitignored `.env.production`): `VITE_API_URL` points to the LAN backend. Production is built on the server, where the API is same-origin under `/api` behind Nginx.
+- `backend/.env` (gitignored, loaded by `dotenv` in `src/db.ts`): `DATABASE_HOST/PORT/NAME/USER/PASSWORD`, `JWT_SECRET`, `RP_ID` (WebAuthn relying party, default `localhost`), `EXPECTED_ORIGIN` (WebAuthn origin + CORS), `GOOGLE_CLIENT_IDS` (accepted Google OAuth client ids, comma-separated, ADR 0013).
+- `frontend/.env.development` (and the local, gitignored `.env.production`): `VITE_API_URL` points to the LAN backend, `VITE_GOOGLE_WEB_CLIENT_ID` is the Google OAuth web client id (public; Google Cloud project in Testing mode, test users only). Google rejects `http://` origins on an IP address: test Google sign-in on `http://localhost:5173`. Production is built on the server, where the API is same-origin under `/api` behind Nginx.
 - CORS allow-list is hard-coded in `backend/src/server.ts`; update it when the dev host changes.
 - `backend/schema.sql` is the full current schema (reference, from a dump). `backend/database.sql` holds GRANTs for the `countrep_app` role and ad-hoc dated migrations. Schema changes are applied manually: append the migration to `database.sql` with a date comment **and** update `schema.sql`.
 - Exercises have a `unit` (`reps` | `seconds`, ADR 0008): for a `seconds` exercise, `sets.reps` and `workout_exercises.reps` hold seconds. Use `frontend/src/units.ts` to format values and `composables/useExerciseUnits.ts#unitOf` when only the exercise id is known; never add reps and seconds together.

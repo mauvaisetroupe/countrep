@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { addDevice } from '../services/auth'
 import { logoutSafely } from '../services/session'
+import { getProfile, linkGoogleAccount, type AccountProfile } from '../services/googleAuth'
 import SettingsHeader from '../components/SettingsHeader.vue'
 import { useI18n } from 'vue-i18n'
 
@@ -15,6 +16,36 @@ const router = useRouter()
 const error = ref('')
 const deviceLoading = ref(false)
 const deviceMessage = ref('')
+
+// Compte Google associé (ADR 0013) : les comptes créés avec une passkey
+// l'associent ici avant le retrait des passkeys
+const profile = ref<AccountProfile | null>(null)
+const linking = ref(false)
+const linkMessage = ref('')
+
+const loadProfile = async () => {
+  if (!authStore.isAuthenticated) return
+  profile.value = await getProfile().catch(() => null)
+}
+
+const handleLinkGoogle = async () => {
+  linking.value = true
+  error.value = ''
+  linkMessage.value = ''
+
+  try {
+    if (await linkGoogleAccount()) {
+      linkMessage.value = t('account.googleLinkedDone')
+      await loadProfile()
+    }
+  } catch (err: any) {
+    error.value = err.message || t('auth.googleFailed')
+  } finally {
+    linking.value = false
+  }
+}
+
+onMounted(loadProfile)
 
 const handleAddDevice = async () => {
   if (!authStore.token) return
@@ -131,6 +162,38 @@ const decodedToken = computed(() => {
             </p>
 
           </div>
+        </div>
+
+        <!-- Compte Google -->
+        <!-- Affichée même si le profil n'a pas pu être chargé : le bouton
+             d'association reste disponible, et l'erreur s'affiche au besoin -->
+        <div class="mt-5 pt-4 border-t border-line">
+          <div class="flex items-center justify-between gap-3">
+            <p class="text-sm font-semibold text-fg">{{ t('account.googleTitle') }}</p>
+            <span
+              v-if="profile?.googleLinked"
+              class="rounded-full bg-success-soft px-2.5 py-1 text-xs font-semibold text-success"
+            >
+              ✓ {{ t('account.googleLinked') }}
+            </span>
+          </div>
+          <p v-if="profile" class="mt-1 text-xs text-fg-secondary">
+            {{ t('account.name') }} : {{ profile.name }}
+          </p>
+
+          <template v-if="!profile?.googleLinked">
+            <p class="mt-2 text-xs text-fg-secondary">{{ t('account.googleLinkHint') }}</p>
+            <button
+              type="button"
+              :disabled="linking"
+              class="mt-3 w-full bg-primary text-on-primary font-semibold py-3 rounded-xl disabled:opacity-50"
+              @click="handleLinkGoogle"
+            >
+              {{ linking ? t('common.wait') : t('account.googleLink') }}
+            </button>
+          </template>
+
+          <p v-if="linkMessage" class="mt-3 text-sm text-success">{{ linkMessage }}</p>
         </div>
 
         <!-- Ajouter un appareil -->

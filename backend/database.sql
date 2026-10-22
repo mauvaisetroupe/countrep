@@ -138,3 +138,7 @@ INSERT INTO exercises (id, name_en, name_fr, liftmanual_url, unit) VALUES
 
 -- 2026-10-11 : nom de la séance réalisée, copié sur ses sets (ADR 0011)
 ALTER TABLE sets ADD COLUMN session_name character varying(100);
+
+-- 2026-10-11 : connexion par compte Google (ADR 0013)
+ALTER TABLE users ADD COLUMN google_sub text;
+CREATE UNIQUE INDEX users_google_sub_unique ON users USING btree (google_sub);

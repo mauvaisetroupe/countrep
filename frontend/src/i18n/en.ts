@@ -70,7 +70,13 @@ const messages: typeof fr = {
     "expiredTitle": "Session expired",
     "localHint": "Your data stays on this phone. Sign in to back it up and find it on your other devices.",
     "logoutHint": "Your data stays on this phone and syncs again next time you sign in.",
-    "logoutWipe": "Sign out and erase the data on this phone"
+    "logoutWipe": "Sign out and erase the data on this phone",
+    "googleTitle": "Google account",
+    "googleLinked": "Linked",
+    "googleLink": "Link my Google account",
+    "googleLinkHint": "Link your Google account to sign in with it from now on: passkey sign-in is going away.",
+    "googleLinkedDone": "Google account linked.",
+    "name": "Name"
   },
   "common": {
     "wait": "Please wait...",
@@ -105,21 +111,24 @@ const messages: typeof fr = {
     "registerFailed": "Registration failed.",
     "loginChallenge": "Could not create the sign-in challenge",
     "challenge": "Could not create the challenge.",
-    "addDeviceFailed": "Adding the device failed."
+    "addDeviceFailed": "Adding the device failed.",
+    "googleNotConfigured": "Google sign-in is not configured.",
+    "googleFailed": "Google sign-in failed.",
+    "googleAlreadyLinked": "This Google account is already linked to another account."
   },
   "login": {
     "cancelled": "Sign-in cancelled.",
-    "registerError": "Something went wrong during registration.",
     "loginError": "Something went wrong while signing in.",
     "title": "Sign in",
-    "passkey": "Passkey security",
-    "intro": "Enter your username to sign in or create a key.",
     "expired": "Your session has expired, please sign in again.",
     "pendingKept": "{n} pending entry is kept on this device and will be synced after signing in. | {n} pending entries are kept on this device and will be synced after signing in.",
     "username": "Username / Email",
     "signIn": "Sign in",
-    "register": "Register (passkey)",
-    "continueWithout": "Continue without an account"
+    "continueWithout": "Continue without an account",
+    "googleIntro": "Sign in to back up your data and find it on all your devices.",
+    "google": "Sign in with Google",
+    "passkeyLegacy": "Former sign-in (passkey)",
+    "passkeyLegacyHint": "For accounts created with a passkey: sign in, then link your Google account in Settings › Account."
   },
   "exercises": {
     "loadError": "Could not load exercises",

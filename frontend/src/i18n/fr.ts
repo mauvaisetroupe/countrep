@@ -68,7 +68,13 @@ const messages = {
     "expiredTitle": "Session expirée",
     "localHint": "Tes données restent sur ce téléphone. Connecte-toi pour les sauvegarder et les retrouver sur tes autres appareils.",
     "logoutHint": "Tes données restent sur ce téléphone, et se resynchronisent à ta prochaine connexion.",
-    "logoutWipe": "Se déconnecter et effacer les données de ce téléphone"
+    "logoutWipe": "Se déconnecter et effacer les données de ce téléphone",
+    "googleTitle": "Compte Google",
+    "googleLinked": "Associé",
+    "googleLink": "Associer mon compte Google",
+    "googleLinkHint": "Associe ton compte Google pour t'y connecter à l'avenir : la connexion par passkey va disparaître.",
+    "googleLinkedDone": "Compte Google associé.",
+    "name": "Nom"
   },
   "common": {
     "wait": "Patientez...",
@@ -103,21 +109,24 @@ const messages = {
     "registerFailed": "L'enregistrement a échoué.",
     "loginChallenge": "Échec de la création du challenge de connexion",
     "challenge": "Échec de la création du challenge.",
-    "addDeviceFailed": "L'ajout de l'appareil a échoué."
+    "addDeviceFailed": "L'ajout de l'appareil a échoué.",
+    "googleNotConfigured": "La connexion Google n'est pas configurée.",
+    "googleFailed": "La connexion Google a échoué.",
+    "googleAlreadyLinked": "Ce compte Google est déjà associé à un autre compte."
   },
   "login": {
     "cancelled": "Connexion annulée.",
-    "registerError": "Une erreur est survenue lors de l'enregistrement.",
     "loginError": "Une erreur est survenue lors de la connexion.",
     "title": "Connexion",
-    "passkey": "Sécurité Passkey",
-    "intro": "Entrez votre identifiant pour vous connecter ou créer une clé.",
     "expired": "Ta session a expiré, reconnecte-toi.",
     "pendingKept": "{n} saisie en attente est conservée sur cet appareil et sera synchronisée après la connexion. | {n} saisies en attente sont conservées sur cet appareil et seront synchronisées après la connexion.",
     "username": "Identifiant / Email",
     "signIn": "Se connecter",
-    "register": "S'enregistrer (Passkey)",
-    "continueWithout": "Continuer sans compte"
+    "continueWithout": "Continuer sans compte",
+    "googleIntro": "Connecte-toi pour sauvegarder tes données et les retrouver sur tous tes appareils.",
+    "google": "Se connecter avec Google",
+    "passkeyLegacy": "Ancienne connexion (passkey)",
+    "passkeyLegacyHint": "Pour les comptes créés avec une passkey : connecte-toi, puis associe ton compte Google dans Réglages › Compte."
   },
   "exercises": {
     "loadError": "Erreur lors du chargement des exercices",

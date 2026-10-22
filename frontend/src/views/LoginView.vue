@@ -2,7 +2,8 @@
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import { registerUser, loginUser } from '../services/auth'
+import { loginUser } from '../services/auth'
+import { signInWithGoogle } from '../services/googleAuth'
 import { prepareLocalDataFor } from '../services/session'
 import { setRepository } from '../repositories/setRepository'
 import { useI18n } from 'vue-i18n'
@@ -22,21 +23,26 @@ onMounted(async () => {
   pendingCount.value = (await setRepository.getPending()).length
 })
 
-const handleRegister = async () => {
-  if (!username.value.trim()) return
+// Session de l'application obtenue : données locales rattachées au
+// compte (ADR 0014), puis retour à l'application
+const adopt = async (token: string) => {
+  if (!(await prepareLocalDataFor(token))) {
+    error.value = t('login.cancelled')
+    return
+  }
+  authStore.setToken(token)
+  router.push({ name: 'today' })
+}
+
+const handleGoogle = async () => {
   loading.value = true
   error.value = ''
-  
+
   try {
-    const verification = await registerUser(username.value)
-    if (!(await prepareLocalDataFor(verification.token))) {
-      error.value = t('login.cancelled')
-      return
-    }
-    authStore.setToken(verification.token)
-    router.push({ name: 'today' })
+    const token = await signInWithGoogle()
+    if (token) await adopt(token)
   } catch (err: any) {
-    error.value = err.message || t('login.registerError')
+    error.value = err.message || t('login.loginError')
   } finally {
     loading.value = false
   }
@@ -49,12 +55,7 @@ const handleLogin = async () => {
 
   try {
     const verification = await loginUser(username.value)
-    if (!(await prepareLocalDataFor(verification.token))) {
-      error.value = t('login.cancelled')
-      return
-    }
-    authStore.setToken(verification.token)
-    router.push({ name: 'today' })
+    await adopt(verification.token)
   } catch (err: any) {
     error.value = err.message || t('login.loginError')
   } finally {
@@ -75,12 +76,10 @@ const handleLogin = async () => {
       {{ t('login.title') }}
     </h1>
     <main class="mt-6 space-y-4">
+      <!-- Connexion par compte Google (ADR 0013) -->
       <section class="bg-surface rounded-xl p-5">
-        <h2 class="text-lg font-bold text-fg">
-          {{ t('login.passkey') }}
-        </h2>
-        <p class="mt-1 text-sm text-fg-secondary">
-          {{ t('login.intro') }}
+        <p class="text-sm text-fg-secondary">
+          {{ t('login.googleIntro') }}
         </p>
 
         <!-- Session expirée -->
@@ -94,49 +93,56 @@ const handleLogin = async () => {
           </template>
         </div>
 
-        <!-- Identifiant -->
-        <div class="mt-5">
-          <label
-            for="username"
-            class="text-xs font-semibold text-fg-secondary block mb-2"
-          >
-            {{ t('login.username') }}
-          </label>
-          <input
-            id="username"
-            v-model="username"
-            type="text"
-            placeholder="Lionel"
-            autocomplete="username"
-            class="w-full bg-surface-alt border border-transparent rounded-xl px-4 py-3 text-sm text-fg focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-soft"
-            @keyup.enter="handleLogin"
-          />
-        </div>
+        <button
+          type="button"
+          :disabled="loading"
+          class="mt-5 flex w-full items-center justify-center gap-3 rounded-xl border border-line-strong bg-card py-3.5 font-semibold text-fg transition-all active:scale-[0.98] disabled:opacity-50"
+          @click="handleGoogle"
+        >
+          <!-- Logo « G » de Google -->
+          <svg viewBox="0 0 48 48" class="h-5 w-5" aria-hidden="true">
+            <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+            <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+            <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+            <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+          </svg>
+          {{ loading ? t('common.loading') : t('login.google') }}
+        </button>
 
-        <!-- Erreur -->
         <p v-if="error" class="mt-3 text-sm text-danger">
           {{ error }}
         </p>
-
-        <!-- Actions -->
-        <div class="mt-5 space-y-3">
-          <button
-            @click="handleLogin"
-            :disabled="loading || !username.trim()"
-            class="w-full bg-primary hover:bg-primary/90 disabled:bg-surface-alt disabled:text-fg-muted disabled:cursor-not-allowed text-on-primary font-semibold py-3.5 rounded-xl shadow-md transition-all active:scale-[0.98]"
-          >
-            {{ loading ? t('common.loading') : t('login.signIn') }}
-          </button>
-
-          <button
-            @click="handleRegister"
-            :disabled="loading || !username.trim()"
-            class="w-full bg-surface-alt hover:bg-surface-alt disabled:opacity-50 text-fg-secondary font-semibold py-3 rounded-xl transition-colors"
-          >
-            {{ t('login.register') }}
-          </button>
-        </div>
       </section>
+
+      <!-- Ancienne connexion par passkey : seulement pour associer un
+           compte existant à Google, avant le retrait des passkeys -->
+      <details class="rounded-xl bg-surface p-5">
+        <summary class="cursor-pointer text-sm font-semibold text-fg-secondary">
+          {{ t('login.passkeyLegacy') }}
+        </summary>
+
+        <p class="mt-3 text-sm text-fg-secondary">
+          {{ t('login.passkeyLegacyHint') }}
+        </p>
+
+        <input
+          id="username"
+          v-model="username"
+          type="text"
+          :placeholder="t('login.username')"
+          autocomplete="username"
+          class="mt-4 w-full bg-surface-alt border border-transparent rounded-xl px-4 py-3 text-sm text-fg focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-soft"
+          @keyup.enter="handleLogin"
+        />
+
+        <button
+          @click="handleLogin"
+          :disabled="loading || !username.trim()"
+          class="mt-3 w-full bg-surface-alt disabled:opacity-50 text-fg-secondary font-semibold py-3 rounded-xl transition-colors"
+        >
+          {{ t('login.signIn') }}
+        </button>
+      </details>
 
       <!-- Tout fonctionne aussi sans compte (ADR 0014) -->
       <router-link

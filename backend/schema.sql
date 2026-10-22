@@ -18,8 +18,12 @@ CREATE TABLE users (
     id uuid NOT NULL,
     name character varying(100) NOT NULL,
     created_at timestamptz DEFAULT now() NOT NULL,
+    -- Identifiant du compte Google associé (ADR 0013), sans e-mail
+    google_sub text,
     CONSTRAINT users_pkey PRIMARY KEY (id)
 );
+
+CREATE UNIQUE INDEX users_google_sub_unique ON users USING btree (google_sub);
 
 CREATE UNIQUE INDEX users_name_unique ON users USING btree (name);
 
