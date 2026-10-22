@@ -10,6 +10,7 @@ import type { LocalSet } from '../db'
 import { useUserExercises } from '../composables/useUserExercises'
 import TodayCalendar from '../components/TodayCalendar.vue'
 import DayNavigator from '../components/DayNavigator.vue'
+import JournalDay from '../components/JournalDay.vue'
 import { useI18n } from 'vue-i18n'
 import { exerciseName } from '../i18n'
 import { formatAmount } from '../units'
@@ -81,8 +82,20 @@ const pickDate = (date: string) => {
 const {
   sets,
   createSet,
+  updateSet,
+  deleteSet,
   loadSets
 } = useSets()
+
+// Saisies du jour sélectionné, comme dans le journal (tous exercices),
+// dépliées par défaut
+const selectedDaySets = computed(() =>
+  sets.value
+    .filter(set => !set.deletedAt && set.date === selectedDate.value)
+    .sort((a, b) => b.time.localeCompare(a.time))
+)
+
+const dayExpanded = ref(true)
 
 interface LogEntry {
   exerciseId: string
@@ -250,6 +263,25 @@ loadUserExercises()
   <!-- ========================================================
           MODALE D'AJOUT
       ========================================================= -->
+
+  <!-- ========================================================
+       SAISIES DU JOUR (comme dans le journal)
+  ========================================================= -->
+
+  <div
+    v-if="selectedDaySets.length > 0"
+    class="px-4 pt-6 pb-24"
+  >
+    <JournalDay
+      :date="selectedDate"
+      :day-sets="selectedDaySets"
+      :sets="sets"
+      :expanded="dayExpanded"
+      @toggle="dayExpanded = !dayExpanded"
+      @update="updateSet"
+      @delete="deleteSet"
+    />
+  </div>
 
   <AddRepsModal
     v-if="showModal && exerciseStore.selectedExercise"
