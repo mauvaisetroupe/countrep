@@ -1,98 +1,84 @@
-import { startRegistration, startAuthentication } from '@simplewebauthn/browser';
+import { SocialLogin } from '@capgo/capacitor-social-login'
+import { apiFetch, API_URL } from '../api/client'
 import { i18n } from '../i18n'
 
 const t = i18n.global.t
 
-const API_URL = import.meta.env.VITE_API_URL || '';
+// Connexion par compte Google (ADR 0013) : le même appel dans le
+// navigateur (Google Identity Services) et dans l'application Android
+// (Credential Manager), grâce au plugin. Le jeton d'identité obtenu est
+// vérifié par le serveur, qui ouvre la session de l'application.
 
-export async function registerUser(username: string) {
-  const res = await fetch(`${API_URL}/api/auth/register-challenge`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username })
-  });
-  
-  if (!res.ok) {
-    const errData = await res.json();
-    throw new Error(errData.error || t('auth.registerChallenge'));
-  }
-  
-  const optionsJSON = await res.json();
-  const cred = await startRegistration({ optionsJSON });
+const WEB_CLIENT_ID = import.meta.env.VITE_GOOGLE_WEB_CLIENT_ID as string | undefined
 
-  const verificationRes = await fetch(`${API_URL}/api/auth/register`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username, cred })
-  });
-  
-  const verification = await verificationRes.json();
-  if (!verification.verified) {
-    throw new Error(verification.error || t('auth.registerFailed'));
-  }
-  
-  return verification;
-}
+let initialized: Promise<void> | null = null
 
-export async function loginUser(username: string) {
-  const res = await fetch(`${API_URL}/api/auth/login-challenge`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username })
-  });
-
-  if (!res.ok) {
-    const errData = await res.json();
-    throw new Error(errData.error || t('auth.loginChallenge'));
+// Le plugin charge la bibliothèque Google de façon asynchrone : on
+// l'initialise une seule fois, au premier besoin
+const ensureInitialized = () => {
+  if (!WEB_CLIENT_ID) {
+    return Promise.reject(new Error(t('auth.googleNotConfigured')))
   }
 
-  const optionsJSON = await res.json();
-  const cred = await startAuthentication({ optionsJSON });
-
-  const verificationRes = await fetch(`${API_URL}/api/auth/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username, cred })
-  });
-
-  const verification = await verificationRes.json();
-  if (!verification.verified) {
-    throw new Error(verification.error || "Échec de la connexion.");
-  }
-
-  return verification;
-}
-
-export async function addDevice(token: string) {
-  const res = await fetch(`${API_URL}/api/auth/add-device-challenge`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`
+  // Sur le web, le plugin ouvre une popup OAuth qui revient sur
+  // `redirectUrl` (par défaut l'adresse de la page, qui varie : /login,
+  // /settings/account) : on fixe la racine, seule URI de redirection
+  // déclarée dans le client Web Google. L'application, chargée dans la
+  // popup, importe le plugin qui transmet le jeton et ferme la popup.
+  initialized ??= SocialLogin.initialize({
+    google: {
+      webClientId: WEB_CLIENT_ID,
+      mode: 'online',
+      redirectUrl: `${window.location.origin}/`
     }
-  });
+  }).catch(error => {
+    initialized = null
+    throw error
+  })
 
-  if (!res.ok) {
-    const errData = await res.json();
-    throw new Error(errData.error || t('auth.challenge'));
+  return initialized
+}
+
+// Ouvre la connexion Google et renvoie le jeton d'identité, ou null si
+// l'utilisateur a annulé
+async function googleIdToken(): Promise<string | null> {
+  await ensureInitialized()
+
+  const response = await SocialLogin.login({ provider: 'google', options: {} })
+  const result = response.result
+
+  if (result.responseType !== 'online' || !result.idToken) {
+    return null
   }
 
-  const optionsJSON = await res.json();
-  const cred = await startRegistration({ optionsJSON });
+  return result.idToken
+}
 
-  const verificationRes = await fetch(`${API_URL}/api/auth/add-device`, {
+// Connexion (ou création du compte) : renvoie le token de session de
+// l'application, ou null si l'utilisateur a annulé
+export async function signInWithGoogle(): Promise<string | null> {
+  const idToken = await googleIdToken()
+  if (!idToken) return null
+
+  const response = await fetch(`${API_URL}/api/auth/google`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
-    },
-    body: JSON.stringify({ cred })
-  });
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ idToken })
+  })
 
-  const verification = await verificationRes.json();
-
-  if (!verification.verified) {
-    throw new Error(verification.error || t('auth.addDeviceFailed'));
+  if (!response.ok) {
+    throw new Error(t('auth.googleFailed'))
   }
 
-  return verification;
+  const { token } = await response.json() as { token: string }
+  return token
+}
+
+export interface AccountProfile {
+  name: string
+}
+
+export async function getProfile(): Promise<AccountProfile | null> {
+  const response = await apiFetch('/api/auth/me')
+  return response.ok ? response.json() : null
 }

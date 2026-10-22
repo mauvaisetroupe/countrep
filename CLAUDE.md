@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 CountRep is an offline-first PWA for logging daily exercise repetitions (bodyweight / resistance band). Two independent npm packages, no workspace tooling:
 
 - `frontend/` — Vue 3 + TypeScript, Vite, Pinia, Vue Router, Tailwind 4, Dexie (IndexedDB), `vite-plugin-pwa`
-- `backend/` — Fastify 5 + raw SQL via `pg` (no ORM), JWT auth, WebAuthn passkeys (`@simplewebauthn`)
+- `backend/` — Fastify 5 + raw SQL via `pg` (no ORM), JWT auth, Google sign-in (`google-auth-library`)
 
 Production: `https://countrep.architech.lu` (Cloudflare → Nginx + systemd `countrep-api` on a Proxmox LXC, built and deployed from a git clone in `/opt/countrep`; see `docs/deployment.md`). Frontend and backend deploy together, but installed PWAs keep running their cached frontend until the user accepts the update prompt, so keep API changes backward compatible. Comments and log messages are mostly in French; UI text is translated (French / English, ADR 0009).
 
@@ -27,7 +27,7 @@ There are no tests and no linter configured. Use `npm run build` in each package
 
 ## Configuration
 
-- `backend/.env` (gitignored, loaded by `dotenv` in `src/db.ts`): `DATABASE_HOST/PORT/NAME/USER/PASSWORD`, `JWT_SECRET`, `RP_ID` (WebAuthn relying party, default `localhost`), `EXPECTED_ORIGIN` (WebAuthn origin + CORS), `GOOGLE_CLIENT_IDS` (accepted Google OAuth client ids, comma-separated, ADR 0013).
+- `backend/.env` (gitignored, loaded by `dotenv` in `src/db.ts`): `DATABASE_HOST/PORT/NAME/USER/PASSWORD`, `JWT_SECRET`, `EXPECTED_ORIGIN` (production origin added to the CORS allow-list), `GOOGLE_CLIENT_IDS` (accepted Google OAuth client ids, comma-separated, ADR 0013).
 - `frontend/.env.development` (and the local, gitignored `.env.production`): `VITE_API_URL` points to the LAN backend, `VITE_GOOGLE_WEB_CLIENT_ID` is the Google OAuth web client id (public; Google Cloud project in Testing mode, test users only). Google rejects `http://` origins on an IP address: test Google sign-in on `http://localhost:5173`. Production is built on the server, where the API is same-origin under `/api` behind Nginx.
 - CORS allow-list is hard-coded in `backend/src/server.ts`; update it when the dev host changes.
 - `backend/schema.sql` is the full current schema (reference, from a dump). `backend/database.sql` holds GRANTs for the `countrep_app` role and ad-hoc dated migrations. Schema changes are applied manually: append the migration to `database.sql` with a date comment **and** update `schema.sql`.
@@ -67,7 +67,7 @@ Everything works without an account and without network (ADR 0014): no API call 
 
 ### Auth
 
-- Passwordless: WebAuthn register/login in `backend/src/routes/auth.ts` issues a 7-day JWT `{ userId }`. Additional devices are registered via `/api/auth/add-device*` while authenticated.
+- Google sign-in only (ADR 0013, passkeys removed): `services/auth.ts#signInWithGoogle` gets a Google ID token through `@capgo/capacitor-social-login` (web popup, native on Android) and posts it to `POST /api/auth/google` (`backend/src/routes/auth.ts`), which verifies it against `GOOGLE_CLIENT_IDS`, finds or creates the user by `users.google_sub` (no email stored) and issues a 7-day JWT `{ userId }`. On the web the plugin's OAuth popup returns to `redirectUrl` = origin + `/`, which must be listed in the Google client's authorized redirect URIs.
 - Sliding session: `POST /api/auth/refresh` swaps a valid token for a fresh one; `services/session.ts#ensureFreshToken` calls it once the token is over a day old (app start, `visibilitychange`, before each sync).
 - Frontend stores the token in `localStorage` (`stores/auth.ts`); `isAuthenticated` checks the JWT `exp` client-side.
 - Local data belongs to one account at a time (`localStorage` `countrep.owner`, set by `setToken`, absent until the first sign-in). Logins must call `services/session.ts#prepareLocalDataFor(token)` before `setToken`: data without owner is adopted by the account and pushed; another account's data is wiped (with confirmation if pending). Logout must go through `logoutSafely({ wipe })`: without `wipe` the data stays on the device (the app keeps working locally); with `wipe`, sync attempt, confirmation, then `authStore.logout({ wipe: true })` deletes the whole IndexedDB (ADR 0014).

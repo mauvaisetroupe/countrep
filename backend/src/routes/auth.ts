@@ -1,300 +1,110 @@
 import type { FastifyInstance } from 'fastify'
 import { randomUUID } from 'crypto'
-import {
-  generateRegistrationOptions,
-  verifyRegistrationResponse,
-  generateAuthenticationOptions,
-  verifyAuthenticationResponse,
-} from '@simplewebauthn/server'
-import { pool } from '../db.js'
+import { OAuth2Client } from 'google-auth-library'
 import jwt from 'jsonwebtoken'
+import { pool } from '../db.js'
 import { verifyJWT } from '../middleware/auth.js'
 
-const rpName = 'CountRep App'
-// Récupérez les valeurs depuis les variables d'environnement avec des replis pour le local
-const rpID = process.env.RP_ID || 'localhost'
-const expectedOrigin = process.env.EXPECTED_ORIGIN || 'http://localhost:5173'
+// Connexion par compte Google (voir docs/adr/0013). Le client obtient un
+// jeton d'identité Google (plugin @capgo/capacitor-social-login, web ou
+// Android) ; le serveur le vérifie et ouvre la session de l'application
+// (JWT de 7 jours, renouvellement glissant de l'ADR 0003).
 
 const JWT_SECRET: string = process.env.JWT_SECRET || 'votre_secret_super_securise'
 
-const currentChallenges = new Map<string, string>()
+// Identifiants client OAuth acceptés (web, Android), séparés par des virgules
+const GOOGLE_CLIENT_IDS = (process.env.GOOGLE_CLIENT_IDS ?? '')
+  .split(',')
+  .map(id => id.trim())
+  .filter(Boolean)
 
-export async function authRoutes(fastify: FastifyInstance) {
-  
-  fastify.post('/api/auth/register-challenge', async (request, reply) => {
-    const { username } = request.body as { username: string }
-    if (!username) return reply.code(400).send({ error: 'Username requis' })
+const googleClient = new OAuth2Client()
 
-    let userResult = await pool.query('SELECT id FROM users WHERE name = $1', [username])
-    let userId: string
+interface GoogleIdentity {
+  sub: string
+  givenName: string | null
+}
 
-    if (userResult.rows.length === 0) {
+// Vérifie signature, émetteur, audience et expiration du jeton Google.
+// Seul l'identifiant `sub` est gardé, et le prénom pour le nom affiché :
+// pas d'adresse e-mail (ADR 0013).
+async function verifyGoogleToken(idToken: unknown): Promise<GoogleIdentity | null> {
+  if (typeof idToken !== 'string' || GOOGLE_CLIENT_IDS.length === 0) {
+    return null
+  }
+
+  try {
+    const ticket = await googleClient.verifyIdToken({
+      idToken,
+      audience: GOOGLE_CLIENT_IDS
+    })
+    const payload = ticket.getPayload()
+    if (!payload?.sub) return null
+
+    return { sub: payload.sub, givenName: payload.given_name ?? null }
+  } catch {
+    return null
+  }
+}
+
+const sessionToken = (userId: string) =>
+  jwt.sign({ userId }, JWT_SECRET, { expiresIn: '7d' })
+
+export async function authRoutes(app: FastifyInstance) {
+
+  // Connexion : retrouve le compte associé à ce compte Google, ou le crée
+  app.post('/api/auth/google', async (request, reply) => {
+    const { idToken } = (request.body ?? {}) as { idToken?: unknown }
+    const identity = await verifyGoogleToken(idToken)
+
+    if (!identity) {
+      return reply.code(401).send({ error: 'Invalid Google token' })
+    }
+
+    const existing = await pool.query(
+      'SELECT id FROM users WHERE google_sub = $1',
+      [identity.sub]
+    )
+
+    let userId: string = existing.rows[0]?.id
+    const created = !userId
+
+    if (!userId) {
       userId = randomUUID()
-      const now = new Date()
+      const name = identity.givenName?.trim().slice(0, 100) || 'CountRep'
       await pool.query(
-        'INSERT INTO users (id, name, created_at) VALUES ($1, $2, $3)',
-        [userId, username, now]
+        'INSERT INTO users (id, name, google_sub, created_at) VALUES ($1, $2, $3, now())',
+        [userId, name, identity.sub]
       )
-    } else {
-      return reply.code(400).send({ error: 'Ce nom d\'utilisateur est déjà pris' })
     }
 
-    const devicesRes = await pool.query(
-      'SELECT credential_id, transports FROM user_devices WHERE user_id = $1',
-      [userId]
-    )
-
-    const options = await generateRegistrationOptions({
-      rpName,
-      rpID,
-      userID: Buffer.from(userId),
-      userName: username,
-      excludeCredentials: devicesRes.rows.map((dev: any) => ({
-        id: dev.credential_id,
-        type: 'public-key',
-        transports: dev.transports,
-      })),
-    })
-
-    currentChallenges.set(username, options.challenge)
-    return options
-  })
-
-  fastify.post('/api/auth/register', async (request, reply) => {
-    const { username, cred } = request.body as { username: string; cred: any }
-    const expectedChallenge = currentChallenges.get(username)
-
-    const userResult = await pool.query('SELECT id FROM users WHERE name = $1', [username])
-    if (userResult.rows.length === 0 || !expectedChallenge) {
-      return reply.code(400).send({ error: 'Contexte invalide' })
-    }
-    const userId = userResult.rows[0].id
-
-    try {
-      const verification = await verifyRegistrationResponse({
-        response: cred,
-        expectedChallenge,
-        expectedOrigin,
-        expectedRPID: rpID,
-      })
-
-      if (verification.verified && verification.registrationInfo) {
-        const { credential } = verification.registrationInfo
-
-        await pool.query(
-          `INSERT INTO user_devices (user_id, credential_id, credential_public_key, counter, transports)
-           VALUES ($1, $2, $3, $4, $5)
-           ON CONFLICT (credential_id) DO NOTHING`,
-          [
-            userId,
-            credential.id,
-            Buffer.from(credential.publicKey),
-            credential.counter,
-            credential.transports || [],
-          ]
-        )
-
-        currentChallenges.delete(username)
-        const token = jwt.sign({ userId }, JWT_SECRET, { expiresIn: '7d' })
-        return { verified: true, token }
-      }
-      return { verified: false }
-    } catch (error: any) {
-      return reply.code(400).send({ error: error.message })
-    }
-  })
-
-  fastify.post('/api/auth/login-challenge', async (request, reply) => {
-    const { username } = request.body as { username: string }
-    
-    const userResult = await pool.query('SELECT id FROM users WHERE name = $1', [username])
-    if (userResult.rows.length === 0) {
-      return reply.code(404).send({ error: 'Utilisateur inconnu' })
-    }
-    const userId = userResult.rows[0].id
-
-    const devicesRes = await pool.query(
-      'SELECT credential_id, transports FROM user_devices WHERE user_id = $1',
-      [userId]
-    )
-
-    if (devicesRes.rows.length === 0) {
-      return reply.code(400).send({ error: 'Aucun appareil enregistré pour cet utilisateur' })
-    }
-
-    const options = await generateAuthenticationOptions({
-      rpID,
-      allowCredentials: devicesRes.rows.map((dev: any) => ({
-        id: dev.credential_id,
-        type: 'public-key',
-        transports: dev.transports,
-      })),
-    })
-
-    currentChallenges.set(username, options.challenge)
-    return options
-  })
-
-  fastify.post('/api/auth/login', async (request, reply) => {
-    const { username, cred } = request.body as { username: string; cred: any }
-    const expectedChallenge = currentChallenges.get(username)
-
-    const userResult = await pool.query('SELECT id FROM users WHERE name = $1', [username])
-    if (userResult.rows.length === 0 || !expectedChallenge) {
-      return reply.code(400).send({ error: 'Contexte invalide' })
-    }
-    const userId = userResult.rows[0].id
-
-    const deviceRes = await pool.query(
-      'SELECT credential_id, credential_public_key, counter, transports FROM user_devices WHERE user_id = $1 AND credential_id = $2',
-      [userId, cred.id]
-    )
-
-    if (deviceRes.rows.length === 0) {
-      return reply.code(400).send({ error: 'Appareil non reconnu' })
-    }
-
-    const dbDevice = deviceRes.rows[0]
-
-    try {
-      const verification = await verifyAuthenticationResponse({
-        response: cred,
-        expectedChallenge,
-        expectedOrigin,
-        expectedRPID: rpID,
-        credential: {
-          id: dbDevice.credential_id,
-          publicKey: dbDevice.credential_public_key,
-          counter: Number(dbDevice.counter),
-          transports: dbDevice.transports,
-        },
-      })
-
-      if (verification.verified && verification.authenticationInfo) {
-        await pool.query(
-          'UPDATE user_devices SET counter = $1 WHERE credential_id = $2',
-          [verification.authenticationInfo.newCounter, dbDevice.credential_id]
-        )
-
-        currentChallenges.delete(username)
-        const token = jwt.sign({ userId }, JWT_SECRET, { expiresIn: '7d' })
-        return { verified: true, token }
-      }
-      return { verified: false }
-    } catch (error: any) {
-      return reply.code(400).send({ error: error.message })
-    }
+    return { token: sessionToken(userId), created }
   })
 
   // Renouvellement glissant : un token encore valide est échangé
   // contre un nouveau token de 7 jours (voir docs/adr/0003).
-  fastify.post('/api/auth/refresh', { preHandler: verifyJWT }, async (request, reply) => {
-    const userId = request.userId
+  app.post('/api/auth/refresh', { preHandler: verifyJWT }, async (request, reply) => {
+    const userId = request.userId!
 
     const userResult = await pool.query('SELECT id FROM users WHERE id = $1', [userId])
     if (userResult.rows.length === 0) {
       return reply.code(401).send({ error: 'Utilisateur inconnu' })
     }
 
-    const token = jwt.sign({ userId }, JWT_SECRET, { expiresIn: '7d' })
-    return { token }
+    return { token: sessionToken(userId) }
   })
 
-  fastify.post('/api/auth/add-device-challenge', { preHandler: verifyJWT }, async (request, reply) => {
-    const userId = request.userId
-
-    if (!userId) {
-      return reply.code(401).send({ error: 'Utilisateur non authentifié' })
-    }
-
-    const userResult = await pool.query(
-      'SELECT id, name FROM users WHERE id = $1',
-      [userId]
+  // Profil du compte connecté
+  app.get('/api/auth/me', { preHandler: verifyJWT }, async (request, reply) => {
+    const result = await pool.query(
+      'SELECT name FROM users WHERE id = $1',
+      [request.userId]
     )
 
-    if (userResult.rows.length === 0) {
-      return reply.code(404).send({ error: 'Utilisateur inconnu' })
+    if (result.rowCount === 0) {
+      return reply.code(401).send({ error: 'Unknown user' })
     }
 
-    const user = userResult.rows[0]
-
-    const devicesRes = await pool.query(
-      'SELECT credential_id, transports FROM user_devices WHERE user_id = $1',
-      [userId]
-    )
-
-    const options = await generateRegistrationOptions({
-      rpName,
-      rpID,
-      userID: Buffer.from(userId),
-      userName: user.name,
-      excludeCredentials: devicesRes.rows.map((dev: any) => ({
-        id: dev.credential_id,
-        type: 'public-key',
-        transports: dev.transports,
-      })),
-    })
-
-    currentChallenges.set(`add-device:${userId}`, options.challenge)
-
-    return options
-  })
-
-  fastify.post('/api/auth/add-device', { preHandler: verifyJWT }, async (request, reply) => {
-    const userId = request.userId
-
-    if (!userId) {
-      return reply.code(401).send({ error: 'Utilisateur non authentifié' })
-    }
-
-    const { cred } = request.body as { cred: any }
-
-    if (!cred) {
-      return reply.code(400).send({ error: 'Credential manquante' })
-    }
-
-    const challengeKey = `add-device:${userId}`
-    const expectedChallenge = currentChallenges.get(challengeKey)
-
-    if (!expectedChallenge) {
-      return reply.code(400).send({ error: 'Contexte invalide' })
-    }
-
-    try {
-      const verification = await verifyRegistrationResponse({
-        response: cred,
-        expectedChallenge,
-        expectedOrigin,
-        expectedRPID: rpID,
-      })
-
-      if (verification.verified && verification.registrationInfo) {
-        const { credential } = verification.registrationInfo
-
-        await pool.query(
-          `INSERT INTO user_devices (user_id, credential_id, credential_public_key, counter, transports)
-           VALUES ($1, $2, $3, $4, $5)
-           ON CONFLICT (credential_id) DO NOTHING`,
-          [
-            userId,
-            credential.id,
-            Buffer.from(credential.publicKey),
-            credential.counter,
-            credential.transports || [],
-          ]
-        )
-
-        currentChallenges.delete(challengeKey)
-
-        return {
-          verified: true,
-          credentialId: credential.id,
-        }
-      }
-
-      return { verified: false }
-    } catch (error: any) {
-      return reply.code(400).send({ error: error.message })
-    }
+    return { name: result.rows[0].name }
   })
 }

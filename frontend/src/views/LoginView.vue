@@ -2,15 +2,13 @@
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import { loginUser } from '../services/auth'
-import { signInWithGoogle } from '../services/googleAuth'
+import { signInWithGoogle } from '../services/auth'
 import { prepareLocalDataFor } from '../services/session'
 import { setRepository } from '../repositories/setRepository'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
 
-const username = ref('')
 const error = ref('')
 const loading = ref(false)
 const router = useRouter()
@@ -41,21 +39,6 @@ const handleGoogle = async () => {
   try {
     const token = await signInWithGoogle()
     if (token) await adopt(token)
-  } catch (err: any) {
-    error.value = err.message || t('login.loginError')
-  } finally {
-    loading.value = false
-  }
-}
-
-const handleLogin = async () => {
-  if (!username.value.trim()) return
-  loading.value = true
-  error.value = ''
-
-  try {
-    const verification = await loginUser(username.value)
-    await adopt(verification.token)
   } catch (err: any) {
     error.value = err.message || t('login.loginError')
   } finally {
@@ -113,36 +96,6 @@ const handleLogin = async () => {
           {{ error }}
         </p>
       </section>
-
-      <!-- Ancienne connexion par passkey : seulement pour associer un
-           compte existant à Google, avant le retrait des passkeys -->
-      <details class="rounded-xl bg-surface p-5">
-        <summary class="cursor-pointer text-sm font-semibold text-fg-secondary">
-          {{ t('login.passkeyLegacy') }}
-        </summary>
-
-        <p class="mt-3 text-sm text-fg-secondary">
-          {{ t('login.passkeyLegacyHint') }}
-        </p>
-
-        <input
-          id="username"
-          v-model="username"
-          type="text"
-          :placeholder="t('login.username')"
-          autocomplete="username"
-          class="mt-4 w-full bg-surface-alt border border-transparent rounded-xl px-4 py-3 text-sm text-fg focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-soft"
-          @keyup.enter="handleLogin"
-        />
-
-        <button
-          @click="handleLogin"
-          :disabled="loading || !username.trim()"
-          class="mt-3 w-full bg-surface-alt disabled:opacity-50 text-fg-secondary font-semibold py-3 rounded-xl transition-colors"
-        >
-          {{ t('login.signIn') }}
-        </button>
-      </details>
 
       <!-- Tout fonctionne aussi sans compte (ADR 0014) -->
       <router-link

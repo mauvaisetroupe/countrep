@@ -1,8 +1,7 @@
-GRANT USAGE, SELECT ON SEQUENCE user_devices_id_seq TO countrep_app;
 GRANT USAGE ON SCHEMA public TO countrep_app;
 
 GRANT SELECT, INSERT, UPDATE, DELETE
-ON TABLE users, workouts, user_devices
+ON TABLE users, workouts
 TO countrep_app;
 
 GRANT SELECT ON TABLE exercises TO countrep_app;
@@ -142,3 +141,9 @@ ALTER TABLE sets ADD COLUMN session_name character varying(100);
 -- 2026-10-11 : connexion par compte Google (ADR 0013)
 ALTER TABLE users ADD COLUMN google_sub text;
 CREATE UNIQUE INDEX users_google_sub_unique ON users USING btree (google_sub);
+
+-- 2026-10-22 : retrait des passkeys, tous les comptes sont associés à Google (ADR 0013)
+DROP TABLE user_devices;
+DROP SEQUENCE IF EXISTS user_devices_id_seq;
+DROP INDEX users_name_unique;
+ALTER TABLE users ALTER COLUMN google_sub SET NOT NULL;

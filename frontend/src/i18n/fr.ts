@@ -55,14 +55,9 @@ const messages = {
     "new": "Nouvelle séance"
   },
   "account": {
-    "deviceAdded": "Cet appareil est maintenant enregistré.",
-    "deviceError": "Une erreur est survenue lors de l'ajout de l'appareil.",
     "decodeError": "Impossible de décoder le JWT",
     "sessionActive": "Session sécurisée active",
     "jwt": "Authentifié par Jeton JWT",
-    "addDeviceTitle": "Ajouter cet appareil",
-    "addDeviceHint": "Enregistrez un nouveau Passkey pour pouvoir vous connecter à votre compte depuis cet appareil.",
-    "addDevice": "Ajouter un moyen d’accès",
     "logout": "Se déconnecter",
     "localTitle": "Non connecté",
     "expiredTitle": "Session expirée",
@@ -70,10 +65,6 @@ const messages = {
     "logoutHint": "Tes données restent sur ce téléphone, et se resynchronisent à ta prochaine connexion.",
     "logoutWipe": "Se déconnecter et effacer les données de ce téléphone",
     "googleTitle": "Compte Google",
-    "googleLinked": "Associé",
-    "googleLink": "Associer mon compte Google",
-    "googleLinkHint": "Associe ton compte Google pour t'y connecter à l'avenir : la connexion par passkey va disparaître.",
-    "googleLinkedDone": "Compte Google associé.",
     "name": "Nom"
   },
   "common": {
@@ -105,14 +96,8 @@ const messages = {
     "finish": "Terminer la séance"
   },
   "auth": {
-    "registerChallenge": "Échec de la création du challenge d'enregistrement",
-    "registerFailed": "L'enregistrement a échoué.",
-    "loginChallenge": "Échec de la création du challenge de connexion",
-    "challenge": "Échec de la création du challenge.",
-    "addDeviceFailed": "L'ajout de l'appareil a échoué.",
     "googleNotConfigured": "La connexion Google n'est pas configurée.",
-    "googleFailed": "La connexion Google a échoué.",
-    "googleAlreadyLinked": "Ce compte Google est déjà associé à un autre compte."
+    "googleFailed": "La connexion Google a échoué."
   },
   "login": {
     "cancelled": "Connexion annulée.",
@@ -120,13 +105,10 @@ const messages = {
     "title": "Connexion",
     "expired": "Ta session a expiré, reconnecte-toi.",
     "pendingKept": "{n} saisie en attente est conservée sur cet appareil et sera synchronisée après la connexion. | {n} saisies en attente sont conservées sur cet appareil et seront synchronisées après la connexion.",
-    "username": "Identifiant / Email",
     "signIn": "Se connecter",
     "continueWithout": "Continuer sans compte",
     "googleIntro": "Connecte-toi pour sauvegarder tes données et les retrouver sur tous tes appareils.",
-    "google": "Se connecter avec Google",
-    "passkeyLegacy": "Ancienne connexion (passkey)",
-    "passkeyLegacyHint": "Pour les comptes créés avec une passkey : connecte-toi, puis associe ton compte Google dans Réglages › Compte."
+    "google": "Se connecter avec Google"
   },
   "exercises": {
     "loadError": "Erreur lors du chargement des exercices",

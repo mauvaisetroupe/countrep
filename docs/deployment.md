@@ -16,7 +16,7 @@ Navigateur ──HTTPS──▶ Cloudflare (countrep.architech.lu)
 
 - Le TLS est terminé par Cloudflare ; Nginx écoute en HTTP sur le LXC.
 - Le front appelle l'API en même origine (`/api`), via Nginx.
-- HTTPS côté navigateur est indispensable : les passkeys (WebAuthn) et le service worker PWA ne fonctionnent qu'en contexte sécurisé.
+- HTTPS côté navigateur est indispensable : le service worker PWA et la connexion Google ne fonctionnent qu'en contexte sécurisé.
 
 ## Procédure
 
@@ -44,9 +44,9 @@ Fichiers non versionnés, présents uniquement sur le LXC :
 
 | Fichier | Contenu attendu |
 | ------- | --------------- |
-| `/opt/countrep/backend/.env` ou le unit systemd | `DATABASE_HOST/PORT/NAME/USER/PASSWORD`, `JWT_SECRET`, `RP_ID=countrep.architech.lu`, `EXPECTED_ORIGIN=https://countrep.architech.lu`, `GOOGLE_CLIENT_IDS` (identifiant client OAuth Web, ADR 0013) |
+| `/opt/countrep/backend/.env` ou le unit systemd | `DATABASE_HOST/PORT/NAME/USER/PASSWORD`, `JWT_SECRET`, `EXPECTED_ORIGIN=https://countrep.architech.lu` (CORS), `GOOGLE_CLIENT_IDS` (identifiant client OAuth Web, ADR 0013) |
 | `/opt/countrep/frontend/.env.production` | `VITE_API_URL` vide ou absent (API en même origine), `VITE_GOOGLE_WEB_CLIENT_ID` (le même identifiant client Web, lu au build) |
 
-`JWT_SECRET`, `RP_ID` et `EXPECTED_ORIGIN` ont des valeurs par défaut dans le code (secret de démo, `localhost`) : s'ils manquent, l'authentification passkey échoue ou les tokens deviennent falsifiables. Sans `GOOGLE_CLIENT_IDS`, le backend refuse toute connexion Google ; sans `VITE_GOOGLE_WEB_CLIENT_ID`, le bouton Google répond « non configuré ».
+`JWT_SECRET` a une valeur par défaut dans le code (secret de démo) : s'il manque, les tokens deviennent falsifiables. Sans `GOOGLE_CLIENT_IDS`, le backend refuse toute connexion Google ; sans `VITE_GOOGLE_WEB_CLIENT_ID`, le bouton Google répond « non configuré ».
 
 À noter : le `frontend/.env.production` du poste de développement pointe vers le backend du réseau local ; un build de production fait sur le poste de dev ne fonctionnerait pas en ligne.

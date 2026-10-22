@@ -57,14 +57,9 @@ const messages: typeof fr = {
     "new": "New workout"
   },
   "account": {
-    "deviceAdded": "This device is now registered.",
-    "deviceError": "Something went wrong while adding the device.",
     "decodeError": "Could not decode the JWT",
     "sessionActive": "Secure session active",
     "jwt": "Authenticated with a JWT",
-    "addDeviceTitle": "Add this device",
-    "addDeviceHint": "Register a new passkey to sign in to your account from this device.",
-    "addDevice": "Add a sign-in method",
     "logout": "Sign out",
     "localTitle": "Not signed in",
     "expiredTitle": "Session expired",
@@ -72,10 +67,6 @@ const messages: typeof fr = {
     "logoutHint": "Your data stays on this phone and syncs again next time you sign in.",
     "logoutWipe": "Sign out and erase the data on this phone",
     "googleTitle": "Google account",
-    "googleLinked": "Linked",
-    "googleLink": "Link my Google account",
-    "googleLinkHint": "Link your Google account to sign in with it from now on: passkey sign-in is going away.",
-    "googleLinkedDone": "Google account linked.",
     "name": "Name"
   },
   "common": {
@@ -107,14 +98,8 @@ const messages: typeof fr = {
     "finish": "Finish workout"
   },
   "auth": {
-    "registerChallenge": "Could not create the registration challenge",
-    "registerFailed": "Registration failed.",
-    "loginChallenge": "Could not create the sign-in challenge",
-    "challenge": "Could not create the challenge.",
-    "addDeviceFailed": "Adding the device failed.",
     "googleNotConfigured": "Google sign-in is not configured.",
-    "googleFailed": "Google sign-in failed.",
-    "googleAlreadyLinked": "This Google account is already linked to another account."
+    "googleFailed": "Google sign-in failed."
   },
   "login": {
     "cancelled": "Sign-in cancelled.",
@@ -122,13 +107,10 @@ const messages: typeof fr = {
     "title": "Sign in",
     "expired": "Your session has expired, please sign in again.",
     "pendingKept": "{n} pending entry is kept on this device and will be synced after signing in. | {n} pending entries are kept on this device and will be synced after signing in.",
-    "username": "Username / Email",
     "signIn": "Sign in",
     "continueWithout": "Continue without an account",
     "googleIntro": "Sign in to back up your data and find it on all your devices.",
-    "google": "Sign in with Google",
-    "passkeyLegacy": "Former sign-in (passkey)",
-    "passkeyLegacyHint": "For accounts created with a passkey: sign in, then link your Google account in Settings › Account."
+    "google": "Sign in with Google"
   },
   "exercises": {
     "loadError": "Could not load exercises",
