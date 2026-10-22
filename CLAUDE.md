@@ -18,6 +18,7 @@ Production: `https://countrep.architech.lu` (Cloudflare → Nginx + systemd `cou
 cd frontend && npm run dev
 cd frontend && npm run build     # vue-tsc -b && vite build — this is the type check
 cd frontend && npm run build:android   # Capacitor app: vite build --mode android (.env.android) + cap sync
+cd frontend && npm run bundle:android  # signed release .aab for Google Play (docs/signing.md); version from package.json
 
 # backend (Fastify on 0.0.0.0:3000)
 cd backend && npm run dev        # tsx watch src/server.ts (restarts on change)

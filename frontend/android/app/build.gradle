@@ -1,5 +1,17 @@
 apply plugin: 'com.android.application'
 
+import groovy.json.JsonSlurper
+
+// Version de l'application : celle de frontend/package.json, seule source.
+// versionCode = majeur * 10000 + mineur * 100 + correctif (1.2.3 -> 10203) :
+// il croît à chaque version, comme l'exige Google Play.
+def appVersion = new JsonSlurper().parse(file('../../package.json')).version
+def (versionMajor, versionMinor, versionPatch) = appVersion.tokenize('.').collect { it as int }
+
+// Clé d'importation Google Play (docs/signing.md) : chemin et mots de passe
+// dans ~/.gradle/gradle.properties, jamais dans le dépôt.
+def uploadStoreFile = findProperty('COUNTREP_UPLOAD_STORE_FILE')
+
 android {
     namespace = "lu.architech.countrep"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -7,8 +19,8 @@ android {
         applicationId "lu.architech.countrep"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode versionMajor * 10000 + versionMinor * 100 + versionPatch
+        versionName appVersion
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -16,8 +28,23 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        if (uploadStoreFile) {
+            upload {
+                storeFile file(uploadStoreFile)
+                storePassword findProperty('COUNTREP_UPLOAD_STORE_PASSWORD')
+                keyAlias findProperty('COUNTREP_UPLOAD_KEY_ALIAS')
+                keyPassword findProperty('COUNTREP_UPLOAD_KEY_PASSWORD')
+            }
+        }
+    }
     buildTypes {
         release {
+            if (uploadStoreFile) {
+                signingConfig signingConfigs.upload
+            } else {
+                logger.warn('COUNTREP_UPLOAD_STORE_FILE absent : build release non signé (voir docs/signing.md)')
+            }
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }

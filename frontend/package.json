@@ -1,13 +1,14 @@
 {
   "name": "countrep",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc -b && vite build",
     "preview": "vite preview",
-    "build:android": "vue-tsc -b && vite build --mode android && cap sync android"
+    "build:android": "vue-tsc -b && vite build --mode android && cap sync android",
+    "bundle:android": "npm run build:android && cd android && ./gradlew bundleRelease"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.3",
