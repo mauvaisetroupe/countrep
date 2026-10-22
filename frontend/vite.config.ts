@@ -17,11 +17,15 @@ function getGitHash(): string {
 }
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [
     vue(),
 
     VitePWA({
+      // Pas de service worker dans l'application Capacitor : elle se met
+      // à jour par le Store (ADR 0015). Le plugin reste chargé pour que
+      // `virtual:pwa-register` existe, mais son enregistrement est inactif.
+      disable: mode === 'android',
       registerType: 'prompt',
       manifest: {
         id: '/',
@@ -63,4 +67,4 @@ export default defineConfig({
   server: {
     host: true
   }
-})
+}))

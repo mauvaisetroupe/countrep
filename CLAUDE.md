@@ -17,6 +17,7 @@ Production: `https://countrep.architech.lu` (Cloudflare → Nginx + systemd `cou
 # frontend (Vite dev server on :5173, exposed on LAN via server.host)
 cd frontend && npm run dev
 cd frontend && npm run build     # vue-tsc -b && vite build — this is the type check
+cd frontend && npm run build:android   # Capacitor app: vite build --mode android (.env.android) + cap sync
 
 # backend (Fastify on 0.0.0.0:3000)
 cd backend && npm run dev        # tsx watch src/server.ts (restarts on change)
@@ -83,7 +84,7 @@ Everything works without an account and without network (ADR 0014): no API call 
 - i18n (ADR 0009): `vue-i18n`, messages in `frontend/src/i18n/fr.ts` and `en.ts` (typed on `fr.ts`, keep keys in sync). Never hard-code UI text; use `t()` (`useI18n`) in components and `i18n.global.t` elsewhere. Exercise names via `i18n/index.ts#exerciseName`, dates via `dateLocale()`. Language preference is per device (`localStorage` `countrep.locale`, Réglages › Langue, default system).
 - `stores/exercise.ts` persists the selected exercise in `localStorage`; `ExerciseSelector` is a controlled component (`v-model`) and is not coupled to the store.
 - Exercise illustrations are static files at `frontend/public/exercises/<exercise-id>.jpg`, the filename must match the exercise `id`.
-- `__GIT_HASH__` is injected at build time by `vite.config.ts`; PWA updates use `registerType: 'prompt'` (`composables/usePwaUpdate.ts`).
+- `__GIT_HASH__` is injected at build time by `vite.config.ts`; PWA updates use `registerType: 'prompt'` (`composables/usePwaUpdate.ts`). The Android app (Capacitor, ADR 0012, `frontend/android/` versioned and edited directly, app id `lu.architech.countrep`) is built with `--mode android`, which disables the PWA plugin: no service worker in the app, updates through the Store only (ADR 0015).
 
 ### Backend conventions
 

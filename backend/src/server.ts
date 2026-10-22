@@ -15,6 +15,8 @@ await app.register(cors, {
   origin: [
     'http://localhost:5173',
     'http://192.168.1.109:5173',
+    // Application Android Capacitor (ADR 0012)
+    'https://localhost',
     process.env.EXPECTED_ORIGIN || 'https://countrep.architech.lu'
   ],
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
