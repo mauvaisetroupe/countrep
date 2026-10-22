@@ -1,6 +1,6 @@
 # 12. Application Android avec Capacitor
 
-- Statut : Accepté
+- Statut : Accepté, remplacé en partie par [ADR 0015](0015-pwa-conservee-pour-le-site-web.md) (point 3)
 - Date : 2026-10-11
 
 ## Contexte

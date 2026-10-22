@@ -15,6 +15,7 @@ Voir [ADR 0001](0001-enregistrer-les-decisions-d-architecture.md) pour le format
 | 0009 | [Interface multilingue : français et anglais](0009-interface-multilingue.md) | Accepté |
 | 0010 | [Thème, apparence claire ou sombre, et logo](0010-theme-apparence-et-logo.md) | Accepté |
 | 0011 | [Nom et modification d'une séance réalisée](0011-nom-et-modification-d-une-seance.md) | Accepté |
-| 0012 | [Application Android avec Capacitor](0012-application-android-capacitor.md) | Accepté |
+| 0012 | [Application Android avec Capacitor](0012-application-android-capacitor.md) | Accepté, remplacé en partie par 0015 |
 | 0013 | [Connexion par compte Google](0013-connexion-par-compte-google.md) | Accepté |
 | 0014 | [Application utilisable sans compte](0014-application-utilisable-sans-compte.md) | Accepté |
+| 0015 | [PWA conservée pour le site web](0015-pwa-conservee-pour-le-site-web.md) | Accepté |
