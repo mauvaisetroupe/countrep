@@ -19,3 +19,4 @@ Voir [ADR 0001](0001-enregistrer-les-decisions-d-architecture.md) pour le format
 | 0013 | [Connexion par compte Google](0013-connexion-par-compte-google.md) | Accepté |
 | 0014 | [Application utilisable sans compte](0014-application-utilisable-sans-compte.md) | Accepté |
 | 0015 | [PWA conservée pour le site web](0015-pwa-conservee-pour-le-site-web.md) | Accepté |
+| 0016 | [Suppression du compte](0016-suppression-du-compte.md) | Accepté |

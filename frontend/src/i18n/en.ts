@@ -67,7 +67,11 @@ const messages: typeof fr = {
     "logoutHint": "Your data stays on this phone and syncs again next time you sign in.",
     "logoutWipe": "Sign out and erase the data on this phone",
     "googleTitle": "Google account",
-    "name": "Name"
+    "name": "Name",
+    "delete": "Delete my account",
+    "deleteHint": "Deletes your account and all your data, on the server and on this phone.",
+    "deleteConfirm": "Permanently delete your account and all your sets, workouts and settings, on the server and on this phone? This cannot be undone.",
+    "deleteFailed": "Deleting your account failed. Check your connection and try again."
   },
   "common": {
     "wait": "Please wait...",

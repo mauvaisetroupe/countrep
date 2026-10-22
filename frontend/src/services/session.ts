@@ -11,6 +11,7 @@ import { syncPendingSets } from './sync'
 import { syncLocalData } from './dataSync'
 import { workoutRepository } from '../repositories/workoutRepository'
 import { i18n } from '../i18n'
+import { deleteAccountOnServer } from './auth'
 
 const t = i18n.global.t
 
@@ -133,6 +134,21 @@ export async function logoutSafely({ wipe = false }: { wipe?: boolean } = {}): P
   }
 
   await authStore.logout({ wipe: true })
+
+  return true
+}
+
+// Suppression du compte (ADR 0016) : après confirmation, le serveur
+// supprime le compte et ses données, puis toute la base locale est
+// effacée. Retourne false si l'utilisateur annule ; lève une erreur si
+// le serveur n'a pas confirmé (hors ligne) : rien n'est alors effacé.
+export async function deleteAccount(): Promise<boolean> {
+  if (!window.confirm(t('account.deleteConfirm'))) {
+    return false
+  }
+
+  await deleteAccountOnServer()
+  await useAuthStore().logout({ wipe: true })
 
   return true
 }

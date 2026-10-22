@@ -107,4 +107,13 @@ export async function authRoutes(app: FastifyInstance) {
 
     return { name: result.rows[0].name }
   })
+
+  // Suppression du compte (ADR 0016) : saisies, modèles de séance et
+  // sélection d'exercices suivent par cascade
+  app.delete('/api/auth/me', { preHandler: verifyJWT }, async (request, reply) => {
+    await pool.query('DELETE FROM users WHERE id = $1', [request.userId])
+    request.log.info('Compte supprimé')
+
+    return reply.code(204).send()
+  })
 }

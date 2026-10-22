@@ -147,3 +147,7 @@ DROP TABLE user_devices;
 DROP SEQUENCE IF EXISTS user_devices_id_seq;
 DROP INDEX users_name_unique;
 ALTER TABLE users ALTER COLUMN google_sub SET NOT NULL;
+
+-- 2026-10-22 : suppression du compte, les saisies suivent l'utilisateur (ADR 0016)
+ALTER TABLE sets DROP CONSTRAINT sets_user_id_fkey;
+ALTER TABLE sets ADD CONSTRAINT sets_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;

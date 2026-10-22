@@ -2,7 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import { logoutSafely } from '../services/session'
+import { deleteAccount, logoutSafely } from '../services/session'
 import { getProfile, type AccountProfile } from '../services/auth'
 import SettingsHeader from '../components/SettingsHeader.vue'
 import { useI18n } from 'vue-i18n'
@@ -29,6 +29,24 @@ const logout = async (wipe: boolean) => {
     return
   }
   router.replace({ name: 'today' })
+}
+
+// Suppression du compte (ADR 0016) : serveur puis données de ce téléphone
+const deleting = ref(false)
+const deleteError = ref<string | null>(null)
+
+const removeAccount = async () => {
+  deleting.value = true
+  deleteError.value = null
+  try {
+    if (await deleteAccount()) {
+      router.replace({ name: 'today' })
+    }
+  } catch (error) {
+    deleteError.value = error instanceof Error ? error.message : t('account.deleteFailed')
+  } finally {
+    deleting.value = false
+  }
 }
 
 const decodedToken = computed(() => {
@@ -146,6 +164,23 @@ const decodedToken = computed(() => {
           {{ t('account.logoutWipe') }}
         </button>
 
+      </section>
+
+      <!-- Suppression du compte (ADR 0016) -->
+      <section v-if="authStore.isAuthenticated" class="bg-surface rounded-xl p-5">
+        <button
+          @click="removeAccount"
+          :disabled="deleting"
+          class="w-full bg-surface-alt text-danger font-semibold py-3 rounded-xl transition-colors disabled:opacity-50"
+        >
+          {{ deleting ? t('common.wait') : t('account.delete') }}
+        </button>
+        <p class="mt-1.5 px-1 text-xs text-fg-muted">
+          {{ t('account.deleteHint') }}
+        </p>
+        <p v-if="deleteError" class="mt-2 px-1 text-sm text-danger">
+          {{ deleteError }}
+        </p>
       </section>
 
     </main>

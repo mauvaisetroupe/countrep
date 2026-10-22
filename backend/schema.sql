@@ -89,7 +89,7 @@ ALTER TABLE ONLY user_exercises ADD CONSTRAINT user_exercises_exercise_id_fkey F
 ALTER TABLE ONLY user_exercises ADD CONSTRAINT user_exercises_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY sets ADD CONSTRAINT sets_exercise_fkey FOREIGN KEY (exercise) REFERENCES exercises(id) ON DELETE RESTRICT;
-ALTER TABLE ONLY sets ADD CONSTRAINT sets_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id);
+ALTER TABLE ONLY sets ADD CONSTRAINT sets_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY workouts ADD CONSTRAINT workouts_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 

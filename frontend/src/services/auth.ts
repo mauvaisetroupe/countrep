@@ -82,3 +82,12 @@ export async function getProfile(): Promise<AccountProfile | null> {
   const response = await apiFetch('/api/auth/me')
   return response.ok ? response.json() : null
 }
+
+// Supprime le compte et toutes ses données sur le serveur (ADR 0016)
+export async function deleteAccountOnServer(): Promise<void> {
+  const response = await apiFetch('/api/auth/me', { method: 'DELETE' })
+
+  if (!response.ok) {
+    throw new Error(t('account.deleteFailed'))
+  }
+}
