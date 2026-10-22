@@ -1,7 +1,6 @@
 import Fastify from 'fastify'
 import cors from '@fastify/cors'
 import { pool } from './db.js'
-import { userRoutes } from './routes/users.js'
 import { setRoutes } from './routes/sets.js'
 import { authRoutes } from './routes/auth.js'
 import { exerciseRoutes } from './routes/exercises.js'
@@ -39,7 +38,6 @@ app.get('/api/health/db', async () => {
   }
 })
 
-app.register(userRoutes)
 app.register(setRoutes)
 app.register(authRoutes)
 app.register(exerciseRoutes)

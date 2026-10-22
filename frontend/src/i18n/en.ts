@@ -57,9 +57,6 @@ const messages: typeof fr = {
     "new": "New workout"
   },
   "account": {
-    "decodeError": "Could not decode the JWT",
-    "sessionActive": "Secure session active",
-    "jwt": "Authenticated with a JWT",
     "logout": "Sign out",
     "localTitle": "Not signed in",
     "expiredTitle": "Session expired",
@@ -67,7 +64,6 @@ const messages: typeof fr = {
     "logoutHint": "Your data stays on this phone and syncs again next time you sign in.",
     "logoutWipe": "Sign out and erase the data on this phone",
     "googleTitle": "Google account",
-    "name": "Name",
     "delete": "Delete my account",
     "deleteHint": "Deletes your account and all your data, on the server and on this phone.",
     "deleteConfirm": "Permanently delete your account and all your sets, workouts and settings, on the server and on this phone? This cannot be undone.",

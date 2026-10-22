@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { deleteAccount, logoutSafely } from '../services/session'
@@ -48,24 +48,6 @@ const removeAccount = async () => {
     deleting.value = false
   }
 }
-
-const decodedToken = computed(() => {
-  const token = authStore.token
-  if (!token) return null
-  try {
-    const base64Url = token.split('.')[1]
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
-    const jsonPayload = decodeURIComponent(
-      atob(base64)
-        .split('')
-        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-        .join('')
-    )
-    return JSON.parse(jsonPayload)
-  } catch (e) {
-    return { error: t('account.decodeError') }
-  }
-})
 </script>
 
 <template>
@@ -100,51 +82,15 @@ const decodedToken = computed(() => {
 
       <section v-else class="bg-surface rounded-xl p-5">
 
+        <!-- Compte Google (ADR 0013) : prénom affiché -->
         <div class="flex items-center gap-3">
-
-          <!-- Avatar -->
-          <div
-            class="w-10 h-10 rounded-full bg-primary-soft flex items-center justify-center"
-          >
+          <div class="w-10 h-10 rounded-full bg-primary-soft flex items-center justify-center">
             🔒
           </div>
-
-          <!-- Informations -->
           <div class="min-w-0">
-
-            <p class="text-sm font-semibold text-fg">
-              {{ t('account.sessionActive') }}
-            </p>
-
-            <p class="text-xs text-fg-secondary font-mono truncate">
-              {{ t('account.jwt') }}
-            </p>
-
-            <p class="text-sm font-semibold text-fg">
-              Raw Token
-            </p>
-
-            <p class="text-xs text-fg-secondary font-mono truncate">
-              {{ authStore.token }}
-            </p>
-
-            <p class="text-sm font-semibold text-fg">
-              Decoded Token
-            </p>
-
-            <p class="text-xs text-fg-secondary font-mono">
-              {{ JSON.stringify(decodedToken, null, 2) }}
-            </p>
-
+            <p class="text-sm font-semibold text-fg">{{ t('account.googleTitle') }}</p>
+            <p v-if="profile" class="text-sm text-fg-secondary truncate">{{ profile.name }}</p>
           </div>
-        </div>
-
-        <!-- Compte Google -->
-        <div class="mt-5 pt-4 border-t border-line">
-          <p class="text-sm font-semibold text-fg">{{ t('account.googleTitle') }}</p>
-          <p v-if="profile" class="mt-1 text-xs text-fg-secondary">
-            {{ t('account.name') }} : {{ profile.name }}
-          </p>
         </div>
 
         <!-- Déconnexion : garder ou effacer les données de ce téléphone -->

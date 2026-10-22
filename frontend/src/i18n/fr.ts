@@ -55,9 +55,6 @@ const messages = {
     "new": "Nouvelle séance"
   },
   "account": {
-    "decodeError": "Impossible de décoder le JWT",
-    "sessionActive": "Session sécurisée active",
-    "jwt": "Authentifié par Jeton JWT",
     "logout": "Se déconnecter",
     "localTitle": "Non connecté",
     "expiredTitle": "Session expirée",
@@ -65,7 +62,6 @@ const messages = {
     "logoutHint": "Tes données restent sur ce téléphone, et se resynchronisent à ta prochaine connexion.",
     "logoutWipe": "Se déconnecter et effacer les données de ce téléphone",
     "googleTitle": "Compte Google",
-    "name": "Nom",
     "delete": "Supprimer mon compte",
     "deleteHint": "Supprime ton compte et toutes tes données, sur le serveur et sur ce téléphone.",
     "deleteConfirm": "Supprimer définitivement ton compte et toutes tes saisies, séances et réglages, sur le serveur et sur ce téléphone ? Cette action est irréversible.",
