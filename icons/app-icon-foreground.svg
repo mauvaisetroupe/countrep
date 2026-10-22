@@ -2,7 +2,7 @@
 <!--
   CountRep — icône de l'application (premier plan), SVG maître.
 
-  Source de toutes les icônes (PWA, favicon, future app Android) :
+  Source de toutes les icônes (PWA, favicon, application Android) :
   la modifier dans Inkscape, puis lancer `python3 icons/export-app-icons.py`.
 
   - Canevas 1024 x 1024, transparent : la couleur de fond (#1389FC) est

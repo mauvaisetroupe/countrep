@@ -20,6 +20,19 @@ PWA dans frontend/vite.config.ts et par frontend/index.html) :
 - apple-touch-icon.png               icône iOS (180 x 180, opaque)
 - favicon.svg, favicon-48.png        favicon
 
+Application Android (frontend/android/app/src/main/res, ADR 0012) :
+
+- mipmap-*/ic_launcher_foreground.png  premier plan de l'icône adaptative
+                                     (108 dp), aussi utilisé comme icône
+                                     monochrome et icône de l'écran de
+                                     démarrage (mipmap-anydpi-v26/*.xml,
+                                     values/styles.xml)
+- mipmap-*/ic_launcher.png,
+  ic_launcher_round.png              icônes des Android < 8 (48 dp), carré
+                                     arrondi et rond
+- values/ic_launcher_background.xml  couleur de fond de l'icône et de
+                                     l'écran de démarrage
+
 Et hors de l'application (icons/) :
 
 - playstore-icon.png                 icône de la fiche Google Play
@@ -44,9 +57,18 @@ BACKGROUND = '#1389FC'
 # de sécurité.
 ICON_ZOOM = 1.4
 
+# Le premier plan d'une icône adaptative Android fait 108 dp, dont le
+# lanceur ne montre que les 72 dp centraux : réduit d'autant, le dessin
+# occupe la même part de l'icône visible que dans maskable-*.png.
+ADAPTIVE_ZOOM = 72 / 108
+
+# Facteurs d'échelle des densités Android (mdpi = 1 px par dp)
+DENSITIES = {'mdpi': 1, 'hdpi': 1.5, 'xhdpi': 2, 'xxhdpi': 3, 'xxxhdpi': 4}
+
 ROOT = Path(__file__).resolve().parent.parent
 SOURCE = ROOT / 'icons' / 'app-icon-foreground.svg'
 OUTPUT = ROOT / 'frontend' / 'public' / 'icons'
+ANDROID_RES = ROOT / 'frontend' / 'android' / 'app' / 'src' / 'main' / 'res'
 STORE_OUTPUT = ROOT / 'icons'
 
 
@@ -94,6 +116,50 @@ def with_background(svg, zoom=1.0):
     return svg.replace('</svg>', '</g></svg>')
 
 
+def zoomed(svg, zoom):
+    """Renvoie le SVG, dessin agrandi de `zoom` autour du centre, sans fond."""
+    opening = f'<g transform="translate(512,512) scale({zoom}) translate(-512,-512)">'
+    svg = re.sub(r'(<svg\b[^>]*>)', lambda m: m.group(1) + opening, svg, count=1)
+    return svg.replace('</svg>', '</g></svg>')
+
+
+def clipped(svg, shape):
+    """Renvoie le SVG découpé par `shape` (élément SVG sur le canevas 1024)."""
+    opening = (
+        f'<defs><clipPath id="launcher-shape">{shape}</clipPath></defs>'
+        '<g clip-path="url(#launcher-shape)">'
+    )
+    svg = re.sub(r'(<svg\b[^>]*>)', lambda m: m.group(1) + opening, svg, count=1)
+    return svg.replace('</svg>', '</g></svg>')
+
+
+def export_android(inkscape, source, maskable, tmp):
+    foreground_svg = tmp / 'android-foreground.svg'
+    foreground_svg.write_text(zoomed(source, ADAPTIVE_ZOOM))
+
+    legacy_svg = tmp / 'android-legacy.svg'
+    legacy_svg.write_text(clipped(maskable, '<rect width="1024" height="1024" rx="180"/>'))
+
+    round_svg = tmp / 'android-round.svg'
+    round_svg.write_text(clipped(maskable, '<circle cx="512" cy="512" r="512"/>'))
+
+    for density, scale in DENSITIES.items():
+        folder = ANDROID_RES / f'mipmap-{density}'
+        export(inkscape, foreground_svg, folder / 'ic_launcher_foreground.png', round(108 * scale))
+        export(inkscape, legacy_svg, folder / 'ic_launcher.png', round(48 * scale))
+        export(inkscape, round_svg, folder / 'ic_launcher_round.png', round(48 * scale))
+
+    colors = ANDROID_RES / 'values' / 'ic_launcher_background.xml'
+    colors.write_text(
+        '<?xml version="1.0" encoding="utf-8"?>\n'
+        '<!-- Généré par icons/export-app-icons.py -->\n'
+        '<resources>\n'
+        f'    <color name="ic_launcher_background">{BACKGROUND}</color>\n'
+        '</resources>\n'
+    )
+    print(f'  {colors.relative_to(ROOT)}')
+
+
 def main():
     inkscape = find_inkscape()
     source = SOURCE.read_text()
@@ -126,6 +192,8 @@ def main():
         print(f'  {favicon.relative_to(ROOT)}')
 
         export(inkscape, icon_svg, STORE_OUTPUT / 'playstore-icon.png', 512, opaque=True)
+
+        export_android(inkscape, source, maskable_svg.read_text(), tmp)
 
 
 if __name__ == '__main__':
