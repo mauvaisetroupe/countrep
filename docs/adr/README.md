@@ -20,3 +20,4 @@ Voir [ADR 0001](0001-enregistrer-les-decisions-d-architecture.md) pour le format
 | 0014 | [Application utilisable sans compte](0014-application-utilisable-sans-compte.md) | Accepté |
 | 0015 | [PWA conservée pour le site web](0015-pwa-conservee-pour-le-site-web.md) | Accepté |
 | 0016 | [Suppression du compte](0016-suppression-du-compte.md) | Accepté |
+| 0017 | [Images de conteneur et migrations par Flyway](0017-images-de-conteneur-et-migrations-flyway.md) | Accepté |

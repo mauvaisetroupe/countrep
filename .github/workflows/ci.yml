@@ -1,0 +1,152 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    # Versions of the web application and its API (ADR 0017): web-v1.0.0
+    # publishes the images 1.0.0 and 1.0, and the release notes. The
+    # Android app has its own version (package.json, Google Play).
+    tags: ['web-v*']
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  secrets:
+    name: Secrets scan (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build:
+    name: Typecheck, build and migrations
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: countrep_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+      - run: npm ci --no-audit
+        working-directory: backend
+      - run: npm run build
+        working-directory: backend
+      - run: npm ci --no-audit
+        working-directory: frontend
+      - run: npm run build
+        working-directory: frontend
+      # Schema created by the migration image, as in production.
+      - run: docker build -t countrep-migrations backend/migrations
+      - run: >-
+          docker run --rm --network host
+          -e FLYWAY_URL=jdbc:postgresql://localhost:5432/countrep_test
+          -e FLYWAY_USER=postgres -e FLYWAY_PASSWORD=test
+          countrep-migrations
+
+  # Images (ADR 0017, docs/exploitation.md), published once the build
+  # passes: sha-<commit> for every push to main, X.Y.Z and X.Y for a tag
+  # web-vX.Y.Z. No latest: the operator picks a version.
+  images:
+    name: Publish image (${{ matrix.image }})
+    if: github.event_name == 'push'
+    needs: [secrets, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        include:
+          - image: countrep
+            context: .
+            description: CountRep web application and API (Fastify). Requires the countrep-migrations image of the same version.
+          - image: countrep-migrations
+            context: backend/migrations
+            description: CountRep database migrations (Flyway). Run before the countrep image of the same version.
+    env:
+      # GHCR shows the description of the index of a multi-platform image.
+      DOCKER_METADATA_ANNOTATIONS_LEVELS: manifest,index
+    steps:
+      - uses: actions/checkout@v5
+      - id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}
+          flavor: |
+            latest=false
+          tags: |
+            type=sha
+            type=match,pattern=^web-v(\d+\.\d+\.\d+)$,group=1
+            type=match,pattern=^web-v(\d+\.\d+)\.\d+$,group=1
+          labels: |
+            org.opencontainers.image.description=${{ matrix.description }}
+          annotations: |
+            org.opencontainers.image.description=${{ matrix.description }}
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      # No RUN step in the final stages: both platforms are built without
+      # emulation.
+      - uses: docker/build-push-action@v7
+        with:
+          context: ${{ matrix.context }}
+          platforms: linux/amd64,linux/arm64
+          push: true
+          build-args: |
+            GIT_HASH=${{ github.sha }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          annotations: ${{ steps.meta.outputs.annotations }}
+          cache-from: type=gha,scope=${{ matrix.image }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.image }}
+
+  # GitHub Release of a version, its notes written from git
+  # (.github/release-notes.sh), nothing by hand: what the operator must
+  # read (commits marked « ! »), the new migrations, the commits since the
+  # previous version.
+  release:
+    name: Release notes
+    if: startsWith(github.ref, 'refs/tags/web-v')
+    needs: [images]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # The whole history and the tags: the previous version
+          fetch-depth: 0
+      - run: .github/release-notes.sh "$GITHUB_REF_NAME" > notes.md
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: >-
+          gh release create "$GITHUB_REF_NAME"
+          --title "CountRep web ${GITHUB_REF_NAME#web-v}"
+          --notes-file notes.md
+          --verify-tag

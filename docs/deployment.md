@@ -1,5 +1,7 @@
 # Déploiement
 
+> **Ancienne production, jusqu'à la bascule vers les images** ([ADR 0017](adr/0017-images-de-conteneur-et-migrations-flyway.md), [exploitation](exploitation.md)). **Ne plus lancer `deploy/deploy.sh`** avec un code postérieur à l'ADR 0017 : l'API refuserait de démarrer sur la base du LXC, qui n'a pas d'historique Flyway. Cette page et le script seront retirés après la bascule.
+
 ## Infrastructure
 
 ```
@@ -36,7 +38,7 @@ Le dépôt est cloné sur le LXC dans `/opt/countrep`. Le build se fait sur le s
 
 `npm ci` n'écrit jamais `package-lock.json` : le clone reste propre et `git pull` ne bloque pas. Si un déploiement échoue sur `git pull --ff-only`, quelqu'un a modifié des fichiers suivis directement sur le serveur (`git status` pour voir lesquels).
 
-Pas d'étape de migration : les changements de schéma sont appliqués à la main (voir `backend/database.sql` et `backend/schema.sql`), **avant** de déployer un code qui en dépend.
+Pas d'étape de migration : les changements de schéma étaient appliqués à la main (`backend/database.sql`, retiré par l'ADR 0017, dans l'historique git).
 
 ## Configuration sur le serveur
 

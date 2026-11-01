@@ -1,0 +1,17 @@
+# Build context of the application image (Dockerfile): only the sources.
+# Never the local .env files: secrets (backend/.env) or the LAN address of
+# the API (frontend/.env.production).
+**/.env
+**/.env.*
+**/node_modules
+**/dist
+**/dist-next
+**/dist-prev
+.git
+.github
+.vscode
+**/.DS_Store
+frontend/android
+icons
+docs
+deploy

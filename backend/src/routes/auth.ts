@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify'
 import { randomUUID } from 'crypto'
 import { OAuth2Client } from 'google-auth-library'
 import jwt from 'jsonwebtoken'
+import { config } from '../config.js'
 import { pool } from '../db.js'
 import { verifyJWT } from '../middleware/auth.js'
 
@@ -9,14 +10,6 @@ import { verifyJWT } from '../middleware/auth.js'
 // jeton d'identité Google (plugin @capgo/capacitor-social-login, web ou
 // Android) ; le serveur le vérifie et ouvre la session de l'application
 // (JWT de 7 jours, renouvellement glissant de l'ADR 0003).
-
-const JWT_SECRET: string = process.env.JWT_SECRET || 'votre_secret_super_securise'
-
-// Identifiants client OAuth acceptés (web, Android), séparés par des virgules
-const GOOGLE_CLIENT_IDS = (process.env.GOOGLE_CLIENT_IDS ?? '')
-  .split(',')
-  .map(id => id.trim())
-  .filter(Boolean)
 
 const googleClient = new OAuth2Client()
 
@@ -29,14 +22,14 @@ interface GoogleIdentity {
 // Seul l'identifiant `sub` est gardé, et le prénom pour le nom affiché :
 // pas d'adresse e-mail (ADR 0013).
 async function verifyGoogleToken(idToken: unknown): Promise<GoogleIdentity | null> {
-  if (typeof idToken !== 'string' || GOOGLE_CLIENT_IDS.length === 0) {
+  if (typeof idToken !== 'string') {
     return null
   }
 
   try {
     const ticket = await googleClient.verifyIdToken({
       idToken,
-      audience: GOOGLE_CLIENT_IDS
+      audience: config.googleClientIds
     })
     const payload = ticket.getPayload()
     if (!payload?.sub) return null
@@ -48,7 +41,7 @@ async function verifyGoogleToken(idToken: unknown): Promise<GoogleIdentity | nul
 }
 
 const sessionToken = (userId: string) =>
-  jwt.sign({ userId }, JWT_SECRET, { expiresIn: '7d' })
+  jwt.sign({ userId }, config.jwtSecret, { expiresIn: '7d' })
 
 export async function authRoutes(app: FastifyInstance) {
 

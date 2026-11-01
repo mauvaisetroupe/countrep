@@ -4,11 +4,11 @@ import vue from '@vitejs/plugin-vue'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
-const gitHash = execSync('git rev-parse --short HEAD').toString().trim()
-
-console.log('GIT HASH:', gitHash)
-
 function getGitHash(): string {
+  // Build de l'image (Dockerfile) : pas de dépôt git, le commit est passé par la CI
+  if (process.env.GIT_HASH) {
+    return process.env.GIT_HASH.slice(0, 7)
+  }
   try {
     return execSync('git rev-parse --short HEAD').toString().trim()
   } catch {
