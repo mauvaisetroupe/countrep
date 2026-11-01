@@ -17,7 +17,14 @@ const messages: typeof fr = {
   "settings": {
     "groups": {
       "training": "Training",
-      "general": "General"
+      "general": "General",
+      "about": "About"
+    },
+    "about": {
+      "site": "CountRep website",
+      "siteDescription": "Overview, help and contact",
+      "privacy": "Privacy",
+      "privacyDescription": "The data collected and how to delete it"
     },
     "build": "Build: {hash}",
     "exercises": {

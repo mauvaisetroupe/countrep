@@ -15,7 +15,14 @@ const messages = {
   "settings": {
     "groups": {
       "training": "Entraînement",
-      "general": "Général"
+      "general": "Général",
+      "about": "À propos"
+    },
+    "about": {
+      "site": "Site de CountRep",
+      "siteDescription": "Présentation, aide et contact",
+      "privacy": "Confidentialité",
+      "privacyDescription": "Les données collectées et comment les supprimer"
     },
     "build": "Build : {hash}",
     "exercises": {

@@ -5,13 +5,27 @@ import { appearancePreference } from '../appearance'
 import { useAuthStore } from '../stores/auth'
 import { localePreference } from '../i18n'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const authStore = useAuthStore()
 const gitHash = __GIT_HASH__
 
+// Pages publiques de CountRep (sport.architech.lu), dans la langue de
+// l'application : Google Play exige un lien vers la politique de
+// confidentialité dans l'application
+const SITE_URL = 'https://sport.architech.lu'
+const sitePage = (page: string) =>
+  `${SITE_URL}${locale.value === 'fr' ? '/fr' : ''}/countrep/${page}`
+
+interface SettingsEntry {
+  title: string
+  detail: string
+  to?: string
+  href?: string
+}
+
 // Menu des réglages, comme Step Challenge : des groupes d'entrées, chacune
 // avec sa sous-page et un détail (la valeur actuelle quand il y en a une)
-const groups = computed(() => [
+const groups = computed<{ title: string, entries: SettingsEntry[] }[]>(() => [
   {
     title: t('settings.groups.training'),
     entries: [
@@ -25,6 +39,13 @@ const groups = computed(() => [
       { to: '/settings/account', title: t('settings.account.title'), detail: authStore.isAuthenticated ? t('settings.account.description') : t('account.localTitle') },
       { to: '/settings/appearance', title: t('settings.appearance.title'), detail: t(`settings.appearance.${appearancePreference.value}`) },
       { to: '/settings/language', title: t('settings.language.title'), detail: t(`settings.language.${localePreference.value}`) }
+    ]
+  },
+  {
+    title: t('settings.groups.about'),
+    entries: [
+      { href: sitePage(''), title: t('settings.about.site'), detail: t('settings.about.siteDescription') },
+      { href: sitePage('privacy.html'), title: t('settings.about.privacy'), detail: t('settings.about.privacyDescription') }
     ]
   }
 ])
@@ -45,10 +66,12 @@ const groups = computed(() => [
         </h2>
 
         <nav class="bg-surface rounded-xl divide-y divide-line overflow-hidden">
-          <router-link
+          <!-- Sous-page des réglages, ou page du site (navigateur) -->
+          <component
+            :is="entry.to ? 'router-link' : 'a'"
             v-for="entry in group.entries"
-            :key="entry.to"
-            :to="entry.to"
+            :key="entry.to ?? entry.href"
+            v-bind="entry.to ? { to: entry.to } : { href: entry.href, target: '_blank', rel: 'noopener' }"
             class="flex items-center gap-3 px-4 py-3.5 active:bg-surface-alt transition-colors"
           >
             <div class="min-w-0 flex-1">
@@ -60,8 +83,8 @@ const groups = computed(() => [
               </p>
             </div>
 
-            <span class="text-xl text-fg-muted">›</span>
-          </router-link>
+            <span class="text-xl text-fg-muted">{{ entry.to ? '›' : '↗' }}</span>
+          </component>
         </nav>
       </section>
 
