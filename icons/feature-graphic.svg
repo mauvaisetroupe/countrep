@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  Step Challenge — Google Play feature graphic (1024 x 500).
+
+  Edit it in Inkscape (one layer per element), then run
+  `python3 icons/export-app-icons.py` to export feature-graphic.png
+  (opaque PNG, as required by Google Play) and upload it in the Play
+  Console: Store presence → Main store listing → Feature graphic.
+
+  - Keep the texts and the shoe away from the edges: Google Play may
+    crop the banner or overlay a play button on some screens.
+  - The shoe is a copy of app-icon-foreground.svg: update it here too
+    if the app icon changes.
+  - No screenshot with real users' names or step counts here.
+-->
+
+<svg
+   width="1024"
+   height="500"
+   viewBox="0 0 1024 500"
+   version="1.1"
+   id="svg5"
+   sodipodi:docname="feature-graphic.svg"
+   inkscape:version="1.3.2 (091e20e, 2023-11-25)"
+   inkscape:export-filename="feature-graphic.png"
+   inkscape:export-xdpi="96"
+   inkscape:export-ydpi="96"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview5"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="0.45012631"
+     inkscape:cx="675.36598"
+     inkscape:cy="548.73486"
+     inkscape:window-width="1512"
+     inkscape:window-height="921"
+     inkscape:window-x="0"
+     inkscape:window-y="33"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="texts" />
+  <defs
+     id="defs2">
+    <rect
+       x="345.54551"
+       y="37.356271"
+       width="593.96471"
+       height="82.183797"
+       id="rect6" />
+    <linearGradient
+       id="bg"
+       x1="0"
+       y1="0"
+       x2="1"
+       y2="1">
+      <stop
+         offset="0"
+         stop-color="#1F95FF"
+         id="stop1" />
+      <stop
+         offset="1"
+         stop-color="#0A6AD0"
+         id="stop2" />
+    </linearGradient>
+  </defs>
+  <g
+     id="background"
+     inkscape:groupmode="layer"
+     inkscape:label="Fond">
+    <rect
+       width="1024"
+       height="500"
+       fill="url(#bg)"
+       id="rect2" />
+    <g
+       id="tally"
+       inkscape:label="Bâtons"
+       style="fill:none;stroke:#ffffff;stroke-width:60;stroke-linecap:round;stroke-linejoin:round"
+       transform="matrix(0.44066062,0,0,0.43306848,7.5682007,21.506228)">
+      <path
+         id="stroke-1"
+         d="M 368,340 V 684" />
+      <path
+         id="stroke-2"
+         d="M 464,340 V 684" />
+      <path
+         id="stroke-3"
+         d="M 560,340 V 684" />
+      <path
+         id="stroke-4"
+         d="M 656,340 V 684" />
+    </g>
+    <path
+       id="slash"
+       inkscape:label="Barre"
+       d="M 138.00375,293.47323 328.36913,193.00135"
+       style="fill:none;stroke:#ffffff;stroke-width:26.2109;stroke-linecap:round;stroke-linejoin:round" />
+    <polygon
+       points="383.5,224.1 327.3,363.2 178.8,384.1 86.5,265.9 142.7,126.8 291.2,105.9"
+       fill="#ffffff"
+       fill-opacity="0.08"
+       stroke="#ffffff"
+       stroke-opacity="0.18"
+       stroke-width="3"
+       id="polygon2" />
+  </g>
+  <g
+     id="logo"
+     inkscape:groupmode="layer"
+     inkscape:label="Chaussure" />
+  <g
+     id="texts"
+     inkscape:groupmode="layer"
+     inkscape:label="Textes"
+     font-family="Helvetica Neue, Helvetica, Arial, sans-serif"
+     fill="#ffffff">
+    <text
+       x="450"
+       y="205"
+       font-size="66px"
+       font-weight="700"
+       id="text2">CountRep</text>
+    <text
+       x="452"
+       y="270"
+       font-size="36px"
+       fill-opacity="0.92"
+       id="text3">Greasing the groove</text>
+    <text
+       x="452"
+       y="316"
+       font-size="36px"
+       fill-opacity="0.92"
+       id="text4">compte tes répétitions</text>
+    <text
+       x="453"
+       y="378"
+       font-size="24"
+       fill-opacity="0.72"
+       id="text5">Gratuit · Sans publicité · Open source</text>
+    <text
+       xml:space="preserve"
+       id="text6"
+       style="font-size:56px;line-height:1.3;font-family:Sans;-inkscape-font-specification:'Sans, Normal';text-align:justify;white-space:pre;shape-inside:url(#rect6);display:inline;opacity:0.568056;fill:#bfbfbf;stroke-width:2.21858;stroke-linejoin:bevel;paint-order:fill markers stroke"><tspan
+         x="345.54492"
+         y="89.845965"
+         id="tspan2"><tspan
+           style="opacity:0.988889;fill:#ffffff"
+           id="tspan1">Compte tes reps</tspan></tspan></text>
+  </g>
+</svg>
