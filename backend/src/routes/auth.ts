@@ -1,4 +1,4 @@
-import type { FastifyInstance } from 'fastify'
+import type { FastifyBaseLogger, FastifyInstance } from 'fastify'
 import { randomUUID } from 'crypto'
 import { OAuth2Client } from 'google-auth-library'
 import jwt from 'jsonwebtoken'
@@ -21,8 +21,32 @@ interface GoogleIdentity {
 // Vérifie signature, émetteur, audience et expiration du jeton Google.
 // Seul l'identifiant `sub` est gardé, et le prénom pour le nom affiché :
 // pas d'adresse e-mail (ADR 0013).
-async function verifyGoogleToken(idToken: unknown): Promise<GoogleIdentity | null> {
+// Raison d'un refus, pour le journal : les messages de google-auth-library
+// peuvent contenir le jeton ou son contenu (adresse e-mail) après « : »,
+// on ne garde que ce qui précède. L'audience du jeton (`aud`) est
+// l'identifiant client OAuth, public : comparée à GOOGLE_CLIENT_IDS, elle
+// explique le refus le plus courant en développement.
+function rejectionReason(idToken: string, error: unknown) {
+  const message = error instanceof Error ? error.message : String(error)
+  let audience: unknown
+  try {
+    audience = JSON.parse(Buffer.from(idToken.split('.')[1] ?? '', 'base64url').toString()).aud
+  } catch {
+    audience = undefined
+  }
+  return {
+    reason: (message.split(': ')[0] ?? '').slice(0, 200),
+    tokenAudience: typeof audience === 'string' ? audience : undefined,
+    acceptedAudiences: config.googleClientIds
+  }
+}
+
+async function verifyGoogleToken(
+  idToken: unknown,
+  log: FastifyBaseLogger
+): Promise<GoogleIdentity | null> {
   if (typeof idToken !== 'string') {
+    log.warn('Google sign-in refused: no idToken in the request')
     return null
   }
 
@@ -32,10 +56,14 @@ async function verifyGoogleToken(idToken: unknown): Promise<GoogleIdentity | nul
       audience: config.googleClientIds
     })
     const payload = ticket.getPayload()
-    if (!payload?.sub) return null
+    if (!payload?.sub) {
+      log.warn('Google sign-in refused: no sub in the token')
+      return null
+    }
 
     return { sub: payload.sub, givenName: payload.given_name ?? null }
-  } catch {
+  } catch (error) {
+    log.warn(rejectionReason(idToken, error), 'Google sign-in refused: token verification failed')
     return null
   }
 }
@@ -48,7 +76,7 @@ export async function authRoutes(app: FastifyInstance) {
   // Connexion : retrouve le compte associé à ce compte Google, ou le crée
   app.post('/api/auth/google', async (request, reply) => {
     const { idToken } = (request.body ?? {}) as { idToken?: unknown }
-    const identity = await verifyGoogleToken(idToken)
+    const identity = await verifyGoogleToken(idToken, request.log)
 
     if (!identity) {
       return reply.code(401).send({ error: 'Invalid Google token' })
