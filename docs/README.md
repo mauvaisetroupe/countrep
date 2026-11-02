@@ -46,6 +46,8 @@ Android et Google :
 ## Explication : comprendre
 
 - [Architecture](explanation/architecture.md) : hors ligne d'abord, synchronisation, connexion, déploiement
+- [Les clés de signature Android](explanation/android-signing.md) : ce que prouve une signature, pourquoi trois clés,
+  pourquoi Google Cloud veut leurs empreintes
 - [Versions et livraisons](explanation/versions-and-releases.md) : deux produits, deux numéros de version, et
   pourquoi l'API reste compatible
 - [Revue d'architecture de septembre 2026](explanation/architecture-review-2026-09.md) : archive, antérieure au

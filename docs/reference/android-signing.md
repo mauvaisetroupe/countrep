@@ -2,6 +2,8 @@
 
 Une application Android est identifiée par son **nom de package** (`lu.architech.countrep`) et par le **certificat** qui la signe. Plusieurs services vérifient ce certificat au moyen de son **empreinte** (SHA-1 ou SHA-256) : il faut la leur déclarer.
 
+Le pourquoi : [Les clés de signature Android](../explanation/android-signing.md).
+
 Les empreintes ne sont pas des secrets. Les **clés** (keystores, mots de passe) ne doivent jamais être commitées.
 
 ## Les trois clés
