@@ -14,7 +14,7 @@ flowchart LR
 | | Version web | Application Android |
 |---|---|---|
 | Contenu | Image `countrep` (API **et** frontend) et image `countrep-migrations` | Le frontend, embarqué avec Capacitor |
-| Numéro | Tag git `web-vX.Y.Z` | `version` de `frontend/package.json` |
+| Numéro | Tag git `web-vX.Y.Z` | `version` de `frontend/package.json`, puis tag git `android-vX.Y.Z` |
 | Construit par | La CI | Le Mac (il a la clé d'importation) |
 | Arrive chez l'utilisateur | Au déploiement, puis quand il accepte l'invite de mise à jour de la PWA | Après l'examen de Google, puis la mise à jour du Store (des jours, parfois jamais) |
 | Retour en arrière | `deploy-app` de la version précédente | Impossible : une nouvelle version |

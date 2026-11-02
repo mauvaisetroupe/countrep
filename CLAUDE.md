@@ -18,7 +18,7 @@ Production: `https://countrep.architech.lu`, container images run by the operato
 cd frontend && npm run dev
 cd frontend && npm run build     # vue-tsc -b && vite build — this is the type check
 cd frontend && npm run build:android   # Capacitor app: vite build --mode android (.env.android) + cap sync
-cd frontend && npm run bundle:android  # signed release .aab for Google Play (docs/how-to/publish-the-android-app.md); version from package.json
+cd frontend && npm run bundle:android  # signed release .aab for Google Play (docs/how-to/publish-the-android-app.md); version from package.json; refuses uncommitted changes in frontend/; tag android-vX.Y.Z once uploaded
 
 # backend (Fastify on 0.0.0.0:3000)
 cd backend && npm run dev        # tsx watch src/server.ts (restarts on change)

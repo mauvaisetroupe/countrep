@@ -7,8 +7,8 @@ Google Play. Elle appelle l'API de production, `https://countrep.architech.lu`. 
 ```mermaid
 flowchart LR
     web["API prête en production<br/>(si la version en dépend)"] --> version["version dans<br/>frontend/package.json"]
-    version --> bundle["npm run bundle:android<br/>(.aab signé)"] --> play["Play Console :<br/>piste, notes FR/EN"]
-    play --> review["examen Google"] --> users["téléphones"]
+    version --> bundle["npm run bundle:android<br/>(.aab signé)"] --> play["Play Console :<br/>piste, notes FR/EN"] --> tag["git tag android-vX.Y.Z"]
+    tag --> review["examen Google"] --> users["téléphones"]
 ```
 
 ## La première fois (prérequis)
@@ -63,8 +63,9 @@ cd frontend
 npm version patch --no-git-tag-version     # ou minor, major ; modifie package.json et package-lock.json
 ```
 
-Commiter ce changement (`chore(android): 1.0.2`). Un tag git n'est pas nécessaire : la Play Console garde l'historique ;
-pour le retrouver dans git, `git log -p -- frontend/package.json`.
+Commiter ce changement (`chore(android): 1.0.2`), **et tout le reste** : `bundle:android` refuse de construire si
+`frontend/` a des modifications non commitées. Le commit affiché en bas des Réglages est ainsi exactement le code
+envoyé.
 
 ### 3. Construire
 
@@ -73,7 +74,7 @@ cd frontend
 npm run bundle:android
 ```
 
-Fait `vue-tsc`, `vite build --mode android` (`.env.android` : l'API de production, pas de PWA), `cap sync android`,
+Vérifie que `frontend/` est commité (`scripts/check-clean.mjs`), puis fait `vue-tsc`, `vite build --mode android` (`.env.android` : l'API de production, pas de PWA), `cap sync android`,
 puis `./gradlew bundleRelease`. Le fichier à envoyer :
 
 ```
@@ -115,7 +116,20 @@ Android](run-on-an-android-phone.md#essayer-le-build-release).
 
 Pour passer une release d'une piste à l'autre sans reconstruire : sur la piste, **Promouvoir la release**.
 
-### 5. Vérifier
+### 5. Taguer
+
+Une fois la release créée dans la Play Console, marquer le commit construit :
+
+```bash
+git tag android-v1.0.2
+git push origin android-v1.0.2
+```
+
+Le tag `android-v*` ne déclenche rien dans la CI (seuls les `web-v*` publient). Il sert à retrouver le code d'une
+version : `git show android-v1.0.2`, ou `git diff android-v1.0.2..HEAD -- frontend` pour ce qui a changé depuis. La
+1.0.1 n'a pas de tag : elle a été construite depuis une copie de travail modifiée (base `dff3ad8`).
+
+### 6. Vérifier
 
 Une fois publiée, installer ou mettre à jour depuis le Play Store, puis : la version en bas des Réglages, une saisie
 sans compte, la connexion Google, la synchronisation.
@@ -126,6 +140,7 @@ sans compte, la connexion Google, la synchronisation.
 |---|---|
 | « Le code de version X a déjà été utilisé » | Version de `package.json` pas montée |
 | « Votre Android App Bundle est signé avec la mauvaise clé » | Mauvais keystore dans `gradle.properties` ; ou clé perdue : la remplacer ([Signature Android](../reference/android-signing.md)) |
+| « Modifications non commitées dans frontend/ » | Commiter (ou `git stash`) avant `bundle:android` |
 | Build release non signé (avertissement Gradle) | `COUNTREP_UPLOAD_STORE_FILE` absent de `~/.gradle/gradle.properties` |
 | Connexion Google : `[28444] Developer console is not set up correctly` | Client OAuth Android manquant pour la clé qui signe (Google Play pour l'application du Store) |
 | L'application ne synchronise plus après un déploiement web | L'API n'est plus compatible avec cette version : corriger l'API, pas l'application |

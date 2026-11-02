@@ -11,7 +11,7 @@
 | | `npm run build` | `vue-tsc -b && vite build` vers `dist/` : **la vérification des types**, et le site avec la PWA |
 | | `npm run preview` | Sert `dist/` pour l'essayer |
 | | `npm run build:android` | Build avec `.env.android` (mode `android`, sans PWA), puis `cap sync android` |
-| | `npm run bundle:android` | `build:android` puis `./gradlew bundleRelease` : l'`.aab` signé pour Google Play |
+| | `npm run bundle:android` | Refuse une copie de travail modifiée dans `frontend/`, puis `build:android` et `./gradlew bundleRelease` : l'`.aab` signé pour Google Play |
 
 ## Base de développement (`compose.dev.yml`)
 
@@ -47,6 +47,7 @@
 | Commande | Fait |
 |---|---|
 | `node frontend/scripts/update-catalog.mjs [url]` (depuis `frontend/` : `node scripts/update-catalog.mjs`) | Régénère `frontend/src/data/exercises.json` depuis `GET /api/exercises` (production par défaut) |
+| `node frontend/scripts/check-clean.mjs` (depuis `frontend/` : `node scripts/check-clean.mjs`) | Échoue si `frontend/` a des modifications non commitées (lancé par `bundle:android`) |
 | `python3 icons/export-app-icons.py` | Régénère toutes les icônes depuis le SVG maître (Inkscape requis) |
 | `.github/release-notes.sh web-vX.Y.Z` | Les notes de version d'un tag, comme la CI (historique et tags complets nécessaires) |
 
@@ -58,3 +59,4 @@
 | `gh run watch` | Suit la CI |
 | `ssh -t vps-ovh sudo -iu countrep deploy-app X.Y.Z` | Déploie en production (dépôt `vps-infra`) |
 | `npm version patch --no-git-tag-version` (dans `frontend/`) | Monte la version de l'application Android ([guide](../how-to/publish-the-android-app.md)) |
+| `git tag android-vX.Y.Z && git push origin android-vX.Y.Z` | Marque le code d'une version Android envoyée sur Google Play |

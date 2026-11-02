@@ -19,7 +19,7 @@ Un seul workflow, `.github/workflows/ci.yml`, sur GitHub Actions.
 - **`release`** : `.github/release-notes.sh` écrit les notes, puis `gh release create` crée la GitHub Release
   « CountRep web X.Y.Z ».
 
-L'application Android n'est **pas** construite par la CI : `npm run bundle:android` se lance sur le Mac, qui a la clé
+Un tag `android-vX.Y.Z` ne déclenche rien : il marque seulement le code d'une version Android. L'application Android n'est **pas** construite par la CI : `npm run bundle:android` se lance sur le Mac, qui a la clé
 d'importation.
 
 ## Notes de version
