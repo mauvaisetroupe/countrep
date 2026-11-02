@@ -1,0 +1,50 @@
+# DÉVELOPPEMENT LOCAL : PostgreSQL et les migrations du dépôt (README.md).
+# L'API (npm run dev) et le frontend (Vite) tournent hors conteneur, sur
+# la machine, et se connectent à la base publiée sur localhost:5432.
+#
+#   docker compose -f compose.dev.yml up -d
+#
+# Après une nouvelle migration (backend/migrations/V00n__*.sql) :
+#
+#   docker compose -f compose.dev.yml up -d --build migrations
+#
+# Repartir d'une base vide : docker compose -f compose.dev.yml down -v
+#
+# Mots de passe de développement seulement : la base n'est publiée que
+# sur 127.0.0.1. Pour la production, voir docs/exploitation.md.
+
+name: countrep-dev
+
+services:
+  db:
+    image: postgres:18
+    environment:
+      POSTGRES_DB: countrep
+      POSTGRES_USER: countrep
+      POSTGRES_PASSWORD: countrep
+    volumes:
+      - db-data:/var/lib/postgresql
+    ports:
+      - 127.0.0.1:${DB_PUBLISH_PORT:-5432}:5432
+    healthcheck:
+      test: ['CMD', 'pg_isready', '-U', 'countrep', '-d', 'countrep']
+      interval: 2s
+      timeout: 5s
+      retries: 15
+
+  # Construite depuis backend/migrations : les migrations du dépôt, même
+  # celles qui ne sont pas encore publiées. Applique, puis s'arrête.
+  migrations:
+    build: backend/migrations
+    image: countrep-migrations:dev
+    pull_policy: build
+    environment:
+      FLYWAY_URL: jdbc:postgresql://db:5432/countrep
+      FLYWAY_USER: countrep
+      FLYWAY_PASSWORD: countrep
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  db-data:

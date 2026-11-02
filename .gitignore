@@ -26,4 +26,6 @@ dist-prev
 *.sw?
 
 backend/.env
+# DB_PUBLISH_PORT de compose.dev.yml
+/.env
 frontend/.env.production
