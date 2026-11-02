@@ -11,6 +11,7 @@ import { useUserExercises } from '../composables/useUserExercises'
 import TodayCalendar from '../components/TodayCalendar.vue'
 import DayNavigator from '../components/DayNavigator.vue'
 import JournalDay from '../components/JournalDay.vue'
+import LocalDataBanner from '../components/LocalDataBanner.vue'
 import { useI18n } from 'vue-i18n'
 import { exerciseName } from '../i18n'
 import { formatAmount } from '../units'
@@ -212,6 +213,9 @@ loadUserExercises()
       </button>
     </div>
   </header>
+
+  <!-- Sans compte : les saisies restent sur ce téléphone (ADR 0014) -->
+  <LocalDataBanner />
 
   <!-- ========================================================
        DATE (les deux modes) : un appui ouvre le calendrier
