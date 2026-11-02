@@ -18,7 +18,7 @@ Production: `https://countrep.architech.lu`, container images run by the operato
 cd frontend && npm run dev
 cd frontend && npm run build     # vue-tsc -b && vite build — this is the type check
 cd frontend && npm run build:android   # Capacitor app: vite build --mode android (.env.android) + cap sync
-cd frontend && npm run bundle:android  # signed release .aab for Google Play (docs/signing.md); version from package.json
+cd frontend && npm run bundle:android  # signed release .aab for Google Play (docs/how-to/publish-the-android-app.md); version from package.json
 
 # backend (Fastify on 0.0.0.0:3000)
 cd backend && npm run dev        # tsx watch src/server.ts (restarts on change)
@@ -30,10 +30,10 @@ There are no tests and no linter configured. Use `npm run build` in each package
 ## Configuration
 
 - `backend/.env` (gitignored, copy of `backend/.env.example`, loaded by `dotenv` in `src/db.ts`): `DATABASE_HOST/PORT/NAME/USER/PASSWORD`, `JWT_SECRET`, `EXPECTED_ORIGIN` (production origin added to the CORS allow-list), `GOOGLE_CLIENT_IDS` (accepted Google OAuth client ids, comma-separated, ADR 0013).
-- `frontend/.env.development` (and the local, gitignored `.env.production`): `VITE_API_URL` points to the LAN backend, `VITE_GOOGLE_WEB_CLIENT_ID` is the Google OAuth web client id (public; Google Cloud project in Testing mode, test users only). Google rejects `http://` origins on an IP address: test Google sign-in on `http://localhost:5173`. Production is built on the server, where the API is same-origin under `/api` behind Nginx. The Android app (`.env.android`) also passes the **web** client id; Google accepts it only if the Google Cloud project `countrep` has an Android OAuth client for package `lu.architech.countrep` with the SHA-1 of the signing key (one client per key: debug exists, release and Play App Signing still to add).
+- `frontend/.env.development`: `VITE_API_URL` points to the LAN backend, `VITE_GOOGLE_WEB_CLIENT_ID` is the Google OAuth web client id (public; Google Cloud project in Testing mode, test users only). Google rejects `http://` origins on an IP address: test Google sign-in on `http://localhost:5173`. The production frontend is built in the image (`Dockerfile`, client id as an `ARG`), without `VITE_API_URL`: same origin under `/api`; `.dockerignore` keeps every local `.env*` out of the image (`docs/reference/configuration.md`). The Android app (`.env.android`) also passes the **web** client id; Google accepts it only if the Google Cloud project `countrep` has an Android OAuth client for package `lu.architech.countrep` with the SHA-1 of the signing key (one client per key: debug exists, release and Play App Signing still to add).
 - CORS allow-list is hard-coded in `backend/src/server.ts`; update it when the dev host changes.
 - Configuration is read and checked once in `backend/src/config.ts`, imported first: the API refuses to start when a required variable is missing (`JWT_SECRET` has no default). A new variable goes there and in `docs/exploitation.md`, with a `!` commit. Dev origins for CORS: `CORS_ORIGINS` in `backend/.env`.
-- Schema: Flyway migrations in `backend/migrations/` (`V001__schema.sql` is the schema **and** the exercise catalog, ADR 0017). Any change to the schema or to the `exercises` rows is a new `V00n__name.sql`, never an edit of a published migration; the API refuses to start unless the database is at the highest migration of its image (`schemaVersion.ts`). Local development (README.md): `docker compose -f compose.dev.yml up -d` starts PostgreSQL on `127.0.0.1:5432` and applies the repository migrations (`up -d --build migrations` after adding one); the API and Vite run on the host, `backend/.env` from `backend/.env.example`.
+- Schema: Flyway migrations in `backend/migrations/` (`V001__schema.sql` is the schema **and** the exercise catalog, ADR 0017). Any change to the schema or to the `exercises` rows is a new `V00n__name.sql`, never an edit of a published migration; the API refuses to start unless the database is at the highest migration of its image (`schemaVersion.ts`). Local development (`docs/tutorials/develop-locally.md`): `docker compose -f compose.dev.yml up -d` starts PostgreSQL on `127.0.0.1:5432` and applies the repository migrations (`up -d --build migrations` after adding one); the API and Vite run on the host, `backend/.env` from `backend/.env.example`.
 - Exercises have a `unit` (`reps` | `seconds`, ADR 0008): for a `seconds` exercise, `sets.reps` and `workout_exercises.reps` hold seconds. Use `frontend/src/units.ts` to format values and `composables/useExerciseUnits.ts#unitOf` when only the exercise id is known; never add reps and seconds together.
 - DB constraints the client must respect or a pending set gets stuck (server 500): `reps` integer > 0, `exercise` must exist in `exercises` (FK).
 
@@ -98,6 +98,6 @@ Everything works without an account and without network (ADR 0014): no API call 
 
 Significant decisions (API/schema/local-data contracts, security, anything costly to undo) are recorded as ADRs in `docs/adr/` (Nygard format, in French, numbered `NNNN-kebab-title.md`, index in `docs/adr/README.md`). Read the relevant ADRs before changing sync or auth behavior, and add a new ADR when making such a decision — never rewrite an accepted one, supersede it.
 
-## Further reading
+## Documentation
 
-`architceture.md` (current architecture, English) and `architecture-review.md` (review and refactoring recommendations, French) describe layering intent in more depth.
+`docs/` follows Diátaxis (index `docs/README.md`), in French, file names in English kebab-case: `tutorials/`, `how-to/` (one task each), `reference/`, `explanation/`, plus `docs/exploitation.md` (the operator's contract, path referenced by ADR 0017 and the `vps-infra` repository: do not move it) and `docs/adr/`. The maintainer must be able to do everything from these pages alone: when a change alters a command, a release step, a console setting (Google Cloud, Play Console) or a file location, update the page in the same change and list new pages in `docs/README.md`. `docs/explanation/architecture-review-2026-09.md` is an archive.

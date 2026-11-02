@@ -1,5 +1,9 @@
 # Revue d'architecture — CountRep
 
+> **Archive** : revue du 2026-09-01, gardée pour l'historique de ses recommandations. Elle précède le vocabulaire de
+> l'ADR 0006 (elle dit « workout » pour une saisie), la connexion Google et l'application Android. L'architecture
+> actuelle : [architecture.md](architecture.md).
+
 ## 1. Contexte
 
 L'application frontend est une application Vue 3 / TypeScript avec une approche **offline-first** :

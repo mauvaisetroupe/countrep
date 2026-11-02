@@ -8,7 +8,7 @@ import groovy.json.JsonSlurper
 def appVersion = new JsonSlurper().parse(file('../../package.json')).version
 def (versionMajor, versionMinor, versionPatch) = appVersion.tokenize('.').collect { it as int }
 
-// Clé d'importation Google Play (docs/signing.md) : chemin et mots de passe
+// Clé d'importation Google Play (docs/reference/android-signing.md) : chemin et mots de passe
 // dans ~/.gradle/gradle.properties, jamais dans le dépôt.
 def uploadStoreFile = findProperty('COUNTREP_UPLOAD_STORE_FILE')
 
@@ -43,7 +43,7 @@ android {
             if (uploadStoreFile) {
                 signingConfig signingConfigs.upload
             } else {
-                logger.warn('COUNTREP_UPLOAD_STORE_FILE absent : build release non signé (voir docs/signing.md)')
+                logger.warn('COUNTREP_UPLOAD_STORE_FILE absent : build release non signé (voir docs/how-to/create-the-upload-key.md)')
             }
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
