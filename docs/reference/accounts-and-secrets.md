@@ -17,7 +17,7 @@ Tout ce qui existe hors du dépôt, et où le retrouver.
 
 | Secret | Où il est | Copie de secours | Le perdre |
 |---|---|---|---|
-| Keystore d'importation `countrep-upload.jks` et son mot de passe | `~/keystores/` et `~/.gradle/gradle.properties` du Mac | Gestionnaire de mots de passe | Remplaçable par Google ([guide](../how-to/create-the-upload-key.md#après-une-perte--la-remplacer)) |
+| Keystore d'importation `countrep-upload.jks` et son mot de passe | `~/keystores/` et `~/.gradle/gradle.properties` du Mac | KeePass (le `.jks` en pièce jointe) | Remplaçable par Google ([guide](../how-to/create-the-upload-key.md#après-une-perte--la-remplacer)) |
 | `JWT_SECRET` de production | `.env` de l'utilisateur `countrep` sur le host (`~countrep/app/.env`) | À ranger dans le gestionnaire de mots de passe | En créer un autre : tous les appareils sont déconnectés une fois, sans perte de données |
 | Mot de passe de la base de production (`DB_PASSWORD`) | Même `.env` | Gestionnaire de mots de passe | Le changer dans PostgreSQL et le `.env` |
 | `JWT_SECRET` de développement | `backend/.env` | Aucune (sans valeur) | En créer un autre |

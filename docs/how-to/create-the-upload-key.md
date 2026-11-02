@@ -6,8 +6,16 @@ un nouveau Mac, ou après sa perte.
 
 ## Sur un nouveau Mac : la récupérer
 
-Le fichier `countrep-upload.jks` et son mot de passe sont dans le gestionnaire de mots de passe. Copier le fichier dans
-`~/keystores/countrep-upload.jks`, puis écrire `~/.gradle/gradle.properties` (section suivante, étape 2).
+Le fichier `countrep-upload.jks` (en pièce jointe) et son mot de passe sont dans **KeePass**. Enregistrer la pièce
+jointe sous `~/keystores/countrep-upload.jks`, la protéger (`chmod 600 ~/keystores/countrep-upload.jks`), vérifier que
+c'est la bonne clé (alias `countrep-upload`, SHA-1 `51:68:17:13:…:FC:08`, voir [Signature
+Android](../reference/android-signing.md)) :
+
+```bash
+keytool -list -v -keystore ~/keystores/countrep-upload.jks
+```
+
+puis écrire `~/.gradle/gradle.properties` (section suivante, étape 2).
 
 ## La créer
 
@@ -22,8 +30,8 @@ Le fichier `countrep-upload.jks` et son mot de passe sont dans le gestionnaire d
      -dname "CN=Lionel Coquin, O=architech.lu, C=LU"
    ```
 
-   `keytool` demande le mot de passe du keystore (et celui de la clé : le même convient). Ranger le fichier `.jks` et le
-   mot de passe dans le gestionnaire de mots de passe.
+   `keytool` demande le mot de passe du keystore (et celui de la clé : le même convient). Ranger le fichier `.jks` (en pièce
+   jointe) et le mot de passe dans KeePass, puis `chmod 600 ~/keystores/countrep-upload.jks`.
 
 2. Le déclarer à Gradle, dans `~/.gradle/gradle.properties` (hors du dépôt) :
 

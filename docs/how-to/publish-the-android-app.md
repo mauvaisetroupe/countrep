@@ -18,7 +18,7 @@ flowchart LR
 2. **La clé d'importation** et `~/.gradle/gradle.properties` ([Créer la clé d'importation](create-the-upload-key.md)).
    Sans elle, le build release n'est pas signé et la Play Console le refuse.
 3. **Connexion Google depuis l'application du Store** : un client OAuth Android pour la **clé Google Play** (et un pour
-   la clé d'importation) dans Google Cloud ([Configurer la connexion Google](set-up-google-sign-in.md), [Signature
+   la clé d'importation) dans Google Cloud, déjà créés ([Configurer la connexion Google](set-up-google-sign-in.md), [Signature
    Android](../reference/android-signing.md)). Sans lui, la connexion échoue avec `[28444] Developer console is not set
    up correctly` dans l'application installée depuis le Store, alors qu'elle marche en local.
 4. **Fiche et déclarations de la Play Console** (Règles et programmes › Contenu de l'application ; Développer sa
@@ -30,6 +30,18 @@ flowchart LR
    - Accès à l'application : aucune connexion requise, tout fonctionne sans compte (ADR 0014) ;
    - Fiche : icône `icons/playstore-icon.png` (512 × 512), captures `docs/screenshots/fr/` et `docs/screenshots/en/`,
      descriptions en français et en anglais.
+
+## Où on en est (2026-11-02)
+
+- Compte développeur **personnel** `mauvaisetroupe`. Production **inactive** ; la version `1.0.1` (10001) est en
+  **test fermé « Alpha »** (4 pays) et en **test interne**.
+- Toutes les déclarations du contenu de l'application sont faites (2026-10-22).
+- **Pour passer en production**, un compte personnel doit d'abord faire tourner un test fermé avec **au moins
+  12 testeurs inscrits pendant 14 jours** (1 inscrit aujourd'hui), puis demander l'accès (Tableau de bord › Apply for
+  production, avec un questionnaire sur le test).
+- **Connexion Google** : le projet Google Cloud est en mode **Test**. Chaque testeur qui veut se connecter doit aussi
+  être utilisateur de test dans Google Cloud ; avant la production, publier l'écran de consentement ([Configurer la
+  connexion Google](set-up-google-sign-in.md#ajouter-un-utilisateur)).
 
 ## À chaque version
 
@@ -83,7 +95,8 @@ Android](run-on-an-android-phone.md#essayer-le-build-release).
 
 [play.google.com/console](https://play.google.com/console) › CountRep › **Tester et publier** :
 
-1. Choisir la piste : **Test interne** (immédiat, testeurs listés), **Test fermé**, ou **Production**.
+1. Choisir la piste : **Test interne** (immédiat, testeurs listés), **Test fermé** (« Alpha », celle des testeurs
+   inscrits), ou **Production**.
 2. **Créer une release** › Importer `app-release.aab`.
 3. **Notes de version**, en français et en anglais, dans le format demandé :
 

@@ -14,8 +14,11 @@ Auth Platform**.
 | Audience | **Externe**, mode **Test** : seuls les utilisateurs de test peuvent se connecter (100 au plus) |
 | Droits | `openid` (et le profil de base), rien de sensible : pas de vérification par Google |
 | Client **Web** | `14127079549-o2h7n8qpjnru8v257fpqkjo8mppluqfo.apps.googleusercontent.com`, utilisé partout (web **et** Android) |
-| Client **Android**, debug | « CountRep Android debug », package `lu.architech.countrep`, SHA-1 de la clé de debug du Mac |
-| Clients **Android** à ajouter | Clé Google Play et clé d'importation ([Signature Android](../reference/android-signing.md)) |
+| Clients **Android** | « CountRep Android debug » (clé de debug du Mac), « CountRep Android upload key », « CountRep Android Google Play », package `lu.architech.countrep` ([empreintes](../reference/android-signing.md)) |
+| Utilisateurs de test | 2 (au 2026-11-02) |
+
+Google supprime un client OAuth **inutilisé pendant six mois** (avec un avertissement, et restauration possible
+30 jours : Clients › Restore deleted OAuth clients). Le client debug, s'il ne sert plus, est le premier concerné.
 
 Où l'identifiant Web est écrit : `frontend/.env.development`, `frontend/.env.android`, `Dockerfile`
 (`VITE_GOOGLE_WEB_CLIENT_ID`), `backend/.env.example` et le `.env` du host (`GOOGLE_CLIENT_IDS`).
@@ -51,7 +54,7 @@ qu'à autoriser l'application.
 1. Lire la SHA-1 de la clé ([Signature Android, Où lire les empreintes](../reference/android-signing.md#où-lire-les-empreintes)) :
    - debug : `cd frontend/android && ./gradlew :app:signingReport` ;
    - importation : `keytool -list -v -keystore ~/keystores/countrep-upload.jks -alias countrep-upload` ;
-   - Google Play : Play Console › Tester et publier › Configuration › Intégrité de l'appli › Signature de l'appli.
+   - Google Play : Play Console › Protégé par Play › Signature de l'appli (bouton qui copie la SHA-1).
 2. Clients › **Créer un client** › type **Android** : nom (« CountRep Android Google Play »), package
    `lu.architech.countrep`, SHA-1.
 3. Mettre à jour le tableau de [Signature Android](../reference/android-signing.md#où-elles-sont-déclarées).
