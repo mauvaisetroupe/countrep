@@ -163,6 +163,10 @@ const messages: typeof fr = {
     "next": "Next month",
     "today": "Today"
   },
+  "localBanner": {
+    "text": "Your sets are saved on this phone only, with no backup. Sign in to back them up and find them on your other devices.",
+    "dismiss": "Hide"
+  },
   "today": {
     "modeExercise": "Exercise",
     "modeWorkout": "Workout"

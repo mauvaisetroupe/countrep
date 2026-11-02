@@ -161,6 +161,10 @@ const messages = {
     "next": "Mois suivant",
     "today": "Aujourd'hui"
   },
+  "localBanner": {
+    "text": "Tes saisies sont enregistrées sur ce téléphone seulement, sans sauvegarde. Connecte-toi pour les sauvegarder et les retrouver sur tes autres appareils.",
+    "dismiss": "Masquer"
+  },
   "today": {
     "modeExercise": "Exercice",
     "modeWorkout": "Séance"
