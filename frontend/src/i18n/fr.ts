@@ -236,6 +236,11 @@ const messages = {
     },
     "currentStreak": "Série en cours",
     "record": "record : {days}",
+    "metric": {
+      "reps": "Répétitions",
+      "minutes": "Minutes"
+    },
+    "chartRepsOnly": "Exercices en répétitions seulement : les exercices tenus comptent dans Minutes.",
     "chartEquivalent": "Tous les exercices, en minutes d'effort : 15 répétitions ou 30 s tenues valent une minute.",
     "byExercise": "Par exercice",
     "empty": "Aucune saisie sur cette période.",

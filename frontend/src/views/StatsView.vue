@@ -6,16 +6,20 @@ import DayNavigator from '../components/DayNavigator.vue'
 import { useSets } from '../composables/useSets'
 import { useExerciseUnits } from '../composables/useExerciseUnits'
 import { dateLocale, exerciseName } from '../i18n'
-import { formatAmount, formatDuration, formatDurationShort, type AmountTotals } from '../units'
+import { formatAmount, formatDuration, formatDurationShort, type AmountTotals, type ExerciseUnit } from '../units'
 
 // Statistiques, sur le modèle de Step Challenge : une période (1 jour,
 // 7 jours, 30 jours, 1 an), ses chiffres clés, son graphique, la
 // répartition par exercice, et la régularité sur les 16 dernières
-// semaines. Filtrables par exercice.
+// semaines. Filtrables par exercice ; pour tous les exercices, un second
+// sélecteur choisit entre répétitions et minutes d'effort (comme pas et
+// minutes intensives dans Step Challenge).
 
 type Period = '1d' | '7d' | '30d' | '1y'
+type Metric = 'reps' | 'minutes'
 
 const PERIODS: Period[] = ['1d', '7d', '30d', '1y']
+const METRICS: Metric[] = ['reps', 'minutes']
 // Vue 1 jour : on remonte au plus un an en arrière
 const MAX_DAYS_BACK = 364
 const HEATMAP_WEEKS = 16
@@ -31,7 +35,8 @@ const { sets } = useSets()
 const { unitOf, exerciseOf } = useExerciseUnits()
 
 const selectedExercise = ref<string | null>(null)
-const period = ref<Period>('1d')
+const period = ref<Period>('30d')
+const metric = ref<Metric>('reps')
 
 // ============================================================
 // DATES
@@ -67,9 +72,11 @@ const activeSets = computed(() =>
   )
 )
 
-// Unité des valeurs affichées : celle de l'exercice choisi ; pour tous
-// les exercices, les répétitions et les durées sont comptées à part
-const unit = computed(() => selectedExercise.value ? unitOf(selectedExercise.value) : null)
+// Échelle des valeurs affichées : l'unité de l'exercice choisi ; pour
+// tous les exercices, celle du sélecteur
+const scale = computed<ExerciseUnit | 'minutes'>(() =>
+  selectedExercise.value ? unitOf(selectedExercise.value) : metric.value
+)
 
 const totalsOf = (list: typeof activeSets.value): AmountTotals => {
   const totals = { reps: 0, seconds: 0 }
@@ -79,19 +86,23 @@ const totalsOf = (list: typeof activeSets.value): AmountTotals => {
   return totals
 }
 
-// Valeur d'un ensemble de sets sur une seule échelle (graphique, carte) :
-// la valeur brute pour un exercice, l'équivalent en minutes pour tous
+// Valeur d'un ensemble de sets dans l'échelle affichée : minutes d'effort
+// équivalentes, ou somme des sets de l'unité (en répétitions, les
+// exercices tenus ne comptent pas : on n'additionne jamais reps et secondes)
 const scoreOf = (list: typeof activeSets.value) => {
-  if (unit.value) return list.reduce((sum, set) => sum + set.reps, 0)
-  const { reps, seconds } = totalsOf(list)
-  return reps / REPS_PER_MINUTE + seconds / SECONDS_PER_MINUTE
+  const current = scale.value
+  if (current === 'minutes') {
+    const { reps, seconds } = totalsOf(list)
+    return reps / REPS_PER_MINUTE + seconds / SECONDS_PER_MINUTE
+  }
+  return list.reduce((sum, set) => unitOf(set.exercise) === current ? sum + set.reps : sum, 0)
 }
 
 const formatValue = (value: number) => {
-  if (unit.value === 'seconds') return formatDuration(Math.round(value))
-  if (unit.value === 'reps') return formatAmount(Math.round(value), 'reps')
-  // Tous les exercices : minutes d'effort équivalentes
-  return `${Math.max(1, Math.round(value))} min`
+  if (scale.value === 'seconds') return formatDuration(Math.round(value))
+  if (scale.value === 'reps') return formatAmount(Math.round(value), 'reps')
+  // Moins d'une minute d'effort, mais pas rien : 1 min
+  return `${value > 0 ? Math.max(1, Math.round(value)) : 0} min`
 }
 
 const setsByDay = computed(() => {
@@ -126,26 +137,14 @@ const activeDays = computed(() => new Set(periodSets.value.map(set => set.date))
 // Vue 1 jour : nombre de saisies et d'exercices différents
 const exerciseCount = computed(() => new Set(periodSets.value.map(set => set.exercise)).size)
 
-// Une ligne par unité : répétitions, puis durée s'il y en a
-const amountLines = ({ reps, seconds }: AmountTotals): string[] => {
-  if (unit.value) return [formatAmount(unit.value === 'seconds' ? seconds : reps, unit.value)]
-  const lines = [formatAmount(reps, 'reps')]
-  if (seconds > 0) lines.push(formatDuration(seconds))
-  return lines
-}
+const periodScore = computed(() => scoreOf(periodSets.value))
 
-const periodTotal = computed(() => amountLines(totalsOf(periodSets.value)))
+const periodTotal = computed(() => formatValue(periodScore.value))
 
-// Moyenne par jour actif, dans l'unité de l'exercice ; pour tous les
-// exercices, répétitions et durées séparément
-const periodAverage = computed(() => {
-  if (activeDays.value === 0) return ['—']
-  const { reps, seconds } = totalsOf(periodSets.value)
-  return amountLines({
-    reps: Math.round(reps / activeDays.value),
-    seconds: Math.round(seconds / activeDays.value)
-  })
-})
+// Moyenne par jour actif, dans l'échelle affichée
+const periodAverage = computed(() =>
+  activeDays.value === 0 ? '—' : formatValue(periodScore.value / activeDays.value)
+)
 
 // ============================================================
 // SÉRIE DE JOURS (toutes dates confondues)
@@ -261,14 +260,14 @@ const chartScale = computed(() => {
   }
 })
 
-// Graduations : durée courte pour un exercice tenu, minutes « équivalentes »
-// pour tous les exercices
+// Graduations : durée courte pour un exercice tenu, sinon le nombre
 const formatTick = (value: number) =>
-  unit.value === 'seconds' ? formatDurationShort(value) : String(Math.round(value))
+  scale.value === 'seconds' ? formatDurationShort(value) : String(Math.round(value))
 
-const chartLegend = computed(() =>
-  unit.value ? '' : t('stats.chartEquivalent')
-)
+const chartLegend = computed(() => {
+  if (selectedExercise.value) return ''
+  return scale.value === 'minutes' ? t('stats.chartEquivalent') : t('stats.chartRepsOnly')
+})
 
 // ============================================================
 // RÉPARTITION PAR EXERCICE (sans filtre)
@@ -387,6 +386,23 @@ const LEVEL_CLASSES = ['bg-track', 'bg-primary/25', 'bg-primary/50', 'bg-primary
         :pickable="false"
       />
 
+      <!-- Répétitions ou minutes d'effort, pour tous les exercices (un
+           exercice choisi s'affiche dans son unité) -->
+      <div v-if="!selectedExercise" class="mx-auto flex w-fit rounded-xl bg-surface-alt p-1">
+        <button
+          v-for="m in METRICS"
+          :key="m"
+          type="button"
+          class="rounded-lg border-b-2 px-4 py-1.5 text-[13px] transition-all"
+          :class="metric === m
+            ? 'border-primary bg-card font-bold text-fg shadow-sm'
+            : 'border-transparent font-medium text-fg-secondary'"
+          @click="metric = m"
+        >
+          {{ t(`stats.metric.${m}`) }}
+        </button>
+      </div>
+
       <!-- Graphique -->
       <section class="rounded-xl bg-surface p-4">
         <div class="flex gap-2">
@@ -448,7 +464,7 @@ const LEVEL_CLASSES = ['bg-track', 'bg-primary/25', 'bg-primary/50', 'bg-primary
       <div class="grid grid-cols-2 gap-3">
         <div class="rounded-xl bg-surface p-4">
           <p class="text-xs font-medium text-fg-secondary">{{ t('preview.total') }}</p>
-          <p v-for="line in periodTotal" :key="line" class="mt-1 text-lg font-bold leading-tight text-fg">{{ line }}</p>
+          <p class="mt-1 text-lg font-bold leading-tight text-fg">{{ periodTotal }}</p>
         </div>
         <template v-if="period === '1d'">
           <div class="rounded-xl bg-surface p-4">
@@ -470,7 +486,7 @@ const LEVEL_CLASSES = ['bg-track', 'bg-primary/25', 'bg-primary/50', 'bg-primary
           </div>
           <div class="rounded-xl bg-surface p-4">
             <p class="text-xs font-medium text-fg-secondary">{{ t('stats.average') }}</p>
-            <p v-for="line in periodAverage" :key="line" class="mt-1 text-lg font-bold leading-tight text-fg">{{ line }}</p>
+            <p class="mt-1 text-lg font-bold leading-tight text-fg">{{ periodAverage }}</p>
           </div>
         </template>
         <div class="rounded-xl bg-surface p-4">

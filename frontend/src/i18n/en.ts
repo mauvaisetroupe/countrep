@@ -238,6 +238,11 @@ const messages: typeof fr = {
     },
     "currentStreak": "Current streak",
     "record": "best: {days}",
+    "metric": {
+      "reps": "Reps",
+      "minutes": "Minutes"
+    },
+    "chartRepsOnly": "Rep exercises only: held exercises count in Minutes.",
     "chartEquivalent": "All exercises, in minutes of effort: 15 reps or 30 s held count as one minute.",
     "byExercise": "By exercise",
     "empty": "No entries in this period.",
