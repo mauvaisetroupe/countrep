@@ -241,7 +241,7 @@ const messages = {
       "minutes": "Minutes"
     },
     "chartRepsOnly": "Exercices en répétitions seulement : les exercices tenus comptent dans Minutes.",
-    "chartEquivalent": "Tous les exercices, en minutes d'effort : 15 répétitions ou 30 s tenues valent une minute.",
+    "chartEquivalent": "Tous les exercices, en durée d'entraînement comme le résumé Garmin du journal : 15 répétitions ou 30 s tenues valent une minute, arrondie chaque jour, plus 2 min de repos toutes les 10 min.",
     "byExercise": "Par exercice",
     "empty": "Aucune saisie sur cette période.",
     "regularity": "Régularité (16 semaines)",

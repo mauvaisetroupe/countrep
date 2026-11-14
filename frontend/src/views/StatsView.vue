@@ -6,14 +6,18 @@ import DayNavigator from '../components/DayNavigator.vue'
 import { useSets } from '../composables/useSets'
 import { useExerciseUnits } from '../composables/useExerciseUnits'
 import { dateLocale, exerciseName } from '../i18n'
-import { formatAmount, formatDuration, formatDurationShort, type AmountTotals, type ExerciseUnit } from '../units'
+import {
+  effortMinutes, formatAmount, formatDuration, formatDurationShort, formatMinutes, trainingMinutes,
+  type AmountTotals, type ExerciseUnit
+} from '../units'
 
 // Statistiques, sur le modèle de Step Challenge : une période (1 jour,
 // 7 jours, 30 jours, 1 an), ses chiffres clés, son graphique, la
 // répartition par exercice, et la régularité sur les 16 dernières
 // semaines. Filtrables par exercice ; pour tous les exercices, un second
-// sélecteur choisit entre répétitions et minutes d'effort (comme pas et
-// minutes intensives dans Step Challenge).
+// sélecteur choisit entre répétitions et durée d'entraînement (comme pas
+// et minutes intensives dans Step Challenge), calculée comme le résumé
+// Garmin du journal.
 
 type Period = '1d' | '7d' | '30d' | '1y'
 type Metric = 'reps' | 'minutes'
@@ -23,12 +27,6 @@ const METRICS: Metric[] = ['reps', 'minutes']
 // Vue 1 jour : on remonte au plus un an en arrière
 const MAX_DAYS_BACK = 364
 const HEATMAP_WEEKS = 16
-
-// Équivalence commune aux répétitions et aux secondes, pour comparer des
-// exercices d'unités différentes (même règle que le résumé Garmin du
-// journal : 15 répétitions ou 30 s tenues valent une minute)
-const REPS_PER_MINUTE = 15
-const SECONDS_PER_MINUTE = 30
 
 const { t, locale } = useI18n()
 const { sets } = useSets()
@@ -86,14 +84,16 @@ const totalsOf = (list: typeof activeSets.value): AmountTotals => {
   return totals
 }
 
-// Valeur d'un ensemble de sets dans l'échelle affichée : minutes d'effort
-// équivalentes, ou somme des sets de l'unité (en répétitions, les
-// exercices tenus ne comptent pas : on n'additionne jamais reps et secondes)
+// Valeur d'un ensemble de sets dans l'échelle affichée : durée
+// d'entraînement, somme de celles de chaque jour comme dans le journal, ou
+// somme des sets de l'unité (en répétitions, les exercices tenus ne
+// comptent pas : on n'additionne jamais reps et secondes)
 const scoreOf = (list: typeof activeSets.value) => {
   const current = scale.value
   if (current === 'minutes') {
-    const { reps, seconds } = totalsOf(list)
-    return reps / REPS_PER_MINUTE + seconds / SECONDS_PER_MINUTE
+    const days = new Map<string, typeof list>()
+    for (const set of list) days.set(set.date, [...(days.get(set.date) ?? []), set])
+    return [...days.values()].reduce((sum, day) => sum + trainingMinutes(totalsOf(day)), 0)
   }
   return list.reduce((sum, set) => unitOf(set.exercise) === current ? sum + set.reps : sum, 0)
 }
@@ -101,8 +101,8 @@ const scoreOf = (list: typeof activeSets.value) => {
 const formatValue = (value: number) => {
   if (scale.value === 'seconds') return formatDuration(Math.round(value))
   if (scale.value === 'reps') return formatAmount(Math.round(value), 'reps')
-  // Moins d'une minute d'effort, mais pas rien : 1 min
-  return `${value > 0 ? Math.max(1, Math.round(value)) : 0} min`
+  // Moins d'une minute, mais pas rien : 1 min
+  return formatMinutes(value > 0 ? Math.max(1, Math.round(value)) : 0)
 }
 
 const setsByDay = computed(() => {
@@ -216,10 +216,13 @@ const chartBars = computed<Bar[]>(() => {
   }
 
   if (period.value === '1d') {
-    // Un jour : une barre par heure, l'heure affichée toutes les 6 heures
+    // Un jour : une barre par heure, l'heure affichée toutes les 6 heures.
+    // En minutes, l'effort de l'heure sans arrondi ni repos, qui ne
+    // s'appliquent qu'à la journée
     return Array.from({ length: 24 }, (_, hour) => {
       const prefix = String(hour).padStart(2, '0')
-      const value = scoreOf(periodSets.value.filter(set => set.time.startsWith(prefix)))
+      const hourSets = periodSets.value.filter(set => set.time.startsWith(prefix))
+      const value = scale.value === 'minutes' ? effortMinutes(totalsOf(hourSets)) : scoreOf(hourSets)
       return {
         key: prefix,
         label: hour % 6 === 0 ? `${hour}h` : '',
@@ -288,7 +291,7 @@ const breakdown = computed(() => {
       exerciseId,
       name: exerciseName(exerciseOf(exerciseId)) || exerciseId,
       amount: formatAmount(total, exerciseUnit),
-      score: exerciseUnit === 'seconds' ? total / SECONDS_PER_MINUTE : total / REPS_PER_MINUTE
+      score: effortMinutes(exerciseUnit === 'seconds' ? { reps: 0, seconds: total } : { reps: total, seconds: 0 })
     }
   })
 

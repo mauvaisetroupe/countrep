@@ -243,7 +243,7 @@ const messages: typeof fr = {
       "minutes": "Minutes"
     },
     "chartRepsOnly": "Rep exercises only: held exercises count in Minutes.",
-    "chartEquivalent": "All exercises, in minutes of effort: 15 reps or 30 s held count as one minute.",
+    "chartEquivalent": "All exercises, in training time like the Garmin summary of the journal: 15 reps or 30 s held count as one minute, rounded up each day, plus 2 min of rest every 10 min.",
     "byExercise": "By exercise",
     "empty": "No entries in this period.",
     "regularity": "Consistency (16 weeks)",

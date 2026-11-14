@@ -8,7 +8,7 @@ import type { LocalSet } from '../db'
 import { useExerciseUnits } from '../composables/useExerciseUnits'
 import { useI18n } from 'vue-i18n'
 import { dateLocale } from '../i18n'
-import { formatAmount, formatDuration, formatTotals, type AmountTotals } from '../units'
+import { formatAmount, formatDuration, formatMinutes, formatTotals, trainingMinutes, type AmountTotals } from '../units'
 
 // Carte d'un jour du journal : total, résumé Garmin, et (dépliée) les
 // saisies regroupées par séance, modifiables. Utilisée par le journal et
@@ -34,14 +34,6 @@ const { t } = useI18n()
 const router = useRouter()
 const exerciseStore = useExerciseStore()
 const { load: loadPreview, openForEdit } = usePreview()
-
-// Équivalence Garmin : une minute = 30 s d'effort + 30 s de repos,
-// soit 15 répétitions ou 30 s tenues pour un exercice à la durée
-const REPS_PER_SET = 15
-const SECONDS_PER_SET = 30
-const MINUTES_PER_SET = 1
-const SETS_PER_BLOCK = 10
-const BLOCK_REST_MINUTES = 2
 
 const editingSetId = ref<string | null>(null)
 const openMenuId = ref<string | null>(null)
@@ -113,35 +105,9 @@ const garminExerciseSummary = () => {
     .join(' · ')
 }
 
-const garminDuration = () => {
-  const { reps, seconds } = totalsOf(allDaySets())
-
-  if (reps <= 0 && seconds <= 0) return 0
-
-  const sets = Math.ceil(reps / REPS_PER_SET + seconds / SECONDS_PER_SET)
-
-  return (
-    sets * MINUTES_PER_SET +
-    Math.floor(sets / SETS_PER_BLOCK) * BLOCK_REST_MINUTES
-  )
-}
-
-const formatGarminDuration = () => {
-  const minutes = garminDuration()
-
-  if (minutes < 60) {
-    return `${minutes} min`
-  }
-
-  const hours = Math.floor(minutes / 60)
-  const remainingMinutes = minutes % 60
-
-  if (remainingMinutes === 0) {
-    return `${hours} h`
-  }
-
-  return `${hours} h ${remainingMinutes} min`
-}
+// Durée d'entraînement du jour, comme les statistiques (units.ts)
+const formatGarminDuration = () =>
+  formatMinutes(trainingMinutes(totalsOf(allDaySets())))
 
 const copyGarminSummary = async () => {
   const text =
